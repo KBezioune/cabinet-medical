@@ -36,7 +36,7 @@ export default function Login() {
             <text x="50" y="72" fontSize="64" textAnchor="middle" fill="white" fontWeight="bold">+</text>
           </svg>
         </div>
-        <h1 className="login-title">Cabinet Médical</h1>
+        <h1 className="login-title">Centre Médical Dr Bezioune</h1>
         <p className="login-subtitle">Entrez votre code PIN à 4 chiffres</p>
 
         <div className="pin-display">

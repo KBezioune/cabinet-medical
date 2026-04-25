@@ -1,10 +1,10 @@
 import { differenceInMinutes } from 'date-fns'
 
 export const USERS = [
-  { id: '00000000-0000-0000-0000-000000000001', name: 'Sophie',    pin: '2001', role: 'assistant' },
-  { id: '00000000-0000-0000-0000-000000000002', name: 'Camille',   pin: '2002', role: 'assistant' },
-  { id: '00000000-0000-0000-0000-000000000003', name: 'Léa',       pin: '2003', role: 'assistant' },
-  { id: '00000000-0000-0000-0000-000000000004', name: 'Dr. Admin', pin: '1234', role: 'admin'     },
+  { id: '00000000-0000-0000-0000-000000000001', name: 'Imene',        pin: '0503', role: 'assistant' },
+  { id: '00000000-0000-0000-0000-000000000002', name: 'Dessa',        pin: '2002', role: 'assistant' },
+  { id: '00000000-0000-0000-0000-000000000003', name: 'Laëla',        pin: '2003', role: 'assistant' },
+  { id: '00000000-0000-0000-0000-000000000004', name: 'Dr. Bezioune', pin: '1234', role: 'admin'     },
 ]
 
 export const getAssistants = () => USERS.filter(u => u.role === 'assistant')

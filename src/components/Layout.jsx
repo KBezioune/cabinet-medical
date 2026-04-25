@@ -16,7 +16,7 @@ export default function Layout({ children }) {
               <text x="50" y="72" fontSize="64" textAnchor="middle" fill="white" fontWeight="bold">+</text>
             </svg>
             <div>
-              <span className="header-title">Cabinet Médical</span>
+              <span className="header-title">Centre Médical Dr Bezioune</span>
               <span className="header-subtitle">Pointage</span>
             </div>
           </div>
