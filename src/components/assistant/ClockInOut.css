@@ -70,6 +70,79 @@
   font-size: 0.9375rem;
 }
 
+/* Écran de confirmation + compte à rebours */
+.confirm-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 2px solid;
+}
+
+.confirm-arrivee {
+  background: var(--green-50);
+  border-color: var(--green-200);
+  color: var(--green-700);
+}
+
+.confirm-depart {
+  background: var(--blue-50);
+  border-color: var(--blue-200);
+  color: var(--blue-700);
+}
+
+.confirm-icon {
+  font-size: 2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.confirm-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-align: left;
+}
+
+.confirm-text strong {
+  font-size: 1.125rem;
+}
+
+.confirm-text span {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.confirm-recap {
+  font-size: 0.9375rem;
+  color: var(--gray-600);
+  background: var(--gray-50);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.countdown-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.countdown-ring {
+  display: block;
+}
+
+.countdown-label {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.countdown-cancel {
+  width: 100%;
+}
+
 /* Summary card */
 .summary-card { padding: 1.25rem 1.5rem; }
 

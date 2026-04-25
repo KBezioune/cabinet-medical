@@ -1,29 +1,50 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { todayISO, formatDateLong, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
 import { getPointageByUserAndDate, insertPointage, updatePointage } from '../../lib/localData'
 import './ClockInOut.css'
 
-export default function ClockInOut() {
-  const { user } = useAuth()
-  const [pointage, setPointage] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [now, setNow] = useState(new Date())
-  const [msg, setMsg] = useState(null)
+const COUNTDOWN = 5
 
+export default function ClockInOut() {
+  const { user, logout } = useAuth()
+  const [pointage, setPointage]   = useState(null)
+  const [loading, setLoading]     = useState(true)
+  const [now, setNow]             = useState(new Date())
+  const [confirmed, setConfirmed] = useState(null) // { text, isArrivee }
+  const [countdown, setCountdown] = useState(null)
+  const timerRef = useRef(null)
+
+  // Horloge
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(interval)
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
   }, [])
 
   useEffect(() => {
-    const today = todayISO()
-    setPointage(getPointageByUserAndDate(user.id, today))
+    setPointage(getPointageByUserAndDate(user.id, todayISO()))
     setLoading(false)
   }, [user.id])
 
+  // Nettoyage du timer si démontage
+  useEffect(() => () => clearInterval(timerRef.current), [])
+
+  const startCountdownAndLogout = (text, isArrivee) => {
+    setConfirmed({ text, isArrivee })
+    setCountdown(COUNTDOWN)
+
+    let remaining = COUNTDOWN
+    timerRef.current = setInterval(() => {
+      remaining -= 1
+      setCountdown(remaining)
+      if (remaining <= 0) {
+        clearInterval(timerRef.current)
+        logout()
+      }
+    }, 1000)
+  }
+
   const clockIn = () => {
-    setMsg(null)
     const record = insertPointage({
       user_id: user.id,
       date: todayISO(),
@@ -31,25 +52,80 @@ export default function ClockInOut() {
       heure_depart: null,
     })
     setPointage(record)
-    setMsg({ type: 'success', text: 'Arrivée enregistrée !' })
+    startCountdownAndLogout('Arrivée enregistrée', true)
   }
 
   const clockOut = () => {
-    setMsg(null)
     const updated = updatePointage(pointage.id, {
       heure_arrivee: pointage.heure_arrivee,
       heure_depart: new Date().toISOString(),
     })
     setPointage(updated)
-    setMsg({ type: 'success', text: 'Départ enregistré !' })
+    startCountdownAndLogout('Départ enregistré', false)
   }
 
   const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateStr = formatDateLong(now)
-
-  const status = !pointage?.heure_arrivee ? 'absent'
+  const status  = !pointage?.heure_arrivee ? 'absent'
     : !pointage?.heure_depart ? 'present'
     : 'done'
+
+  // Écran de confirmation + compte à rebours
+  if (confirmed) {
+    const radius = 28
+    const circ   = 2 * Math.PI * radius
+    const offset = circ * (1 - countdown / COUNTDOWN)
+
+    return (
+      <div className="clock-page">
+        <div className="card clock-card">
+          <div className={`confirm-banner ${confirmed.isArrivee ? 'confirm-arrivee' : 'confirm-depart'}`}>
+            <div className="confirm-icon">
+              {confirmed.isArrivee ? '✅' : '👋'}
+            </div>
+            <div className="confirm-text">
+              <strong>{confirmed.text} !</strong>
+              <span>Bonne {confirmed.isArrivee ? 'journée' : 'soirée'}, {user.name}</span>
+            </div>
+          </div>
+
+          {pointage && (
+            <div className="confirm-recap">
+              {confirmed.isArrivee
+                ? <span>Arrivée à <strong>{formatDateTime(pointage.heure_arrivee)}</strong></span>
+                : <span>Journée : <strong>{formatDateTime(pointage.heure_arrivee)}</strong> → <strong>{formatDateTime(pointage.heure_depart)}</strong> · <strong>{minutesToHHMM(pointage.duree_minutes)}</strong></span>
+              }
+            </div>
+          )}
+
+          <div className="countdown-wrapper">
+            <svg className="countdown-ring" width="72" height="72" viewBox="0 0 72 72">
+              <circle cx="36" cy="36" r={radius} fill="none" stroke="var(--gray-100)" strokeWidth="5" />
+              <circle
+                cx="36" cy="36" r={radius}
+                fill="none"
+                stroke={confirmed.isArrivee ? 'var(--green-500)' : 'var(--blue-500)'}
+                strokeWidth="5"
+                strokeDasharray={circ}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                transform="rotate(-90 36 36)"
+                style={{ transition: 'stroke-dashoffset 0.9s linear' }}
+              />
+              <text x="36" y="41" textAnchor="middle" fontSize="18" fontWeight="700" fill="var(--gray-700)">
+                {countdown}
+              </text>
+            </svg>
+            <span className="countdown-label">Déconnexion dans {countdown}s</span>
+          </div>
+
+          <button className="btn btn-outline countdown-cancel" onClick={logout}>
+            Déconnecter maintenant
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="clock-page">
@@ -73,8 +149,6 @@ export default function ClockInOut() {
               {status === 'done'    && '✅ Journée terminée'}
             </div>
 
-            {msg && <div className={msg.type === 'error' ? 'error-msg' : 'success-msg'}>{msg.text}</div>}
-
             <div className="clock-actions">
               {status === 'absent' && (
                 <button className="btn btn-success clock-big-btn" onClick={clockIn}>
@@ -92,7 +166,9 @@ export default function ClockInOut() {
                   Pointer mon départ
                 </button>
               )}
-              {status === 'done' && <div className="done-info"><p>Bonne fin de journée !</p></div>}
+              {status === 'done' && (
+                <div className="done-info"><p>Bonne fin de journée !</p></div>
+              )}
             </div>
           </>
         )}
