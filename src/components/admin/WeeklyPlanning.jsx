@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { JOURS, getWeekDays, minutesToHHMM } from '../../utils/dateUtils'
-import { getAssistants, getPlanningForUsers, getPointagesByDateRange, upsertPlanning } from '../../lib/localData'
+import { JOURS, getWeekDays } from '../../utils/dateUtils'
+import { getAssistants } from '../../lib/localData'
+import { getPlanningForUsers, getPointagesByDateRange, upsertPlanning } from '../../lib/db'
 import { format, addWeeks, subWeeks } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import './WeeklyPlanning.css'
@@ -9,36 +10,47 @@ export default function WeeklyPlanning() {
   const [planning,  setPlanning]  = useState([])
   const [pointages, setPointages] = useState([])
   const [weekRef,   setWeekRef]   = useState(new Date())
+  const [loading,   setLoading]   = useState(true)
   const [editingPlan, setEditingPlan] = useState(null)
   const [msg, setMsg] = useState(null)
 
   const assistants = getAssistants()
   const weekDays   = getWeekDays(weekRef)
 
-  const refresh = () => {
+  const refresh = async () => {
+    setLoading(true)
     const dateFrom = format(weekDays[0], 'yyyy-MM-dd')
     const dateTo   = format(weekDays[6], 'yyyy-MM-dd')
     const ids = assistants.map(u => u.id)
-    setPlanning(getPlanningForUsers(ids))
-    setPointages(getPointagesByDateRange(ids, dateFrom, dateTo))
+    try {
+      const [pl, pt] = await Promise.all([
+        getPlanningForUsers(ids),
+        getPointagesByDateRange(ids, dateFrom, dateTo),
+      ])
+      setPlanning(pl)
+      setPointages(pt)
+    } catch { /* silencieux */ }
+    finally { setLoading(false) }
   }
 
   useEffect(() => { refresh() }, [weekRef])
 
-  const getPlan = (userId, dayIndex) =>
-    planning.find(p => p.user_id === userId && p.jour_semaine === dayIndex + 1)
-
-  const getPointage = (userId, date) => {
-    const dateStr = format(date, 'yyyy-MM-dd')
+  const getPlan    = (userId, i) => planning.find(p => p.user_id === userId && p.jour_semaine === i + 1)
+  const getPointage = (userId, day) => {
+    const dateStr = format(day, 'yyyy-MM-dd')
     return pointages.find(p => p.user_id === userId && p.date === dateStr)
   }
 
-  const savePlan = (userId, dayIndex, heure_debut, heure_fin) => {
-    upsertPlanning(userId, dayIndex + 1, heure_debut, heure_fin)
-    setMsg({ type: 'success', text: 'Planning mis à jour !' })
-    setTimeout(() => setMsg(null), 3000)
-    setEditingPlan(null)
-    refresh()
+  const savePlan = async (userId, dayIndex, heure_debut, heure_fin) => {
+    try {
+      await upsertPlanning(userId, dayIndex + 1, heure_debut, heure_fin)
+      setMsg({ type: 'success', text: 'Planning mis à jour !' })
+      setTimeout(() => setMsg(null), 3000)
+      setEditingPlan(null)
+      refresh()
+    } catch {
+      setMsg({ type: 'error', text: 'Erreur lors de la mise à jour.' })
+    }
   }
 
   const today = format(new Date(), 'yyyy-MM-dd')
@@ -46,7 +58,6 @@ export default function WeeklyPlanning() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {msg && <div className={msg.type === 'error' ? 'error-msg' : 'success-msg'}>{msg.text}</div>}
-
       <div className="card">
         <div className="schedule-header" style={{ marginBottom: '1.5rem' }}>
           <h2 className="section-title">Planning hebdomadaire</h2>
@@ -59,67 +70,68 @@ export default function WeeklyPlanning() {
           </div>
         </div>
 
-        <div className="planning-table-wrapper">
-          <table className="planning-table">
-            <thead>
-              <tr>
-                <th className="user-col">Assistante</th>
-                {weekDays.map((day, i) => {
-                  const dateStr = format(day, 'yyyy-MM-dd')
-                  return (
-                    <th key={i} className={dateStr === today ? 'today-col' : ''}>
-                      <div>{JOURS[i].slice(0, 3)}</div>
-                      <div style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--gray-500)' }}>
-                        {format(day, 'dd/MM', { locale: fr })}
-                      </div>
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {assistants.map(u => (
-                <tr key={u.id}>
-                  <td className="user-cell"><strong>{u.name}</strong></td>
+        {loading ? <div className="loading-center"><div className="spinner"/></div> : (
+          <div className="planning-table-wrapper">
+            <table className="planning-table">
+              <thead>
+                <tr>
+                  <th className="user-col">Assistante</th>
                   {weekDays.map((day, i) => {
-                    const plan    = getPlan(u.id, i)
-                    const pt      = getPointage(u.id, day)
                     const dateStr = format(day, 'yyyy-MM-dd')
-                    const isWeekend = i >= 5
-
                     return (
-                      <td key={i} className={`day-cell ${dateStr === today ? 'today-cell' : ''} ${isWeekend ? 'weekend-cell' : ''}`}>
-                        {editingPlan?.userId === u.id && editingPlan?.dayIndex === i ? (
-                          <PlanEditor
-                            plan={plan}
-                            onSave={(d, f) => savePlan(u.id, i, d, f)}
-                            onCancel={() => setEditingPlan(null)}
-                          />
-                        ) : (
-                          <div className="plan-cell-content" onClick={() => setEditingPlan({ userId: u.id, dayIndex: i })} title="Cliquer pour modifier">
-                            {plan?.actif ? (
-                              <div className="plan-info">
-                                <span className="plan-hours">{plan.heure_debut?.slice(0,5)}–{plan.heure_fin?.slice(0,5)}</span>
-                                {pt && (
-                                  <span className="pt-badge">
-                                    {pt.heure_arrivee ? format(new Date(pt.heure_arrivee), 'HH:mm') : '?'}
-                                    {pt.heure_depart  ? '→' + format(new Date(pt.heure_depart), 'HH:mm') : ' ▶'}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="no-plan">{isWeekend ? 'Repos' : '+'}</span>
-                            )}
-                          </div>
-                        )}
-                      </td>
+                      <th key={i} className={dateStr === today ? 'today-col' : ''}>
+                        <div>{JOURS[i].slice(0,3)}</div>
+                        <div style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--gray-500)' }}>
+                          {format(day, 'dd/MM', { locale: fr })}
+                        </div>
+                      </th>
                     )
                   })}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {assistants.map(u => (
+                  <tr key={u.id}>
+                    <td className="user-cell"><strong>{u.name}</strong></td>
+                    {weekDays.map((day, i) => {
+                      const plan      = getPlan(u.id, i)
+                      const pt        = getPointage(u.id, day)
+                      const dateStr   = format(day, 'yyyy-MM-dd')
+                      const isWeekend = i >= 5
+                      return (
+                        <td key={i} className={`day-cell ${dateStr === today ? 'today-cell' : ''} ${isWeekend ? 'weekend-cell' : ''}`}>
+                          {editingPlan?.userId === u.id && editingPlan?.dayIndex === i ? (
+                            <PlanEditor
+                              plan={plan}
+                              onSave={(d, f) => savePlan(u.id, i, d, f)}
+                              onCancel={() => setEditingPlan(null)}
+                            />
+                          ) : (
+                            <div className="plan-cell-content" onClick={() => setEditingPlan({ userId: u.id, dayIndex: i })} title="Cliquer pour modifier">
+                              {plan?.actif ? (
+                                <div className="plan-info">
+                                  <span className="plan-hours">{plan.heure_debut?.slice(0,5)}–{plan.heure_fin?.slice(0,5)}</span>
+                                  {pt && (
+                                    <span className="pt-badge">
+                                      {pt.heure_arrivee ? format(new Date(pt.heure_arrivee), 'HH:mm') : '?'}
+                                      {pt.heure_depart ? '→' + format(new Date(pt.heure_depart), 'HH:mm') : ' ▶'}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="no-plan">{isWeekend ? 'Repos' : '+'}</span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         <p style={{ fontSize: '0.75rem', color: 'var(--gray-400)', marginTop: '0.75rem' }}>
           Cliquez sur une cellule pour modifier le planning.
         </p>
@@ -133,8 +145,8 @@ function PlanEditor({ plan, onSave, onCancel }) {
   const [fin,   setFin]   = useState(plan?.heure_fin?.slice(0,5)   || '17:00')
   return (
     <div className="plan-editor">
-      <input type="time" value={debut} onChange={e => setDebut(e.target.value)} className="time-input" />
-      <input type="time" value={fin}   onChange={e => setFin(e.target.value)}   className="time-input" />
+      <input type="time" value={debut} onChange={e => setDebut(e.target.value)} className="time-input"/>
+      <input type="time" value={fin}   onChange={e => setFin(e.target.value)}   className="time-input"/>
       <div className="plan-editor-actions">
         <button className="btn-tiny btn-save"   onClick={() => onSave(debut, fin)}>✓</button>
         <button className="btn-tiny btn-cancel" onClick={onCancel}>✗</button>

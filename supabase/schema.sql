@@ -61,11 +61,11 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.planning TO anon, authenticated;
 -- Si des lignes existent déjà (sans ces IDs), les supprimer d'abord :
 -- DELETE FROM planning; DELETE FROM pointages; DELETE FROM users;
 INSERT INTO users (id, name, pin, role) VALUES
-  ('00000000-0000-0000-0000-000000000001', 'Sophie',    '2001', 'assistant'),
-  ('00000000-0000-0000-0000-000000000002', 'Camille',   '2002', 'assistant'),
-  ('00000000-0000-0000-0000-000000000003', 'Léa',       '2003', 'assistant'),
-  ('00000000-0000-0000-0000-000000000004', 'Dr. Admin', '1234', 'admin')
-ON CONFLICT (pin) DO UPDATE SET id = EXCLUDED.id, name = EXCLUDED.name, role = EXCLUDED.role;
+  ('00000000-0000-0000-0000-000000000001', 'Imene',        '0503', 'assistant'),
+  ('00000000-0000-0000-0000-000000000002', 'Dessa',        '2002', 'assistant'),
+  ('00000000-0000-0000-0000-000000000003', 'Laëla',        '2003', 'assistant'),
+  ('00000000-0000-0000-0000-000000000004', 'Dr. Bezioune', '1234', 'admin')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, pin = EXCLUDED.pin, role = EXCLUDED.role;
 
 -- Planning type par défaut (Lundi-Vendredi 8h-17h)
 INSERT INTO planning (user_id, jour_semaine, heure_debut, heure_fin)

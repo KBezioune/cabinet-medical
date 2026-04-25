@@ -1,26 +1,33 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
-import { getPointagesByUserAndMonth } from '../../lib/localData'
+import { getPointagesByUserAndMonth } from '../../lib/db'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
 export default function MyHistory() {
   const { user } = useAuth()
   const { year: cy, month: cm } = currentMonthYear()
-  const [year, setYear]     = useState(cy)
-  const [month, setMonth]   = useState(cm)
+  const [year, setYear]       = useState(cy)
+  const [month, setMonth]     = useState(cm)
   const [records, setRecords] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const from = `${year}-${String(month).padStart(2,'0')}-01`
-    const lastDay = new Date(year, month, 0).getDate()
-    const to = `${year}-${String(month).padStart(2,'0')}-${lastDay}`
-    setRecords(getPointagesByUserAndMonth(user.id, from, to))
+    const fetch = async () => {
+      setLoading(true)
+      const from     = `${year}-${String(month).padStart(2,'0')}-01`
+      const lastDay  = new Date(year, month, 0).getDate()
+      const to       = `${year}-${String(month).padStart(2,'0')}-${lastDay}`
+      try {
+        setRecords(await getPointagesByUserAndMonth(user.id, from, to))
+      } catch { setRecords([]) }
+      finally { setLoading(false) }
+    }
+    fetch()
   }, [year, month, user.id])
 
   const totalMinutes = records.reduce((s, r) => s + (r.duree_minutes || 0), 0)
-
   const monthOptions = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
     label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
@@ -32,9 +39,7 @@ export default function MyHistory() {
         <h2 className="section-title">Mes Pointages</h2>
         <div className="week-nav">
           <select value={month} onChange={e => setMonth(Number(e.target.value))} style={{ width: 'auto' }}>
-            {monthOptions.map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
+            {monthOptions.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
           </select>
           <select value={year} onChange={e => setYear(Number(e.target.value))} style={{ width: 'auto' }}>
             {[cy - 1, cy, cy + 1].map(y => <option key={y} value={y}>{y}</option>)}
@@ -48,7 +53,9 @@ export default function MyHistory() {
         </span>
       </div>
 
-      {records.length === 0 ? (
+      {loading ? (
+        <div className="loading-center"><div className="spinner"/></div>
+      ) : records.length === 0 ? (
         <p style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem' }}>
           Aucun pointage pour cette période
         </p>
@@ -56,13 +63,7 @@ export default function MyHistory() {
         <div className="table-wrapper">
           <table>
             <thead>
-              <tr>
-                <th>Date</th>
-                <th>Arrivée</th>
-                <th>Départ</th>
-                <th>Durée</th>
-                <th>Note</th>
-              </tr>
+              <tr><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Note</th></tr>
             </thead>
             <tbody>
               {records.map(r => (
