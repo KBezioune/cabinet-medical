@@ -1,63 +1,62 @@
-.admin-dashboard {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+.admin-dashboard { display: flex; flex-direction: column; gap: 1.5rem; }
 
-.admin-header {
-  margin-bottom: 0.25rem;
-}
+.admin-header { margin-bottom: 0.25rem; }
 
 .admin-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gray-800);
-  letter-spacing: -0.025em;
+  font-size: 1.625rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  letter-spacing: -0.03em;
 }
 
 .admin-subtitle {
   font-size: 0.875rem;
   color: var(--gray-500);
   margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 .admin-tab-nav {
   display: flex;
-  gap: 0.25rem;
-  border-bottom: 2px solid var(--gray-200);
+  gap: 0;
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  padding: 0.375rem;
+  overflow: hidden;
 }
 
 .admin-tab-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6875rem 1.25rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--gray-500);
   background: transparent;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: all 0.15s;
+  border-radius: var(--radius-lg);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  letter-spacing: 0.01em;
 }
-
-.admin-tab-btn:hover { color: var(--gray-800); }
+.admin-tab-btn:hover { color: var(--gray-700); background: var(--gray-50); }
 .admin-tab-btn.active {
-  color: var(--blue-600);
-  border-bottom-color: var(--blue-600);
+  color: white;
+  background: linear-gradient(135deg, var(--brand-700), #0d9488);
+  box-shadow: 0 4px 12px rgb(29 78 216 / 0.3);
 }
 
-.tab-content {
-  animation: fadeIn 0.15s ease;
+.tab-content { animation: fadeUp 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .admin-tab-btn span:last-child { display: none; }
-  .admin-tab-btn { padding: 0.75rem; }
+  .admin-tab-btn { padding: 0.6875rem 0.875rem; }
+  .admin-title { font-size: 1.25rem; }
 }
