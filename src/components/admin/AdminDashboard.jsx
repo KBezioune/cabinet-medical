@@ -2,12 +2,14 @@ import { useState } from 'react'
 import AllPointages from './AllPointages'
 import WeeklyPlanning from './WeeklyPlanning'
 import MonthlyExport from './MonthlyExport'
+import GestionPins from './GestionPins'
 import './AdminDashboard.css'
 
 const TABS = [
   { id: 'pointages', label: 'Pointages en temps réel', icon: '⏱️' },
-  { id: 'planning', label: 'Planning hebdomadaire', icon: '📅' },
-  { id: 'export', label: 'Export mensuel', icon: '📊' },
+  { id: 'planning',  label: 'Planning hebdomadaire',   icon: '📅' },
+  { id: 'export',    label: 'Export mensuel',           icon: '📊' },
+  { id: 'pins',      label: 'Gestion des PINs',         icon: '🔑' },
 ]
 
 export default function AdminDashboard() {
@@ -35,8 +37,9 @@ export default function AdminDashboard() {
 
       <div className="tab-content">
         {tab === 'pointages' && <AllPointages />}
-        {tab === 'planning' && <WeeklyPlanning />}
-        {tab === 'export' && <MonthlyExport />}
+        {tab === 'planning'  && <WeeklyPlanning />}
+        {tab === 'export'    && <MonthlyExport />}
+        {tab === 'pins'      && <GestionPins />}
       </div>
     </div>
   )
