@@ -36,6 +36,7 @@
   flex-shrink: 0;
 }
 .header-logo-ring svg { color: white; }
+.header-logo-img { width: 24px; height: 24px; object-fit: contain; display: block; }
 
 .header-texts { min-width: 0; }
 

@@ -50,29 +50,25 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Logo médical */
+/* Logo */
 .login-logo {
   position: relative;
   margin-bottom: 0.25rem;
 }
 
-.login-logo-ring {
-  width: 72px; height: 72px;
-  background: linear-gradient(135deg, #2563eb, #0d9488);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 24px rgb(37 99 235 / 0.4), 0 0 0 8px rgb(37 99 235 / 0.08);
+.login-logo-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 4px 16px rgb(37 99 235 / 0.2));
   animation: pulse-ring 3s ease-in-out infinite;
 }
 
 @keyframes pulse-ring {
-  0%, 100% { box-shadow: 0 8px 24px rgb(37 99 235 / 0.4), 0 0 0 8px rgb(37 99 235 / 0.08); }
-  50%       { box-shadow: 0 8px 24px rgb(37 99 235 / 0.5), 0 0 0 14px rgb(37 99 235 / 0.04); }
+  0%, 100% { filter: drop-shadow(0 4px 16px rgb(37 99 235 / 0.2)); }
+  50%       { filter: drop-shadow(0 6px 24px rgb(37 99 235 / 0.35)); }
 }
-
-.login-logo-ring svg { color: white; }
 
 /* Texte */
 .login-title {

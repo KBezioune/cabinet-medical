@@ -13,9 +13,7 @@ export default function Layout({ children }) {
 
           <div className="header-brand">
             <div className="header-logo-ring">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-              </svg>
+              <img src="/logo.png" alt="Logo" className="header-logo-img" />
             </div>
             <div className="header-texts">
               <span className="header-title">Centre Médical Dr Bezioune</span>

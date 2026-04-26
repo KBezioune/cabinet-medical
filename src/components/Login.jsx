@@ -66,11 +66,7 @@ export default function Login() {
       <div className="login-card">
 
         <div className="login-logo">
-          <div className="login-logo-ring">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-          </div>
+          <img src="/logo.png" alt="Centre Médical Dr Bezioune" className="login-logo-img" />
         </div>
 
         <p className="login-tagline">Système de Pointage</p>
