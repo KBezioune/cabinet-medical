@@ -28,7 +28,7 @@ export default function ClockInOut() {
         const data = await getPointageByUserAndDate(user.id, todayISO())
         setPointage(data)
       } catch (e) {
-        setError('Impossible de charger les données. Vérifiez la connexion.')
+        setError(`Erreur Supabase: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
       } finally {
         setLoading(false)
       }
@@ -60,8 +60,8 @@ export default function ClockInOut() {
       })
       setPointage(record)
       startCountdown('Arrivée enregistrée', true)
-    } catch {
-      setError('Erreur lors du pointage. Réessayez.')
+    } catch (e) {
+      setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
     } finally {
       setAction(false)
     }
@@ -76,8 +76,8 @@ export default function ClockInOut() {
       })
       setPointage(updated)
       startCountdown('Départ enregistré', false)
-    } catch {
-      setError('Erreur lors du pointage. Réessayez.')
+    } catch (e) {
+      setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
     } finally {
       setAction(false)
     }
