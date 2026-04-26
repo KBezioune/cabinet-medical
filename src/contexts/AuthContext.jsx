@@ -1,22 +1,28 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { getUsers } from '../lib/localData'
+import { syncPinsFromDb } from '../lib/db'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser]     = useState(null)
+  const [user, setUser]       = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Restaurer la session
     const stored = sessionStorage.getItem('cabinet_user')
     if (stored) {
       try { setUser(JSON.parse(stored)) } catch {}
     }
     setLoading(false)
+
+    // Synchroniser les PINs depuis Supabase en arrière-plan
+    // Cela garantit que les PINs modifiés sur un autre appareil sont pris en compte
+    syncPinsFromDb().catch(() => {})
   }, [])
 
   const login = (pin) => {
-    // Appel dynamique pour lire les PINs potentiellement modifiés
+    // getUsers() relit localStorage (mis à jour par syncPinsFromDb)
     const found = getUsers().find(u => u.pin === pin.trim())
     if (!found) throw new Error('PIN incorrect')
     sessionStorage.setItem('cabinet_user', JSON.stringify(found))

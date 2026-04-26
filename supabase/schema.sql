@@ -53,7 +53,7 @@ ALTER TABLE pointages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE planning DISABLE ROW LEVEL SECURITY;
 
 -- Accorder les droits à la clé anon (obligatoire pour CREATE TABLE via SQL brut)
-GRANT SELECT ON public.users TO anon, authenticated;
+GRANT SELECT, UPDATE ON public.users TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.pointages TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.planning TO anon, authenticated;
 

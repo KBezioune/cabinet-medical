@@ -68,6 +68,23 @@ export const deletePointage = async (id) => {
   if (error) { log('deletePointage', error); throw error }
 }
 
+// ── USERS / PINS ─────────────────────────────────────────────
+
+// Lit les PINs depuis Supabase et met à jour localStorage
+export const syncPinsFromDb = async () => {
+  const { data, error } = await supabase.from('users').select('id, pin')
+  if (error) { log('syncPinsFromDb', error); return }
+  const pins = {}
+  ;(data || []).forEach(r => { pins[r.id] = r.pin })
+  localStorage.setItem('cabinet_pins', JSON.stringify(pins))
+}
+
+// Met à jour le PIN d'un utilisateur dans Supabase
+export const updateUserPinInDb = async (userId, newPin) => {
+  const { error } = await supabase.from('users').update({ pin: newPin }).eq('id', userId)
+  if (error) { log('updateUserPinInDb', error); throw error }
+}
+
 // ── PLANNING ─────────────────────────────────────────────────
 
 export const getPlanningByUser = async (userId) => {
