@@ -29,7 +29,7 @@ export default function AdminDashboard() {
             className={`admin-tab-btn ${tab === t.id ? 'active' : ''}`}
             onClick={() => setTab(t.id)}
           >
-            <span>{t.icon}</span>
+            <span className="tab-icon">{t.icon}</span>
             <span>{t.label}</span>
           </button>
         ))}

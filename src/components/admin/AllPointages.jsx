@@ -82,10 +82,8 @@ export default function AllPointages() {
             <label>Date</label>
             <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}/>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <div className="filters-row-actions">
             <button className="btn btn-outline" onClick={() => setFilterDate('')}>Toutes les dates</button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button className="btn btn-ghost" onClick={refresh}>↻ Actualiser</button>
           </div>
         </div>

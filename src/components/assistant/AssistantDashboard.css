@@ -13,17 +13,33 @@
 .tab-btn {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.6875rem 1rem;
+  gap: 0.2rem;
+  padding: 0.5rem 0.5rem;
   border-radius: var(--radius-lg);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.625rem;
+  font-weight: 700;
   color: var(--gray-500);
   background: transparent;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tab-btn .tab-icon { font-size: 1.25rem; line-height: 1; }
+
+@media (min-width: 480px) {
+  .tab-btn {
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.6875rem 1rem;
+    font-size: 0.875rem;
+    text-transform: none;
+    letter-spacing: 0.01em;
+  }
+  .tab-btn .tab-icon { font-size: 1rem; }
 }
 .tab-btn:hover { background: var(--gray-50); color: var(--gray-700); }
 .tab-btn.active {
