@@ -8,7 +8,7 @@ const COUNTDOWN = 5
 
 // Coordonnées du cabinet
 const CABINET = { lat: 46.5338, lng: 6.5739 }
-const MAX_DISTANCE_M = 150
+const MAX_DISTANCE_M = 500
 
 // Formule de Haversine — distance en mètres entre deux coordonnées GPS
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
@@ -233,7 +233,7 @@ export default function ClockInOut() {
                   <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
-                Le pointage est vérifié par GPS (rayon 150 m)
+                Le pointage est vérifié par GPS (rayon 500 m)
               </div>
             )}
 
