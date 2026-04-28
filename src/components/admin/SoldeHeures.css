@@ -1,0 +1,148 @@
+.sh-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+/* ── Controls ────────────────────────────────────────────── */
+.sh-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+}
+
+.sh-selects {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.sh-selects select { width: auto; }
+
+/* ── Card par assistante ─────────────────────────────────── */
+.sh-card { padding: 0; overflow: hidden; }
+
+.sh-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-wrap: wrap;
+}
+.sh-summary:hover { background: var(--gray-50); }
+
+.sh-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-600), var(--teal-500));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.sh-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 80px;
+}
+.sh-name { font-size: 0.9375rem; font-weight: 700; color: var(--gray-800); }
+.sh-sub  { font-size: 0.75rem; color: var(--gray-400); text-transform: capitalize; }
+
+/* Stats */
+.sh-stats {
+  display: flex;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+  align-items: center;
+}
+
+.sh-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sh-stat-val      { font-size: 1.0625rem; font-weight: 700; color: var(--gray-800); }
+.sh-stat-val.blue { color: var(--brand-600); }
+.sh-stat-lbl      { font-size: 0.625rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+
+/* Solde block */
+.sh-solde {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.375rem 0.875rem;
+  border-radius: var(--radius);
+  min-width: 4.5rem;
+}
+.sh-solde-val { font-size: 1.125rem; font-weight: 800; }
+.sh-solde-lbl { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; }
+
+.sh-solde-pos  { background: var(--green-100); color: var(--green-700); }
+.sh-solde-neg  { background: var(--red-100);   color: var(--red-600);   }
+.sh-solde-zero { background: var(--gray-100);  color: var(--gray-600);  }
+
+/* Toggle arrow */
+.sh-toggle {
+  background: none;
+  border: none;
+  font-size: 1.125rem;
+  color: var(--gray-400);
+  padding: 0.25rem;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.sh-toggle.open { transform: rotate(180deg); }
+
+/* ── Détail ───────────────────────────────────────────────── */
+.sh-detail {
+  border-top: 1px solid var(--gray-100);
+  padding: 0.875rem 1.25rem 1rem;
+  animation: fadeUp 0.18s ease;
+}
+
+.sh-date-cell { text-transform: capitalize; white-space: nowrap; }
+
+.sh-pt-cell {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+
+.sh-dash { color: var(--gray-300); }
+
+/* Badges solde dans le tableau */
+.sh-badge-solde {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.sh-badge-lg { padding: 0.25rem 0.75rem; font-size: 0.8125rem; }
+
+.sh-badge-pos  { background: var(--green-100); color: var(--green-700); }
+.sh-badge-neg  { background: var(--red-100);   color: var(--red-600);   }
+.sh-badge-zero { background: var(--gray-100);  color: var(--gray-600);  }
+
+.total-row td { background: var(--gray-50); border-top: 2px solid var(--gray-200); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .sh-stats { gap: 0.5rem 0.875rem; }
+  .sh-stat-val { font-size: 0.9375rem; }
+}

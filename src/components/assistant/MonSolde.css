@@ -1,0 +1,116 @@
+.ms-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.ms-head { padding: 0.875rem 1.25rem; }
+
+.ms-period {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.ms-selects {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.ms-selects select { width: auto; }
+
+/* ── KPI tiles ───────────────────────────────────────────── */
+.ms-kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .ms-kpis { grid-template-columns: 1fr; }
+}
+
+.ms-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1.25rem 0.75rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  border: 1px solid rgb(255 255 255 / 0.8);
+  box-shadow: var(--shadow-sm);
+}
+
+.ms-kpi-icon { font-size: 1.5rem; line-height: 1; }
+
+.ms-kpi-val {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.ms-kpi-big { font-size: 1.625rem; }
+
+.ms-kpi-lbl {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.75;
+}
+
+.ms-kpi-gray { background: var(--gray-50);   color: var(--gray-700); }
+.ms-kpi-blue { background: var(--brand-50);  color: var(--brand-700); }
+.ms-kpi-pos  { background: var(--green-100); color: var(--green-700); }
+.ms-kpi-neg  { background: var(--red-100);   color: var(--red-600);   }
+.ms-kpi-zero { background: var(--gray-100);  color: var(--gray-600);  }
+
+/* ── Détail ──────────────────────────────────────────────── */
+.ms-detail-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  text-transform: capitalize;
+  margin-bottom: 0.875rem;
+}
+
+.ms-empty {
+  text-align: center;
+  color: var(--gray-400);
+  padding: 2rem 0;
+  font-size: 0.875rem;
+}
+
+.ms-date-cell {
+  text-transform: capitalize;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.ms-hours-gray { color: var(--gray-500); font-weight: 500; }
+.ms-dash       { color: var(--gray-300); }
+
+.ms-pt-cell    { font-size: 0.75rem; white-space: nowrap; }
+.ms-arrive     { color: var(--green-600); font-weight: 600; }
+.ms-depart     { color: var(--red-600);   font-weight: 600; }
+
+/* Badges solde */
+.ms-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.ms-badge-lg { padding: 0.25rem 0.75rem; font-size: 0.8125rem; }
+
+.ms-badge-pos  { background: var(--green-100); color: var(--green-700); }
+.ms-badge-neg  { background: var(--red-100);   color: var(--red-600);   }
+.ms-badge-zero { background: var(--gray-100);  color: var(--gray-600);  }
+
+.total-row td { background: var(--gray-50); border-top: 2px solid var(--gray-200); }
