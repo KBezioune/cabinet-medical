@@ -6,10 +6,12 @@ import MonthlyExport from './MonthlyExport'
 import GestionPins from './GestionPins'
 import GestionConges from './GestionConges'
 import SoldeHeures from './SoldeHeures'
+import ClockInOut from '../assistant/ClockInOut'
 import './AdminDashboard.css'
 
 // Onglets visibles selon le rôle
 const ALL_TABS = [
+  { id: 'pointage',  label: 'Pointage',                icon: '⏱️', roles: ['manager'] },
   { id: 'pointages', label: 'Pointages en temps réel', icon: '⏱️', roles: ['admin'] },
   { id: 'planning',  label: 'Planning hebdomadaire',   icon: '📅', roles: ['admin', 'manager'] },
   { id: 'soldes',    label: 'Soldes des heures',        icon: '⏰', roles: ['admin', 'manager'] },
@@ -52,6 +54,7 @@ export default function AdminDashboard() {
       </nav>
 
       <div className="tab-content">
+        {tab === 'pointage'  && <ClockInOut />}
         {tab === 'pointages' && <AllPointages />}
         {tab === 'planning'  && <PlanningTaches />}
         {tab === 'soldes'    && <SoldeHeures />}
