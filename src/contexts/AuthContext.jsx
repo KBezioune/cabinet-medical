@@ -17,7 +17,6 @@ export function AuthProvider({ children }) {
     setLoading(false)
 
     // Synchroniser les PINs depuis Supabase en arrière-plan
-    // Cela garantit que les PINs modifiés sur un autre appareil sont pris en compte
     syncPinsFromDb().catch(() => {})
   }, [])
 

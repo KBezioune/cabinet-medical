@@ -20,7 +20,11 @@ function AppContent() {
 
   return (
     <Layout>
-      {user.role === 'admin' ? <AdminDashboard /> : <AssistantDashboard />}
+      {/* admin et manager → dashboard admin (avec onglets filtrés selon rôle) */}
+      {(user.role === 'admin' || user.role === 'manager')
+        ? <AdminDashboard />
+        : <AssistantDashboard />
+      }
     </Layout>
   )
 }

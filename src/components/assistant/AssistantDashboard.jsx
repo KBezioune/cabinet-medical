@@ -2,14 +2,14 @@ import { useState } from 'react'
 import ClockInOut from './ClockInOut'
 import MySchedule from './MySchedule'
 import MyHistory from './MyHistory'
-import MyPlanning from './MyPlanning'
+import DemandeConge from './DemandeConge'
 import './AssistantDashboard.css'
 
 const TABS = [
-  { id: 'clock',      label: 'Pointage',       icon: '⏱️' },
-  { id: 'myplanning', label: 'Mon Calendrier',  icon: '🗓️' },
-  { id: 'schedule',   label: 'Planning type',   icon: '📅' },
-  { id: 'history',    label: 'Mes Pointages',   icon: '📋' },
+  { id: 'clock',    label: 'Pointage',    icon: '⏱️' },
+  { id: 'schedule', label: 'Mon Planning',icon: '📅' },
+  { id: 'history',  label: 'Mes Pointages',icon: '📋' },
+  { id: 'conges',   label: 'Congés',      icon: '🌴' },
 ]
 
 export default function AssistantDashboard() {
@@ -31,10 +31,10 @@ export default function AssistantDashboard() {
       </nav>
 
       <div className="tab-content">
-        {tab === 'clock'      && <ClockInOut />}
-        {tab === 'myplanning' && <MyPlanning />}
-        {tab === 'schedule'   && <MySchedule />}
-        {tab === 'history'    && <MyHistory />}
+        {tab === 'clock'    && <ClockInOut />}
+        {tab === 'schedule' && <MySchedule />}
+        {tab === 'history'  && <MyHistory />}
+        {tab === 'conges'   && <DemandeConge />}
       </div>
     </div>
   )

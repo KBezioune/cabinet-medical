@@ -1,31 +1,43 @@
 import { useState } from 'react'
+import { useAuth } from '../../contexts/AuthContext'
 import AllPointages from './AllPointages'
 import WeeklyPlanning from './WeeklyPlanning'
-import PlanningCalendar from './PlanningCalendar'
 import MonthlyExport from './MonthlyExport'
 import GestionPins from './GestionPins'
+import GestionConges from './GestionConges'
 import './AdminDashboard.css'
 
-const TABS = [
-  { id: 'pointages', label: 'Pointages en temps réel', icon: '⏱️' },
-  { id: 'calendar',  label: 'Calendrier Planning',     icon: '🗓️' },
-  { id: 'planning',  label: 'Planning hebdomadaire',   icon: '📅' },
-  { id: 'export',    label: 'Export mensuel',           icon: '📊' },
-  { id: 'pins',      label: 'Gestion des PINs',         icon: '🔑' },
+// Onglets visibles selon le rôle
+const ALL_TABS = [
+  { id: 'pointages', label: 'Pointages en temps réel', icon: '⏱️', roles: ['admin'] },
+  { id: 'planning',  label: 'Planning hebdomadaire',   icon: '📅', roles: ['admin', 'manager'] },
+  { id: 'conges',    label: 'Gestion des congés',      icon: '🌴', roles: ['admin', 'manager'] },
+  { id: 'export',    label: 'Export mensuel',           icon: '📊', roles: ['admin'] },
+  { id: 'pins',      label: 'Gestion des PINs',         icon: '🔑', roles: ['admin'] },
 ]
 
 export default function AdminDashboard() {
-  const [tab, setTab] = useState('pointages')
+  const { user } = useAuth()
+
+  // Filtrer les onglets selon le rôle
+  const tabs = ALL_TABS.filter(t => t.roles.includes(user.role))
+  const [tab, setTab] = useState(tabs[0]?.id || 'planning')
+
+  const roleLabel = user.role === 'admin'
+    ? 'Médecin — Administrateur'
+    : 'Responsable — Assistante médicale'
 
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
-        <h1 className="admin-title">Tableau de bord Administrateur</h1>
-        <p className="admin-subtitle">Gestion du personnel médical</p>
+        <h1 className="admin-title">
+          {user.role === 'admin' ? 'Tableau de bord Administrateur' : `Bonjour, ${user.name}`}
+        </h1>
+        <p className="admin-subtitle">{roleLabel}</p>
       </div>
 
       <nav className="admin-tab-nav">
-        {TABS.map(t => (
+        {tabs.map(t => (
           <button
             key={t.id}
             className={`admin-tab-btn ${tab === t.id ? 'active' : ''}`}
@@ -39,8 +51,8 @@ export default function AdminDashboard() {
 
       <div className="tab-content">
         {tab === 'pointages' && <AllPointages />}
-        {tab === 'calendar'  && <PlanningCalendar />}
         {tab === 'planning'  && <WeeklyPlanning />}
+        {tab === 'conges'    && <GestionConges />}
         {tab === 'export'    && <MonthlyExport />}
         {tab === 'pins'      && <GestionPins />}
       </div>

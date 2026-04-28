@@ -1,0 +1,257 @@
+.conge-page {
+  padding: 24px 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.conge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.conge-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--gray-800, #1e293b);
+  margin: 0 0 4px;
+}
+
+.conge-subtitle {
+  font-size: 0.85rem;
+  color: var(--gray-500, #64748b);
+  margin: 0;
+}
+
+.btn-new-conge {
+  background: var(--blue-600, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.btn-new-conge:hover { background: var(--blue-700, #1d4ed8); }
+
+/* Alertes */
+.alert {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.alert-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.alert-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+/* Formulaire */
+.conge-form-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.form-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.optional { font-weight: 400; color: #94a3b8; }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #fff;
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.type-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.15s;
+  text-align: left;
+}
+.type-btn:hover  { border-color: #3b82f6; color: #2563eb; background: #eff6ff; }
+.type-btn.active { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; font-weight: 700; }
+.type-emoji { font-size: 1.1rem; }
+
+.nb-jours-badge {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.btn-submit:hover:not(:disabled) { background: #1d4ed8; }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Liste */
+.conges-list { display: flex; flex-direction: column; gap: 12px; }
+
+.conge-card {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 20px;
+  transition: box-shadow 0.2s;
+}
+.conge-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.conge-card.statut-approuve { border-left: 4px solid #22c55e; }
+.conge-card.statut-refuse   { border-left: 4px solid #ef4444; }
+.conge-card.statut-attente  { border-left: 4px solid #f59e0b; }
+.conge-card.statut-modifie  { border-left: 4px solid #8b5cf6; }
+
+.conge-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.conge-type {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.conge-emoji { font-size: 1.2rem; }
+.conge-type-label { font-weight: 700; font-size: 0.95rem; color: #1e293b; }
+
+.statut-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.statut-attente  { background: #fef3c7; color: #92400e; }
+.statut-approuve { background: #dcfce7; color: #166534; }
+.statut-refuse   { background: #fee2e2; color: #991b1b; }
+.statut-modifie  { background: #ede9fe; color: #5b21b6; }
+
+.conge-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #475569;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.dates-sep { color: #94a3b8; }
+.nb-jours-inline { color: #94a3b8; font-size: 0.82rem; }
+
+.conge-motif {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 6px 0;
+  font-style: italic;
+}
+
+.conge-commentaire {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  color: #334155;
+  margin-top: 8px;
+}
+
+.btn-cancel-conge {
+  margin-top: 10px;
+  background: none;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-cancel-conge:hover { background: #fee2e2; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #94a3b8;
+}
+.empty-icon { font-size: 3rem; margin-bottom: 16px; }
+.empty-sub  { font-size: 0.85rem; margin-top: 4px; }
