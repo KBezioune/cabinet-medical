@@ -195,3 +195,38 @@ export const deleteConge = async (id) => {
   const { error } = await supabase.from('conges').delete().eq('id', id)
   if (error) { log('deleteConge', error); throw error }
 }
+
+// ── PLANNING TÂCHES ───────────────────────────────────────────
+
+export const getPlanningTaches = async (userIds, from, to) => {
+  const { data, error } = await supabase.from('planning_taches').select('*')
+    .in('user_id', userIds).gte('date', from).lte('date', to)
+    .order('heure_debut', { ascending: true })
+  if (error) { log('getPlanningTaches', error); throw error }
+  return data || []
+}
+
+export const getPlanningTachesByUser = async (userId, from, to) => {
+  const { data, error } = await supabase.from('planning_taches').select('*')
+    .eq('user_id', userId).gte('date', from).lte('date', to)
+    .order('heure_debut', { ascending: true })
+  if (error) { log('getPlanningTachesByUser', error); throw error }
+  return data || []
+}
+
+export const insertPlanningTache = async (tache) => {
+  const { data, error } = await supabase.from('planning_taches').insert(tache).select().single()
+  if (error) { log('insertPlanningTache', error); throw error }
+  return data
+}
+
+export const updatePlanningTache = async (id, data) => {
+  const { data: rec, error } = await supabase.from('planning_taches').update(data).eq('id', id).select().single()
+  if (error) { log('updatePlanningTache', error); throw error }
+  return rec
+}
+
+export const deletePlanningTache = async (id) => {
+  const { error } = await supabase.from('planning_taches').delete().eq('id', id)
+  if (error) { log('deletePlanningTache', error); throw error }
+}

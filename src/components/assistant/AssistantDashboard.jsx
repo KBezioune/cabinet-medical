@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ClockInOut from './ClockInOut'
-import MySchedule from './MySchedule'
+import MonPlanningTaches from './MonPlanningTaches'
 import MyHistory from './MyHistory'
 import DemandeConge from './DemandeConge'
 import './AssistantDashboard.css'
@@ -32,7 +32,7 @@ export default function AssistantDashboard() {
 
       <div className="tab-content">
         {tab === 'clock'    && <ClockInOut />}
-        {tab === 'schedule' && <MySchedule />}
+        {tab === 'schedule' && <MonPlanningTaches />}
         {tab === 'history'  && <MyHistory />}
         {tab === 'conges'   && <DemandeConge />}
       </div>

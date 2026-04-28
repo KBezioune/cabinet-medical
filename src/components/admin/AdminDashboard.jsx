@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import AllPointages from './AllPointages'
-import WeeklyPlanning from './WeeklyPlanning'
+import PlanningTaches from './PlanningTaches'
 import MonthlyExport from './MonthlyExport'
 import GestionPins from './GestionPins'
 import GestionConges from './GestionConges'
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
 
       <div className="tab-content">
         {tab === 'pointages' && <AllPointages />}
-        {tab === 'planning'  && <WeeklyPlanning />}
+        {tab === 'planning'  && <PlanningTaches />}
         {tab === 'conges'    && <GestionConges />}
         {tab === 'export'    && <MonthlyExport />}
         {tab === 'pins'      && <GestionPins />}

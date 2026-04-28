@@ -1,0 +1,130 @@
+/* MonPlanningTaches.css
+   Réutilise .schedule-header, .section-title, .week-nav, .week-label,
+   .btn-sm, .day-name, .day-date depuis MySchedule.css */
+
+/* ── Grille semaine ──────────────────────────────────────── */
+.mpt-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin-top: 0.875rem;
+}
+
+@media (min-width: 560px) {
+  .mpt-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .mpt-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 1200px) {
+  .mpt-grid { grid-template-columns: repeat(7, 1fr); }
+}
+
+/* ── Carte jour ──────────────────────────────────────────── */
+.mpt-day {
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.mpt-day.mpt-today {
+  border-color: var(--brand-300);
+  background: var(--brand-50);
+  box-shadow: 0 0 0 2px rgb(59 130 246 / 0.1);
+}
+
+.mpt-day.mpt-weekend {
+  background: white;
+  border-color: var(--gray-100);
+  opacity: 0.65;
+}
+
+/* ── En-tête du jour ─────────────────────────────────────── */
+.mpt-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.625rem;
+  border-bottom: 1px solid var(--gray-200);
+  background: white;
+}
+
+.mpt-day.mpt-today .mpt-day-header {
+  background: var(--brand-50);
+  border-bottom-color: var(--brand-200);
+}
+
+.mpt-day-left { display: flex; flex-direction: column; }
+
+.day-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  text-transform: capitalize;
+}
+.mpt-day.mpt-today .day-name { color: var(--brand-700); }
+
+.day-date {
+  font-size: 0.6875rem;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+
+/* ── Corps du jour ───────────────────────────────────────── */
+.mpt-day-body {
+  padding: 0.5rem 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-height: 3rem;
+}
+
+.mpt-empty {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  font-weight: 500;
+  padding: 0.25rem 0;
+}
+
+/* ── Carte tâche ─────────────────────────────────────────── */
+.mpt-tache {
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.5rem;
+}
+
+.mpt-tache-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.mpt-tache-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mpt-tache-hours {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.mpt-tache-note {
+  font-size: 0.6875rem;
+  font-style: italic;
+  opacity: 0.75;
+  margin-top: 0.1875rem;
+}
+
+/* Couleurs par type */
+.mpt-tache-blue   { background: var(--brand-100); color: var(--brand-700); }
+.mpt-tache-teal   { background: #ccfbf1;          color: var(--teal-600);  }
+.mpt-tache-green  { background: var(--green-100); color: var(--green-700); }
+.mpt-tache-orange { background: var(--orange-100);color: var(--orange-600);}
+.mpt-tache-gray   { background: var(--gray-100);  color: var(--gray-600);  }
