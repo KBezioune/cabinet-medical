@@ -1,14 +1,19 @@
 .assistant-dashboard { display: flex; flex-direction: column; gap: 1.5rem; }
 
+/* ── Barre d'onglets ──────────────────────────────────────── */
 .tab-nav {
   display: flex;
-  gap: 0.375rem;
+  gap: 0.25rem;
   background: white;
-  padding: 0.375rem;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
+  padding: 0.3125rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--gray-100);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.tab-nav::-webkit-scrollbar { display: none; }
 
 .tab-btn {
   flex: 1;
@@ -19,43 +24,43 @@
   gap: 0.2rem;
   padding: 0.5rem 0.5rem;
   border-radius: var(--radius-lg);
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   font-weight: 700;
   color: var(--gray-500);
   background: transparent;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tab-btn .tab-icon { font-size: 1.25rem; line-height: 1; }
 
+.tab-btn:hover { background: var(--gray-50); color: var(--gray-700); }
+.tab-btn.active {
+  background: linear-gradient(135deg, var(--brand-600), var(--teal-600));
+  color: white;
+  box-shadow: 0 3px 10px rgb(37 99 235 / 0.28);
+}
+
+/* ── Tablette : labels visibles ───────────────────────────── */
 @media (min-width: 480px) {
   .tab-btn {
     flex-direction: row;
     gap: 0.5rem;
-    padding: 0.6875rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.6875rem 0.875rem;
+    font-size: 0.8125rem;
     text-transform: none;
     letter-spacing: 0.01em;
   }
   .tab-btn .tab-icon { font-size: 1rem; }
 }
-.tab-btn:hover { background: var(--gray-50); color: var(--gray-700); }
-.tab-btn.active {
-  background: linear-gradient(135deg, var(--brand-600), var(--teal-600));
-  color: white;
-  box-shadow: 0 4px 12px rgb(37 99 235 / 0.3);
-}
 
+/* ── Contenu d'onglet ─────────────────────────────────────── */
 .tab-content { animation: fadeUp 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 480px) {
-  .tab-btn span:last-child { display: none; }
-  .tab-btn { padding: 0.6875rem; }
 }

@@ -54,11 +54,11 @@
 /* Formulaire */
 .conge-form-card {
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border: 1px solid var(--gray-100);
+  border-radius: 1rem;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .form-title {
@@ -166,12 +166,13 @@
 
 .conge-card {
   background: #fff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
+  border: 1px solid var(--gray-100);
+  border-radius: 1rem;
   padding: 16px 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.2s;
 }
-.conge-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.conge-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); }
 .conge-card.statut-approuve { border-left: 4px solid #22c55e; }
 .conge-card.statut-refuse   { border-left: 4px solid #ef4444; }
 .conge-card.statut-attente  { border-left: 4px solid #f59e0b; }

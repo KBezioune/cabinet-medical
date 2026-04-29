@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { getAssistants, updateUserPin, getUsers } from '../../lib/localData'
+import { getUsers, updateUserPin } from '../../lib/localData'
 import { updateUserPinInDb } from '../../lib/db'
 import './GestionPins.css'
 
+const getAssistantsOnly = () => getUsers().filter(u => u.role === 'assistant')
+
 export default function GestionPins() {
-  const [assistants, setAssistants] = useState(getAssistants)
+  const [assistants, setAssistants] = useState(getAssistantsOnly)
   const [editing, setEditing]       = useState(null)
   const [newPin, setNewPin]         = useState('')
   const [revealed, setRevealed]     = useState({})
@@ -28,11 +30,9 @@ export default function GestionPins() {
     setSaving(true)
     setMsg(null)
     try {
-      // 1. Sauvegarde dans Supabase (source de vérité)
       await updateUserPinInDb(userId, newPin)
-      // 2. Mise à jour localStorage pour la session courante
       updateUserPin(userId, newPin)
-      setAssistants(getAssistants())
+      setAssistants(getAssistantsOnly())
       setEditing(null)
       setNewPin('')
       setMsg({ type: 'success', text: '✅ PIN mis à jour sur tous les appareils.' })

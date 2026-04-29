@@ -88,7 +88,7 @@
 .sh-solde-lbl { font-size: 0.5625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; }
 
 .sh-solde-pos  { background: var(--green-100); color: var(--green-700); }
-.sh-solde-neg  { background: var(--red-100);   color: var(--red-600);   }
+.sh-solde-neg  { background: #fff5f5;          color: #991b1b;          }
 .sh-solde-zero { background: var(--gray-100);  color: var(--gray-600);  }
 
 /* Toggle arrow */
@@ -132,7 +132,7 @@
 .sh-badge-lg { padding: 0.25rem 0.75rem; font-size: 0.8125rem; }
 
 .sh-badge-pos  { background: var(--green-100); color: var(--green-700); }
-.sh-badge-neg  { background: var(--red-100);   color: var(--red-600);   }
+.sh-badge-neg  { background: #fff5f5;          color: #991b1b;          }
 .sh-badge-zero { background: var(--gray-100);  color: var(--gray-600);  }
 
 .total-row td { background: var(--gray-50); border-top: 2px solid var(--gray-200); }

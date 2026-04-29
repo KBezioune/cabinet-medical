@@ -112,7 +112,7 @@ export default function SoldeHeures() {
           {assistants.map(a => {
             const { plannedMin, workedMin, balance, details } = computeSolde(a.id)
             const isOpen = expanded === a.id
-            const soldeClass = balance > 0 ? 'pos' : balance < 0 ? 'neg' : 'zero'
+            const soldeClass = balance > 0 ? 'pos' : (balance < 0 && workedMin > 0) ? 'neg' : 'zero'
 
             return (
               <div key={a.id} className="card sh-card">
@@ -156,7 +156,7 @@ export default function SoldeHeures() {
                         </thead>
                         <tbody>
                           {details.map(d => {
-                            const dc = d.balance > 0 ? 'pos' : d.balance < 0 ? 'neg' : 'zero'
+                            const dc = d.balance > 0 ? 'pos' : (d.balance < 0 && d.worked > 0) ? 'neg' : 'zero'
                             return (
                               <tr key={d.dateStr}>
                                 <td className="sh-date-cell">

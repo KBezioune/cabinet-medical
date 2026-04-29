@@ -185,7 +185,7 @@ export default function DashboardRH() {
           </div>
         </div>
 
-        <div className={`card drh-kpi ${totalAbsences > 5 ? 'drh-kpi-danger' : ''}`}>
+        <div className={`card drh-kpi ${totalAbsences > 5 && totalWorkedMin > 0 ? 'drh-kpi-danger' : ''}`}>
           <div className="drh-kpi-icon drh-icon-red">⚠️</div>
           <div className="drh-kpi-body">
             <span className="drh-kpi-val">{totalAbsences}</span>
@@ -194,7 +194,7 @@ export default function DashboardRH() {
           </div>
         </div>
 
-        <div className={`card drh-kpi ${tauxEquipe !== null && tauxEquipe < 80 ? 'drh-kpi-danger' : ''}`}>
+        <div className={`card drh-kpi ${tauxEquipe !== null && tauxEquipe < 80 && totalWorkedMin > 0 ? 'drh-kpi-danger' : ''}`}>
           <div className="drh-kpi-icon drh-icon-green">📈</div>
           <div className="drh-kpi-body">
             <span className="drh-kpi-val">{tauxEquipe !== null ? `${tauxEquipe}%` : '—'}</span>
@@ -225,10 +225,10 @@ export default function DashboardRH() {
               </thead>
               <tbody>
                 {allStats.map(r => {
-                  const balanceAlert = r.balance < -300
-                  const tauxAlert    = r.tauxActivite !== null && r.tauxActivite < 80
+                  const balanceAlert = r.balance < -300 && r.workedMin > 0
+                  const tauxAlert    = r.tauxActivite !== null && r.tauxActivite < 80 && r.workedMin > 0
                   const hasAlert     = balanceAlert || tauxAlert
-                  const soldeClass   = r.balance > 0 ? 'pos' : r.balance < 0 ? 'neg' : 'zero'
+                  const soldeClass   = r.balance > 0 ? 'pos' : (r.balance < 0 && r.workedMin > 0) ? 'neg' : 'zero'
 
                   return (
                     <tr key={r.user.id} className={hasAlert ? 'drh-row-alert' : ''}>

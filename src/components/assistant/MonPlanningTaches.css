@@ -22,10 +22,11 @@
 
 /* ── Carte jour ──────────────────────────────────────────── */
 .mpt-day {
-  border: 1.5px solid var(--gray-100);
-  border-radius: var(--radius);
+  border: 1px solid var(--gray-100);
+  border-radius: 1rem;
   background: var(--gray-50);
   overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.15s;
 }
 

@@ -6,9 +6,9 @@
 
 .stat-card {
   background: white;
-  border-radius: var(--radius-lg);
+  border-radius: 1rem;
   padding: 0.875rem 0.5rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--gray-100);
   text-align: center;
   position: relative;
@@ -26,7 +26,7 @@
 .stat-card:nth-child(2)::before { background: linear-gradient(90deg, var(--brand-500), var(--brand-400)); }
 .stat-card:nth-child(3)::before { background: linear-gradient(90deg, var(--orange-500), #f59e0b); }
 
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.1); }
 
 .stat-number {
   font-size: 1.625rem;
