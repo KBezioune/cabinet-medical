@@ -1,0 +1,318 @@
+.pp-wrap { display: flex; flex-direction: column; gap: 1rem; }
+
+.pp-card { padding: 1.25rem; overflow: hidden; }
+
+/* ── En-tête ──────────────────────────────────────────────── */
+.pp-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 600px) {
+  .pp-header { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+
+.pp-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.pp-subtitle {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-top: 0.125rem;
+}
+
+/* ── Navigation semaine ───────────────────────────────────── */
+.pp-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pp-btn-nav {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.pp-week-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-align: center;
+  text-transform: capitalize;
+  flex: 1;
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+/* ── Légende ──────────────────────────────────────────────── */
+.pp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.625rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.pp-legend-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.pp-chip-blue   { background: var(--brand-100);  color: var(--brand-700);  }
+.pp-chip-teal   { background: #ccfbf1;            color: var(--teal-600);   }
+.pp-chip-green  { background: var(--green-100);   color: var(--green-700);  }
+.pp-chip-orange { background: var(--orange-100);  color: var(--orange-600); }
+.pp-chip-gray   { background: var(--gray-100);    color: var(--gray-600);   }
+.pp-chip-conge  { background: #fef3c7;            color: #92400e;           }
+
+/* ── Tableau ──────────────────────────────────────────────── */
+.pp-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  /* Indicateur scroll doux */
+  background:
+    linear-gradient(to right, white 20%, transparent),
+    linear-gradient(to left,  white 20%, transparent) 100% 0,
+    radial-gradient(farthest-side at 0   50%, rgb(0 0 0 / 0.06), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.06), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 36px 100%, 36px 100%, 10px 100%, 10px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.pp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  min-width: 620px;
+}
+
+/* ── En-têtes colonnes ────────────────────────────────────── */
+.pp-th-user,
+.pp-th-day {
+  padding: 0.5rem 0.375rem;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray-500);
+  background: var(--gray-50);
+  border-bottom: 2px solid var(--gray-200);
+  white-space: nowrap;
+}
+
+.pp-th-user {
+  text-align: left;
+  width: 110px;
+  min-width: 110px;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--gray-50);
+  border-right: 2px solid var(--gray-200);
+}
+
+.pp-th-today {
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.pp-th-we {
+  background: var(--gray-100);
+  color: var(--gray-400);
+}
+
+.pp-th-jour {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.pp-th-date {
+  display: block;
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: var(--gray-400);
+  margin-top: 0.125rem;
+}
+
+.pp-today-dot {
+  display: block;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--brand-500);
+  margin: 0.25rem auto 0;
+}
+
+/* ── Lignes ────────────────────────────────────────────────── */
+.pp-row { border-bottom: 1px solid var(--gray-100); }
+.pp-row:last-child { border-bottom: none; }
+
+/* Accent couleur selon rôle */
+.pp-row-admin     .pp-td-user { border-left: 3px solid #8b5cf6; }
+.pp-row-manager   .pp-td-user { border-left: 3px solid var(--teal-500); }
+.pp-row-assistant .pp-td-user { border-left: 3px solid var(--brand-500); }
+
+/* ── Cellule utilisateur (sticky) ─────────────────────────── */
+.pp-td-user {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: white;
+  border-right: 2px solid var(--gray-200);
+  padding: 0.625rem 0.625rem !important;
+  vertical-align: middle;
+  min-width: 110px;
+  width: 110px;
+}
+
+/* fond cohérent sur hover */
+.pp-row:hover .pp-td-user { background: var(--gray-50); }
+
+.pp-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pp-avatar {
+  width: 1.875rem;
+  height: 1.875rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: white;
+  flex-shrink: 0;
+}
+.pp-avatar-admin     { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.pp-avatar-manager   { background: linear-gradient(135deg, var(--teal-500), var(--teal-600)); }
+.pp-avatar-assistant { background: linear-gradient(135deg, var(--brand-500), var(--brand-700)); }
+
+.pp-user-info { display: flex; flex-direction: column; min-width: 0; }
+.pp-user-name { font-weight: 700; color: var(--gray-800); font-size: 0.8125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-user-role { font-size: 0.625rem; color: var(--gray-400); margin-top: 0.0625rem; }
+
+/* ── Cellules jours ────────────────────────────────────────── */
+.pp-td {
+  padding: 0.3125rem !important;
+  vertical-align: top;
+  border-right: 1px solid var(--gray-100);
+  min-width: 88px;
+  transition: background 0.12s;
+}
+
+.pp-row:hover .pp-td { background: var(--gray-50); }
+
+.pp-td-today { background: #eff6ff !important; }
+.pp-td-today.pp-row:hover .pp-td-today { background: var(--brand-100) !important; }
+
+.pp-td-we { background: var(--gray-50); }
+.pp-row:hover .pp-td-we { background: var(--gray-100); }
+
+.pp-td-conge { background: #fffbeb; }
+.pp-row:hover .pp-td-conge { background: #fef3c7; }
+
+/* ── Heures planifiées ─────────────────────────────────────── */
+.pp-hours {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--brand-600);
+  background: var(--brand-50);
+  padding: 0.1875rem 0.375rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+}
+
+/* ── Chips tâches ──────────────────────────────────────────── */
+.pp-tache {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.25rem 0.3125rem;
+  border-radius: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  margin-bottom: 0.1875rem;
+  line-height: 1.25;
+}
+
+.pp-tache-icon { font-size: 0.75rem; flex-shrink: 0; line-height: 1.4; }
+
+.pp-tache-body { display: flex; flex-direction: column; min-width: 0; }
+.pp-tache-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-tache-hours { font-weight: 400; opacity: 0.8; white-space: nowrap; font-size: 0.5625rem; }
+
+.pp-tache-note-dot {
+  margin-left: auto;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: 0.5;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.pp-tache-blue   { background: var(--brand-100);  color: var(--brand-700);  }
+.pp-tache-teal   { background: #ccfbf1;            color: var(--teal-600);   }
+.pp-tache-green  { background: var(--green-100);   color: var(--green-700);  }
+.pp-tache-orange { background: var(--orange-100);  color: var(--orange-600); }
+.pp-tache-gray   { background: var(--gray-100);    color: var(--gray-600);   }
+
+/* ── Congé ─────────────────────────────────────────────────── */
+.pp-conge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0.375rem 0.25rem;
+  border-radius: 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-align: center;
+  min-height: 2.5rem;
+}
+
+.pp-conge-ok   { background: #d1fae5; color: #065f46; }
+.pp-conge-wait { background: #fef3c7; color: #92400e; }
+
+.pp-conge-label { font-size: 0.5625rem; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.9; }
+
+/* ── Cellule vide ──────────────────────────────────────────── */
+.pp-empty { color: var(--gray-200); font-size: 0.875rem; display: block; text-align: center; padding: 0.5rem 0; }
+
+/* ── Responsive tablette ──────────────────────────────────── */
+@media (min-width: 640px) {
+  .pp-table   { font-size: 0.8125rem; min-width: 740px; }
+  .pp-th-user { width: 140px; min-width: 140px; }
+  .pp-td-user { min-width: 140px; width: 140px; }
+  .pp-td      { min-width: 100px; padding: 0.375rem !important; }
+  .pp-tache   { font-size: 0.6875rem; padding: 0.3125rem 0.375rem; }
+  .pp-tache-icon  { font-size: 0.875rem; }
+  .pp-hours   { font-size: 0.75rem; }
+  .pp-user-name { font-size: 0.875rem; }
+}

@@ -4,14 +4,16 @@ import MonPlanningTaches from './MonPlanningTaches'
 import MyHistory from './MyHistory'
 import DemandeConge from './DemandeConge'
 import MonSolde from './MonSolde'
+import PlanningPartage from '../shared/PlanningPartage'
 import './AssistantDashboard.css'
 
 const TABS = [
-  { id: 'clock',    label: 'Pointage',     icon: '⏱️' },
-  { id: 'schedule', label: 'Mon Planning', icon: '📅' },
-  { id: 'solde',    label: 'Mon Solde',    icon: '⏰' },
-  { id: 'history',  label: 'Mes Pointages',icon: '📋' },
-  { id: 'conges',   label: 'Congés',       icon: '🌴' },
+  { id: 'clock',    label: 'Pointage',       icon: '⏱️' },
+  { id: 'schedule', label: 'Mon Planning',   icon: '📅' },
+  { id: 'equipe',   label: 'Planning équipe',icon: '📆' },
+  { id: 'solde',    label: 'Mon Solde',      icon: '⏰' },
+  { id: 'history',  label: 'Mes Pointages',  icon: '📋' },
+  { id: 'conges',   label: 'Congés',         icon: '🌴' },
 ]
 
 export default function AssistantDashboard() {
@@ -35,6 +37,7 @@ export default function AssistantDashboard() {
       <div className="tab-content">
         {tab === 'clock'    && <ClockInOut />}
         {tab === 'schedule' && <MonPlanningTaches />}
+        {tab === 'equipe'   && <PlanningPartage />}
         {tab === 'solde'    && <MonSolde />}
         {tab === 'history'  && <MyHistory />}
         {tab === 'conges'   && <DemandeConge />}
