@@ -26,7 +26,31 @@ const formatSolde = (min) => {
   return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
 }
 
-const TODAY = format(new Date(), 'yyyy-MM-dd')
+const TODAY      = format(new Date(), 'yyyy-MM-dd')
+const VAC_QUOTA  = 20
+const THIS_YEAR  = new Date().getFullYear()
+const YEAR_START = `${THIS_YEAR}-01-01`
+const YEAR_END   = `${THIS_YEAR}-12-31`
+
+const countWorkingDays = (debut, fin) => {
+  const s = new Date(debut + 'T12:00:00')
+  const e = new Date(fin   + 'T12:00:00')
+  if (s > e) return 0
+  return eachDayOfInterval({ start: s, end: e })
+    .filter(d => getDay(d) >= 1 && getDay(d) <= 5).length
+}
+
+const computeVacances = (userId, conges) => {
+  const consomme = conges
+    .filter(c => c.user_id === userId && c.statut === 'approuve' &&
+                 c.date_debut <= YEAR_END && c.date_fin >= YEAR_START)
+    .reduce((sum, c) => {
+      const debut = c.date_debut < YEAR_START ? YEAR_START : c.date_debut
+      const fin   = c.date_fin   > YEAR_END   ? YEAR_END   : c.date_fin
+      return sum + countWorkingDays(debut, fin)
+    }, 0)
+  return { quota: VAC_QUOTA, consomme, restant: Math.max(0, VAC_QUOTA - consomme) }
+}
 
 export default function DashboardRH() {
   const { year: cy, month: cm } = currentMonthYear()
@@ -97,7 +121,9 @@ export default function DashboardRH() {
       c.date_fin >= from
     ).length
 
-    return { plannedMin, workedMin, balance, absences, tauxActivite, congesApprouves }
+    const vac = computeVacances(userId, conges)
+
+    return { plannedMin, workedMin, balance, absences, tauxActivite, congesApprouves, vac }
   }
 
   const allStats = collaborateurs.map(u => ({ user: u, ...computeStats(u.id) }))
@@ -218,7 +244,7 @@ export default function DashboardRH() {
                   <th>Heures travaillées</th>
                   <th>Solde</th>
                   <th>Taux activité</th>
-                  <th>Congés</th>
+                  <th>Vacances {THIS_YEAR}</th>
                   <th>Absences</th>
                   <th>Statut</th>
                 </tr>
@@ -273,9 +299,10 @@ export default function DashboardRH() {
                       </td>
 
                       <td>
-                        {r.congesApprouves > 0
-                          ? <span className="badge badge-teal">{r.congesApprouves}j</span>
-                          : <span className="sh-dash">—</span>}
+                        <div className={`drh-vac ${r.vac.restant <= 3 ? 'drh-vac-low' : ''}`}>
+                          <span className="drh-vac-restant">🌴 {r.vac.restant}j restants</span>
+                          <span className="drh-vac-detail">{r.vac.consomme} / {r.vac.quota}j consommés</span>
+                        </div>
                       </td>
 
                       <td>

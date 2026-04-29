@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getPlanningByUser, getPointagesByUserAndMonth } from '../../lib/db'
+import { getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser } from '../../lib/db'
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
@@ -26,6 +26,32 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
 }))
 
+// ── Solde vacances ────────────────────────────────────────────
+const VAC_QUOTA  = 20
+const THIS_YEAR  = new Date().getFullYear()
+const YEAR_START = `${THIS_YEAR}-01-01`
+const YEAR_END   = `${THIS_YEAR}-12-31`
+
+const countWorkingDays = (debut, fin) => {
+  const s = new Date(debut + 'T12:00:00')
+  const e = new Date(fin   + 'T12:00:00')
+  if (s > e) return 0
+  return eachDayOfInterval({ start: s, end: e })
+    .filter(d => getDay(d) >= 1 && getDay(d) <= 5).length
+}
+
+const computeVacances = (conges) => {
+  const consomme = conges
+    .filter(c => c.statut === 'approuve' &&
+                 c.date_debut <= YEAR_END && c.date_fin >= YEAR_START)
+    .reduce((sum, c) => {
+      const debut = c.date_debut < YEAR_START ? YEAR_START : c.date_debut
+      const fin   = c.date_fin   > YEAR_END   ? YEAR_END   : c.date_fin
+      return sum + countWorkingDays(debut, fin)
+    }, 0)
+  return { quota: VAC_QUOTA, consomme, restant: Math.max(0, VAC_QUOTA - consomme) }
+}
+
 export default function MonSolde() {
   const { user } = useAuth()
   const { year: cy, month: cm } = currentMonthYear()
@@ -33,6 +59,7 @@ export default function MonSolde() {
   const [month, setMonth]   = useState(cm)
   const [planning,  setPlanning]  = useState([])
   const [pointages, setPointages] = useState([])
+  const [conges,    setConges]    = useState([])
   const [loading,   setLoading]   = useState(true)
 
   useEffect(() => {
@@ -41,12 +68,14 @@ export default function MonSolde() {
       const from = `${year}-${String(month).padStart(2, '0')}-01`
       const to   = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`
       try {
-        const [pl, pt] = await Promise.all([
+        const [pl, pt, cg] = await Promise.all([
           getPlanningByUser(user.id),
           getPointagesByUserAndMonth(user.id, from, to),
+          getCongesByUser(user.id),
         ])
         setPlanning(pl)
         setPointages(pt)
+        setConges(cg)
       } catch (e) { console.error(e) }
       finally { setLoading(false) }
     }
@@ -79,8 +108,10 @@ export default function MonSolde() {
   })
 
   const solde      = totalWorked - totalPlanned
-  const soldeClass = solde > 0 ? 'pos' : solde < 0 ? 'neg' : 'zero'
+  const soldeClass = solde > 0 ? 'pos' : (solde < 0 && totalWorked > 0) ? 'neg' : 'zero'
   const monthLabel = format(new Date(year, month - 1), 'MMMM yyyy', { locale: fr })
+  const vacances   = computeVacances(conges)
+  const pct        = Math.min(Math.round((vacances.consomme / vacances.quota) * 100), 100)
 
   return (
     <div className="ms-wrap">
@@ -103,7 +134,7 @@ export default function MonSolde() {
         <div className="loading-center"><div className="spinner" /></div>
       ) : (
         <>
-          {/* Grandes tuiles de résumé */}
+          {/* KPIs heures */}
           <div className="ms-kpis">
             <div className="ms-kpi ms-kpi-gray">
               <span className="ms-kpi-icon">📅</span>
@@ -119,9 +150,35 @@ export default function MonSolde() {
               <span className="ms-kpi-icon">{solde >= 0 ? '✅' : '⚠️'}</span>
               <span className="ms-kpi-val ms-kpi-big">{formatSolde(solde)}</span>
               <span className="ms-kpi-lbl">
-                {solde > 0 ? 'Heures supplémentaires' : solde < 0 ? 'Heures manquantes' : 'À l\'équilibre'}
+                {solde > 0 ? 'Heures suppl.' : solde < 0 ? 'Heures manquantes' : 'À l\'équilibre'}
               </span>
             </div>
+          </div>
+
+          {/* Solde vacances */}
+          <div className="card ms-vac-card">
+            <h3 className="ms-vac-title">🌴 Solde vacances {THIS_YEAR}</h3>
+            <div className="ms-vac-grid">
+              <div className="ms-vac-item ms-vac-quota">
+                <span className="ms-vac-val">{vacances.quota}</span>
+                <span className="ms-vac-lbl">Quota annuel</span>
+              </div>
+              <div className="ms-vac-item ms-vac-used">
+                <span className="ms-vac-val">{vacances.consomme}</span>
+                <span className="ms-vac-lbl">Consommés</span>
+              </div>
+              <div className={`ms-vac-item ${vacances.restant <= 3 ? 'ms-vac-low' : 'ms-vac-ok'}`}>
+                <span className="ms-vac-val">{vacances.restant}</span>
+                <span className="ms-vac-lbl">Restants</span>
+              </div>
+            </div>
+            <div className="ms-vac-bar">
+              <div className="ms-vac-bar-fill" style={{ width: `${pct}%` }} />
+            </div>
+            <p className="ms-vac-note">
+              {vacances.consomme} jour{vacances.consomme !== 1 ? 's' : ''} de congés approuvés
+              sur {vacances.quota} jours ouvrables annuels
+            </p>
           </div>
 
           {/* Tableau jour par jour */}
@@ -143,7 +200,7 @@ export default function MonSolde() {
                   </thead>
                   <tbody>
                     {details.map(d => {
-                      const dc = d.balance > 0 ? 'pos' : d.balance < 0 ? 'neg' : 'zero'
+                      const dc = d.balance > 0 ? 'pos' : (d.balance < 0 && d.worked > 0) ? 'neg' : 'zero'
                       return (
                         <tr key={d.dateStr}>
                           <td className="ms-date-cell">

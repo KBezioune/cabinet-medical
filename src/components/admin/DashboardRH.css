@@ -114,6 +114,19 @@
   white-space: nowrap;
 }
 
+/* ── Colonne vacances ─────────────────────────────────────── */
+.drh-vac { display: flex; flex-direction: column; gap: 0.125rem; }
+.drh-vac-restant {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--green-700);
+}
+.drh-vac-detail {
+  font-size: 0.625rem;
+  color: var(--gray-400);
+}
+.drh-vac-low .drh-vac-restant { color: var(--orange-600); }
+
 /* ── Table ────────────────────────────────────────────────── */
 .drh-table-card { padding: 0; overflow: hidden; }
 

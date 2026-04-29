@@ -3,10 +3,10 @@ import { getUsers, updateUserPin } from '../../lib/localData'
 import { updateUserPinInDb } from '../../lib/db'
 import './GestionPins.css'
 
-const getAssistantsOnly = () => getUsers().filter(u => u.role === 'assistant')
+const getNonAdmins = () => getUsers().filter(u => u.role !== 'admin')
 
 export default function GestionPins() {
-  const [assistants, setAssistants] = useState(getAssistantsOnly)
+  const [assistants, setAssistants] = useState(getNonAdmins)
   const [editing, setEditing]       = useState(null)
   const [newPin, setNewPin]         = useState('')
   const [revealed, setRevealed]     = useState({})
@@ -32,7 +32,7 @@ export default function GestionPins() {
     try {
       await updateUserPinInDb(userId, newPin)
       updateUserPin(userId, newPin)
-      setAssistants(getAssistantsOnly())
+      setAssistants(getNonAdmins())
       setEditing(null)
       setNewPin('')
       setMsg({ type: 'success', text: '✅ PIN mis à jour sur tous les appareils.' })
@@ -67,7 +67,7 @@ export default function GestionPins() {
 
               <div className="pin-row-info">
                 <div className="pin-row-name">{u.name}</div>
-                <div className="pin-row-role">Assistante médicale</div>
+                <div className="pin-row-role">{u.role === 'manager' ? 'Manager' : 'Assistante médicale'}</div>
               </div>
 
               {editing === u.id ? (

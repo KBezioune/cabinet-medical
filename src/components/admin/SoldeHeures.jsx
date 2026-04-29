@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getAssistants } from '../../lib/localData'
-import { getPlanningForUsers, getPointagesByDateRange } from '../../lib/db'
+import { getPlanningForUsers, getPointagesByDateRange, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
@@ -26,12 +26,39 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
 }))
 
+// ── Solde vacances ────────────────────────────────────────────
+const VAC_QUOTA  = 20
+const THIS_YEAR  = new Date().getFullYear()
+const YEAR_START = `${THIS_YEAR}-01-01`
+const YEAR_END   = `${THIS_YEAR}-12-31`
+
+const countWorkingDays = (debut, fin) => {
+  const s = new Date(debut + 'T12:00:00')
+  const e = new Date(fin   + 'T12:00:00')
+  if (s > e) return 0
+  return eachDayOfInterval({ start: s, end: e })
+    .filter(d => getDay(d) >= 1 && getDay(d) <= 5).length
+}
+
+const computeVacances = (userId, conges) => {
+  const consomme = conges
+    .filter(c => c.user_id === userId && c.statut === 'approuve' &&
+                 c.date_debut <= YEAR_END && c.date_fin >= YEAR_START)
+    .reduce((sum, c) => {
+      const debut = c.date_debut < YEAR_START ? YEAR_START : c.date_debut
+      const fin   = c.date_fin   > YEAR_END   ? YEAR_END   : c.date_fin
+      return sum + countWorkingDays(debut, fin)
+    }, 0)
+  return { quota: VAC_QUOTA, consomme, restant: Math.max(0, VAC_QUOTA - consomme) }
+}
+
 export default function SoldeHeures() {
   const { year: cy, month: cm } = currentMonthYear()
   const [year,  setYear]   = useState(cy)
   const [month, setMonth]  = useState(cm)
   const [planning,  setPlanning]  = useState([])
   const [pointages, setPointages] = useState([])
+  const [conges,    setConges]    = useState([])
   const [loading,   setLoading]   = useState(true)
   const [expanded,  setExpanded]  = useState(null)
 
@@ -44,12 +71,14 @@ export default function SoldeHeures() {
       const to   = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`
       const ids  = assistants.map(a => a.id)
       try {
-        const [pl, pt] = await Promise.all([
+        const [pl, pt, cg] = await Promise.all([
           getPlanningForUsers(ids),
           getPointagesByDateRange(ids, from, to),
+          getAllConges(),
         ])
         setPlanning(pl)
         setPointages(pt)
+        setConges(cg)
       } catch (e) { console.error(e) }
       finally { setLoading(false) }
     }
@@ -111,12 +140,13 @@ export default function SoldeHeures() {
         <div className="sh-list">
           {assistants.map(a => {
             const { plannedMin, workedMin, balance, details } = computeSolde(a.id)
-            const isOpen = expanded === a.id
+            const vac      = computeVacances(a.id, conges)
+            const isOpen   = expanded === a.id
             const soldeClass = balance > 0 ? 'pos' : (balance < 0 && workedMin > 0) ? 'neg' : 'zero'
 
             return (
               <div key={a.id} className="card sh-card">
-                {/* Résumé de l'assistante */}
+                {/* Résumé */}
                 <div className="sh-summary" onClick={() => setExpanded(isOpen ? null : a.id)}>
                   <div className="sh-avatar">{a.name[0]}</div>
                   <div className="sh-info">
@@ -135,6 +165,14 @@ export default function SoldeHeures() {
                     <div className={`sh-solde sh-solde-${soldeClass}`}>
                       <span className="sh-solde-val">{formatSolde(balance)}</span>
                       <span className="sh-solde-lbl">Solde</span>
+                    </div>
+                    {/* Solde vacances */}
+                    <div className={`sh-vac ${vac.restant <= 3 ? 'sh-vac-low' : ''}`}>
+                      <span className="sh-vac-icon">🌴</span>
+                      <div className="sh-vac-body">
+                        <span className="sh-vac-main">{vac.restant}j restants</span>
+                        <span className="sh-vac-sub">{vac.consomme}/{vac.quota}j</span>
+                      </div>
                     </div>
                   </div>
                   <button className={`sh-toggle ${isOpen ? 'open' : ''}`} title="Détail">▾</button>

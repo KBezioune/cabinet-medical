@@ -91,6 +91,27 @@
 .sh-solde-neg  { background: #fff5f5;          color: #991b1b;          }
 .sh-solde-zero { background: var(--gray-100);  color: var(--gray-600);  }
 
+/* ── Solde vacances ──────────────────────────────────────────── */
+.sh-vac {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3125rem 0.625rem;
+  background: var(--green-100);
+  border: 1px solid var(--green-200);
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+.sh-vac-low {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+.sh-vac-icon { font-size: 0.875rem; line-height: 1; }
+.sh-vac-body { display: flex; flex-direction: column; }
+.sh-vac-main { font-size: 0.75rem; font-weight: 700; color: var(--green-700); line-height: 1.2; }
+.sh-vac-low .sh-vac-main { color: var(--orange-600); }
+.sh-vac-sub  { font-size: 0.5625rem; color: var(--gray-400); }
+
 /* Toggle arrow */
 .sh-toggle {
   background: none;
