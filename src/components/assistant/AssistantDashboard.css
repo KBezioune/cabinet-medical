@@ -1,61 +1,18 @@
-.assistant-dashboard { display: flex; flex-direction: column; gap: 1.5rem; }
+/* ═══════════════════════════════════════════════════════════
+   MOBILE (<768px) : bottom nav fixe + contenu plein écran
+   DESKTOP (≥768px) : tab nav horizontale en haut
+   ═══════════════════════════════════════════════════════════ */
 
-/* ── Barre d'onglets ──────────────────────────────────────── */
-.tab-nav {
-  display: flex;
-  gap: 0.25rem;
-  background: white;
-  padding: 0.3125rem;
-  border-radius: 1rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--gray-100);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.tab-nav::-webkit-scrollbar { display: none; }
-
-.tab-btn {
-  flex: 1;
+.assistant-dashboard {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  padding: 0.5rem 0.5rem;
-  border-radius: var(--radius-lg);
-  font-size: 0.5625rem;
-  font-weight: 700;
-  color: var(--gray-500);
-  background: transparent;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  flex-shrink: 0;
+  gap: 1.5rem;
+  /* Compense le bottom nav fixe sur mobile */
+  padding-bottom: calc(60px + 0.5rem);
 }
 
-.tab-btn .tab-icon { font-size: 1.25rem; line-height: 1; }
-
-.tab-btn:hover { background: var(--gray-50); color: var(--gray-700); }
-.tab-btn.active {
-  background: linear-gradient(135deg, var(--brand-600), var(--teal-600));
-  color: white;
-  box-shadow: 0 3px 10px rgb(37 99 235 / 0.28);
-}
-
-/* ── Tablette : labels visibles ───────────────────────────── */
-@media (min-width: 480px) {
-  .tab-btn {
-    flex-direction: row;
-    gap: 0.5rem;
-    padding: 0.6875rem 0.875rem;
-    font-size: 0.8125rem;
-    text-transform: none;
-    letter-spacing: 0.01em;
-  }
-  .tab-btn .tab-icon { font-size: 1rem; }
-}
+/* ── Tab nav horizontale : cachée sur mobile ───────────────── */
+.tab-nav { display: none; }
 
 /* ── Contenu d'onglet ─────────────────────────────────────── */
 .tab-content { animation: fadeUp 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -63,4 +20,106 @@
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Bottom nav mobile ─────────────────────────────────────── */
+.asst-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: white;
+  border-top: 1px solid var(--gray-100);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 40;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.asst-bottom-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--gray-400);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s;
+  padding: 0;
+  height: 60px;
+}
+
+.asst-bottom-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.asst-bottom-btn.active           { color: var(--brand-600); }
+.asst-bottom-btn.active .asst-bottom-icon { transform: translateY(-3px); }
+
+.asst-bottom-dot {
+  position: absolute;
+  bottom: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--brand-600);
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP ≥768px : tab nav en haut, pas de bottom bar
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+
+  .assistant-dashboard { padding-bottom: 0; }
+
+  /* Afficher la nav horizontale */
+  .tab-nav {
+    display: flex;
+    gap: 0.25rem;
+    background: white;
+    padding: 0.3125rem;
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--gray-100);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6875rem 0.875rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--gray-500);
+    background: transparent;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tab-btn .tab-icon { font-size: 1rem; line-height: 1; }
+  .tab-btn:hover { background: var(--gray-50); color: var(--gray-700); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, var(--brand-600), var(--teal-600));
+    color: white;
+    box-shadow: 0 3px 10px rgb(37 99 235 / 0.28);
+  }
+
+  /* Masquer la bottom nav */
+  .asst-bottom-nav { display: none; }
 }

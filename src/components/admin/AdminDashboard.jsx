@@ -12,21 +12,21 @@ import PlanningPartage from '../shared/PlanningPartage'
 import './AdminDashboard.css'
 
 const ALL_TABS = [
-  { id: 'pointage',  label: 'Pointage',                icon: '⏱️', roles: ['manager'] },
-  { id: 'pointages', label: 'Pointages',               icon: '⏱️', roles: ['admin'] },
-  { id: 'dashboard', label: 'Dashboard RH',            icon: '👥', roles: ['admin'] },
-  { id: 'equipe',    label: 'Planning équipe',         icon: '📆', roles: ['admin', 'manager'] },
-  { id: 'planning',  label: 'Planning tâches',         icon: '📅', roles: ['admin', 'manager'] },
-  { id: 'soldes',    label: 'Soldes des heures',        icon: '⏰', roles: ['admin', 'manager'] },
-  { id: 'conges',    label: 'Congés',                  icon: '🌴', roles: ['admin', 'manager'] },
-  { id: 'export',    label: 'Export comptabilité',     icon: '📊', roles: ['admin'] },
-  { id: 'pins',      label: 'Gestion des PINs',        icon: '🔑', roles: ['admin'] },
+  { id: 'pointage',  label: 'Pointage',            icon: '⏱️', roles: ['manager'] },
+  { id: 'pointages', label: 'Pointages',            icon: '⏱️', roles: ['admin'] },
+  { id: 'dashboard', label: 'Dashboard RH',         icon: '👥', roles: ['admin'] },
+  { id: 'equipe',    label: 'Planning équipe',      icon: '📆', roles: ['admin', 'manager'] },
+  { id: 'planning',  label: 'Planning tâches',      icon: '📅', roles: ['admin', 'manager'] },
+  { id: 'soldes',    label: 'Soldes des heures',     icon: '⏰', roles: ['admin', 'manager'] },
+  { id: 'conges',    label: 'Congés',               icon: '🌴', roles: ['admin', 'manager'] },
+  { id: 'export',    label: 'Export comptabilité',  icon: '📊', roles: ['admin'] },
+  { id: 'pins',      label: 'Gestion des PINs',     icon: '🔑', roles: ['admin'] },
 ]
 
 export default function AdminDashboard() {
   const { user } = useAuth()
 
-  const tabs = ALL_TABS.filter(t => t.roles.includes(user.role))
+  const tabs     = ALL_TABS.filter(t => t.roles.includes(user.role))
   const [tab, setTab] = useState(tabs[0]?.id || 'pointages')
 
   const isAdmin   = user.role === 'admin'
@@ -35,7 +35,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-layout">
-      {/* ── Sidebar ───────────────────────────────────────── */}
+
+      {/* ── Sidebar desktop ─────────────────────────────────── */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
           <div className="admin-sidebar-logo">🏥</div>
@@ -69,26 +70,12 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* ── Contenu principal ─────────────────────────────── */}
+      {/* ── Contenu principal ─────────────────────────────────── */}
       <div className="admin-content">
         <div className="admin-page-header">
           <h1 className="admin-title">{pageTitle}</h1>
           <p className="admin-subtitle">{pageSub}</p>
         </div>
-
-        {/* Nav mobile (icônes seules, scroll horizontal) */}
-        <nav className="admin-mobile-nav">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              className={`admin-mobile-btn${tab === t.id ? ' active' : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              <span className="admin-mobile-icon">{t.icon}</span>
-              <span className="admin-mobile-label">{t.label}</span>
-            </button>
-          ))}
-        </nav>
 
         <div className="tab-content">
           {tab === 'pointage'  && <ClockInOut />}
@@ -102,6 +89,23 @@ export default function AdminDashboard() {
           {tab === 'pins'      && <GestionPins />}
         </div>
       </div>
+
+      {/* ── Bottom nav mobile (fixe, icônes seules) ─────────── */}
+      <nav className="admin-bottom-nav" aria-label="Navigation principale">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            className={`admin-bottom-btn${tab === t.id ? ' active' : ''}`}
+            onClick={() => setTab(t.id)}
+            title={t.label}
+            aria-label={t.label}
+          >
+            <span className="admin-bottom-icon">{t.icon}</span>
+            {tab === t.id && <span className="admin-bottom-dot" aria-hidden="true" />}
+          </button>
+        ))}
+      </nav>
+
     </div>
   )
 }

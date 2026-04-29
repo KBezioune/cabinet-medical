@@ -1,32 +1,30 @@
 /* ═══════════════════════════════════════════════════════════
-   Layout global admin : sidebar gauche + zone de contenu
+   MOBILE  (<768px) : contenu plein + bottom nav fixe
+   DESKTOP (≥768px) : sidebar gauche + contenu
    ═══════════════════════════════════════════════════════════ */
 
+/* ── Wrapper principal ─────────────────────────────────────── */
 .admin-layout {
   display: flex;
   align-items: flex-start;
-  gap: 0;
-  /* compense le padding de .main pour que la sidebar touche le bord gauche */
-  margin: -1rem;           /* annule le padding mobile de .main */
+  margin: -1rem;                      /* annule padding .main mobile */
   min-height: calc(100vh - 3.5rem);
 }
 
-/* ── Sidebar ───────────────────────────────────────────────── */
-.admin-sidebar {
-  display: none; /* cachée sur mobile — remplacée par admin-mobile-nav */
-}
+/* ── Sidebar : cachée sur mobile ───────────────────────────── */
+.admin-sidebar { display: none; }
 
 /* ── Zone de contenu ───────────────────────────────────────── */
 .admin-content {
   flex: 1;
   min-width: 0;
-  padding: 1rem;
+  padding: 1rem 1rem calc(60px + 1.25rem); /* bottom = bottom-nav + marge */
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-/* ── En-tête de page ───────────────────────────────────────── */
+/* ── Titres page ───────────────────────────────────────────── */
 .admin-page-header { margin-bottom: 0; }
 
 .admin-title {
@@ -43,49 +41,59 @@
   font-weight: 500;
 }
 
-/* ── Nav mobile (icônes + labels courts, scroll horizontal) ── */
-.admin-mobile-nav {
+/* ── Bottom nav mobile ─────────────────────────────────────── */
+.admin-bottom-nav {
   display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
   background: white;
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--gray-200);
-  padding: 0.3125rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  gap: 0.125rem;
+  border-top: 1px solid var(--gray-100);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  z-index: 40;
+  /* Safe area iOS (notch bas) */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-.admin-mobile-nav::-webkit-scrollbar { display: none; }
 
-.admin-mobile-btn {
+.admin-bottom-btn {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
-  padding: 0.5rem 0.625rem;
-  font-size: 0.5625rem;
-  font-weight: 700;
+  justify-content: center;
+  gap: 0;
+  position: relative;
   color: var(--gray-400);
   background: transparent;
-  border-radius: var(--radius);
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  white-space: nowrap;
-  flex-shrink: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.admin-mobile-icon { font-size: 1.25rem; line-height: 1; }
-.admin-mobile-label { line-height: 1.2; }
-
-.admin-mobile-btn:hover { color: var(--gray-700); background: var(--gray-50); }
-.admin-mobile-btn.active {
-  color: white;
-  background: linear-gradient(135deg, var(--brand-600), var(--teal-600));
-  box-shadow: 0 3px 10px rgb(29 78 216 / 0.28);
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+  padding: 0;
+  height: 60px;
 }
 
-/* ── Contenu d'onglet ──────────────────────────────────────── */
+.admin-bottom-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.admin-bottom-btn.active { color: var(--brand-600); }
+.admin-bottom-btn.active .admin-bottom-icon { transform: translateY(-3px); }
+
+/* Pastille indicateur sous l'icône active */
+.admin-bottom-dot {
+  position: absolute;
+  bottom: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--brand-600);
+}
+
+/* ── Transition onglet ─────────────────────────────────────── */
 .tab-content { animation: fadeUp 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
 @keyframes fadeUp {
@@ -95,12 +103,12 @@
 
 
 /* ═══════════════════════════════════════════════════════════
-   Tablette et bureau : sidebar verticale visible
+   DESKTOP ≥768px : sidebar verticale, pas de bottom nav
    ═══════════════════════════════════════════════════════════ */
 @media (min-width: 768px) {
 
   .admin-layout {
-    margin: -2rem -1.5rem;  /* annule le padding de .main sur desktop */
+    margin: -2rem -1.5rem;
     min-height: calc(100vh - 4.25rem);
   }
 
@@ -113,16 +121,19 @@
     background: white;
     border-right: 1px solid var(--gray-200);
     position: sticky;
-    top: 4.25rem;              /* se colle juste sous le header */
+    top: 4.25rem;
     height: calc(100vh - 4.25rem);
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--gray-200) transparent;
   }
   .admin-sidebar::-webkit-scrollbar { width: 4px; }
-  .admin-sidebar::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 9999px; }
+  .admin-sidebar::-webkit-scrollbar-thumb {
+    background: var(--gray-200);
+    border-radius: 9999px;
+  }
 
-  /* Brand dans la sidebar */
+  /* Brand */
   .admin-sidebar-brand {
     display: flex;
     align-items: center;
@@ -188,13 +199,10 @@
     white-space: nowrap;
     overflow: hidden;
   }
-  .admin-sidebar-icon { font-size: 1rem; flex-shrink: 0; line-height: 1; }
+  .admin-sidebar-icon  { font-size: 1rem; flex-shrink: 0; line-height: 1; }
   .admin-sidebar-label { overflow: hidden; text-overflow: ellipsis; }
 
-  .admin-sidebar-item:hover {
-    background: var(--gray-50);
-    color: var(--gray-900);
-  }
+  .admin-sidebar-item:hover { background: var(--gray-50); color: var(--gray-900); }
   .admin-sidebar-item.active {
     background: var(--brand-50);
     color: var(--brand-700);
@@ -237,7 +245,7 @@
   }
   .admin-sidebar-user-role { font-size: 0.625rem; color: var(--gray-400); }
 
-  /* Zone de contenu avec padding latéral */
+  /* Contenu desktop */
   .admin-content {
     padding: 2rem 1.5rem;
     gap: 1.5rem;
@@ -245,13 +253,13 @@
 
   .admin-title { font-size: 1.5rem; }
 
-  /* Cacher la nav mobile sur desktop */
-  .admin-mobile-nav { display: none; }
+  /* Masquer la bottom nav sur desktop */
+  .admin-bottom-nav { display: none; }
 }
 
-/* ── Grand écran : sidebar un peu plus large ───────────────── */
+/* ── Grand écran ───────────────────────────────────────────── */
 @media (min-width: 1100px) {
-  .admin-sidebar { width: 240px; }
-  .admin-sidebar-item { font-size: 0.875rem; padding: 0.625rem 0.875rem; }
-  .admin-sidebar-icon { font-size: 1.0625rem; }
+  .admin-sidebar       { width: 240px; }
+  .admin-sidebar-item  { font-size: 0.875rem; padding: 0.625rem 0.875rem; }
+  .admin-sidebar-icon  { font-size: 1.0625rem; }
 }

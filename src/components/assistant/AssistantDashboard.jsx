@@ -21,6 +21,8 @@ export default function AssistantDashboard() {
 
   return (
     <div className="assistant-dashboard">
+
+      {/* Nav horizontale — visible sur desktop uniquement */}
       <nav className="tab-nav">
         {TABS.map(t => (
           <button
@@ -34,6 +36,7 @@ export default function AssistantDashboard() {
         ))}
       </nav>
 
+      {/* Contenu */}
       <div className="tab-content">
         {tab === 'clock'    && <ClockInOut />}
         {tab === 'schedule' && <MonPlanningTaches />}
@@ -42,6 +45,23 @@ export default function AssistantDashboard() {
         {tab === 'history'  && <MyHistory />}
         {tab === 'conges'   && <DemandeConge />}
       </div>
+
+      {/* Bottom nav mobile — icônes seules, position fixe */}
+      <nav className="asst-bottom-nav" aria-label="Navigation principale">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            className={`asst-bottom-btn${tab === t.id ? ' active' : ''}`}
+            onClick={() => setTab(t.id)}
+            title={t.label}
+            aria-label={t.label}
+          >
+            <span className="asst-bottom-icon">{t.icon}</span>
+            {tab === t.id && <span className="asst-bottom-dot" aria-hidden="true" />}
+          </button>
+        ))}
+      </nav>
+
     </div>
   )
 }
