@@ -6,6 +6,7 @@ import MonthlyExport from './MonthlyExport'
 import GestionPins from './GestionPins'
 import GestionConges from './GestionConges'
 import SoldeHeures from './SoldeHeures'
+import DashboardRH from './DashboardRH'
 import ClockInOut from '../assistant/ClockInOut'
 import './AdminDashboard.css'
 
@@ -13,6 +14,7 @@ import './AdminDashboard.css'
 const ALL_TABS = [
   { id: 'pointage',  label: 'Pointage',                icon: '⏱️', roles: ['manager'] },
   { id: 'pointages', label: 'Pointages en temps réel', icon: '⏱️', roles: ['admin'] },
+  { id: 'dashboard', label: 'Dashboard RH',            icon: '👥', roles: ['admin'] },
   { id: 'planning',  label: 'Planning hebdomadaire',   icon: '📅', roles: ['admin', 'manager'] },
   { id: 'soldes',    label: 'Soldes des heures',        icon: '⏰', roles: ['admin', 'manager'] },
   { id: 'conges',    label: 'Gestion des congés',      icon: '🌴', roles: ['admin', 'manager'] },
@@ -56,6 +58,7 @@ export default function AdminDashboard() {
       <div className="tab-content">
         {tab === 'pointage'  && <ClockInOut />}
         {tab === 'pointages' && <AllPointages />}
+        {tab === 'dashboard' && <DashboardRH />}
         {tab === 'planning'  && <PlanningTaches />}
         {tab === 'soldes'    && <SoldeHeures />}
         {tab === 'conges'    && <GestionConges />}
