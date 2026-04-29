@@ -11,62 +11,96 @@ import ClockInOut from '../assistant/ClockInOut'
 import PlanningPartage from '../shared/PlanningPartage'
 import './AdminDashboard.css'
 
-// Onglets visibles selon le rôle
 const ALL_TABS = [
   { id: 'pointage',  label: 'Pointage',                icon: '⏱️', roles: ['manager'] },
-  { id: 'pointages', label: 'Pointages en temps réel', icon: '⏱️', roles: ['admin'] },
+  { id: 'pointages', label: 'Pointages',               icon: '⏱️', roles: ['admin'] },
   { id: 'dashboard', label: 'Dashboard RH',            icon: '👥', roles: ['admin'] },
   { id: 'equipe',    label: 'Planning équipe',         icon: '📆', roles: ['admin', 'manager'] },
-  { id: 'planning',  label: 'Planning hebdomadaire',   icon: '📅', roles: ['admin', 'manager'] },
+  { id: 'planning',  label: 'Planning tâches',         icon: '📅', roles: ['admin', 'manager'] },
   { id: 'soldes',    label: 'Soldes des heures',        icon: '⏰', roles: ['admin', 'manager'] },
-  { id: 'conges',    label: 'Gestion des congés',      icon: '🌴', roles: ['admin', 'manager'] },
-  { id: 'export',    label: 'Export mensuel',           icon: '📊', roles: ['admin'] },
-  { id: 'pins',      label: 'Gestion des PINs',         icon: '🔑', roles: ['admin'] },
+  { id: 'conges',    label: 'Congés',                  icon: '🌴', roles: ['admin', 'manager'] },
+  { id: 'export',    label: 'Export comptabilité',     icon: '📊', roles: ['admin'] },
+  { id: 'pins',      label: 'Gestion des PINs',        icon: '🔑', roles: ['admin'] },
 ]
 
 export default function AdminDashboard() {
   const { user } = useAuth()
 
-  // Filtrer les onglets selon le rôle
   const tabs = ALL_TABS.filter(t => t.roles.includes(user.role))
-  const [tab, setTab] = useState(tabs[0]?.id || 'planning')
+  const [tab, setTab] = useState(tabs[0]?.id || 'pointages')
 
-  const roleLabel = user.role === 'admin'
-    ? 'Médecin — Administrateur'
-    : 'Responsable — Assistante médicale'
+  const isAdmin   = user.role === 'admin'
+  const pageTitle = isAdmin ? 'Cabinet Médical Dr Bezioune' : `Bonjour, ${user.name}`
+  const pageSub   = isAdmin ? 'Bienvenue, Dr. Bezioune' : 'Responsable — Assistante médicale'
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-header">
-        <h1 className="admin-title">
-          {user.role === 'admin' ? 'Tableau de bord Administrateur' : `Bonjour, ${user.name}`}
-        </h1>
-        <p className="admin-subtitle">{roleLabel}</p>
-      </div>
+    <div className="admin-layout">
+      {/* ── Sidebar ───────────────────────────────────────── */}
+      <aside className="admin-sidebar">
+        <div className="admin-sidebar-brand">
+          <div className="admin-sidebar-logo">🏥</div>
+          <div className="admin-sidebar-brand-text">
+            <span className="admin-sidebar-brand-title">Cabinet Médical</span>
+            <span className="admin-sidebar-brand-sub">Dr Bezioune</span>
+          </div>
+        </div>
 
-      <nav className="admin-tab-nav">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            className={`admin-tab-btn ${tab === t.id ? 'active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            <span className="tab-icon">{t.icon}</span>
-            <span>{t.label}</span>
-          </button>
-        ))}
-      </nav>
+        <nav className="admin-sidebar-nav">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              className={`admin-sidebar-item${tab === t.id ? ' active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              <span className="admin-sidebar-icon">{t.icon}</span>
+              <span className="admin-sidebar-label">{t.label}</span>
+            </button>
+          ))}
+        </nav>
 
-      <div className="tab-content">
-        {tab === 'pointage'  && <ClockInOut />}
-        {tab === 'pointages' && <AllPointages />}
-        {tab === 'dashboard' && <DashboardRH />}
-        {tab === 'equipe'    && <PlanningPartage />}
-        {tab === 'planning'  && <PlanningTaches />}
-        {tab === 'soldes'    && <SoldeHeures />}
-        {tab === 'conges'    && <GestionConges />}
-        {tab === 'export'    && <MonthlyExport />}
-        {tab === 'pins'      && <GestionPins />}
+        <div className="admin-sidebar-footer">
+          <div className="admin-sidebar-avatar">{user.name[0]}</div>
+          <div className="admin-sidebar-user-info">
+            <span className="admin-sidebar-user-name">{user.name}</span>
+            <span className="admin-sidebar-user-role">
+              {isAdmin ? 'Médecin · Admin' : 'Manager'}
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── Contenu principal ─────────────────────────────── */}
+      <div className="admin-content">
+        <div className="admin-page-header">
+          <h1 className="admin-title">{pageTitle}</h1>
+          <p className="admin-subtitle">{pageSub}</p>
+        </div>
+
+        {/* Nav mobile (icônes seules, scroll horizontal) */}
+        <nav className="admin-mobile-nav">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              className={`admin-mobile-btn${tab === t.id ? ' active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              <span className="admin-mobile-icon">{t.icon}</span>
+              <span className="admin-mobile-label">{t.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="tab-content">
+          {tab === 'pointage'  && <ClockInOut />}
+          {tab === 'pointages' && <AllPointages />}
+          {tab === 'dashboard' && <DashboardRH />}
+          {tab === 'equipe'    && <PlanningPartage />}
+          {tab === 'planning'  && <PlanningTaches />}
+          {tab === 'soldes'    && <SoldeHeures />}
+          {tab === 'conges'    && <GestionConges />}
+          {tab === 'export'    && <MonthlyExport />}
+          {tab === 'pins'      && <GestionPins />}
+        </div>
       </div>
     </div>
   )
