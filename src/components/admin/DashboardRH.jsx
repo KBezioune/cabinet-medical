@@ -251,10 +251,11 @@ export default function DashboardRH() {
               </thead>
               <tbody>
                 {allStats.map(r => {
-                  const balanceAlert = r.balance < -300 && r.workedMin > 0
-                  const tauxAlert    = r.tauxActivite !== null && r.tauxActivite < 80 && r.workedMin > 0
+                  const noPointage   = r.workedMin === 0
+                  const balanceAlert = r.balance < -300 && !noPointage
+                  const tauxAlert    = r.tauxActivite !== null && r.tauxActivite < 80 && !noPointage
                   const hasAlert     = balanceAlert || tauxAlert
-                  const soldeClass   = r.balance > 0 ? 'pos' : (r.balance < 0 && r.workedMin > 0) ? 'neg' : 'zero'
+                  const soldeClass   = r.balance > 0 ? 'pos' : (r.balance < 0 && !noPointage) ? 'neg' : 'zero'
 
                   return (
                     <tr key={r.user.id} className={hasAlert ? 'drh-row-alert' : ''}>
@@ -277,13 +278,19 @@ export default function DashboardRH() {
                       </td>
 
                       <td>
-                        <span className={`sh-badge-solde sh-badge-${soldeClass}${balanceAlert ? ' drh-badge-crit' : ''}`}>
-                          {formatSolde(r.balance)}
-                        </span>
+                        {noPointage ? (
+                          <span className="drh-no-pointage">Aucun pointage</span>
+                        ) : (
+                          <span className={`sh-badge-solde sh-badge-${soldeClass}${balanceAlert ? ' drh-badge-crit' : ''}`}>
+                            {formatSolde(r.balance)}
+                          </span>
+                        )}
                       </td>
 
                       <td>
-                        {r.tauxActivite !== null ? (
+                        {noPointage ? (
+                          <span className="sh-dash">—</span>
+                        ) : r.tauxActivite !== null ? (
                           <div className="drh-taux-wrap">
                             <div className="drh-taux-bar">
                               <div
@@ -312,7 +319,9 @@ export default function DashboardRH() {
                       </td>
 
                       <td>
-                        {hasAlert ? (
+                        {noPointage ? (
+                          <span className="drh-no-pointage">Aucun pointage</span>
+                        ) : hasAlert ? (
                           <div className="drh-chips">
                             {balanceAlert && <span className="drh-chip-alert">Solde critique</span>}
                             {tauxAlert    && <span className="drh-chip-alert">Taux faible</span>}

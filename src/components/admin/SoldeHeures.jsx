@@ -162,10 +162,14 @@ export default function SoldeHeures() {
                       <span className="sh-stat-val blue">{minutesToHHMM(workedMin)}</span>
                       <span className="sh-stat-lbl">Travaillées</span>
                     </div>
-                    <div className={`sh-solde sh-solde-${soldeClass}`}>
-                      <span className="sh-solde-val">{formatSolde(balance)}</span>
-                      <span className="sh-solde-lbl">Solde</span>
-                    </div>
+                    {workedMin === 0 ? (
+                      <span className="sh-no-pointage">Aucun pointage</span>
+                    ) : (
+                      <div className={`sh-solde sh-solde-${soldeClass}`}>
+                        <span className="sh-solde-val">{formatSolde(balance)}</span>
+                        <span className="sh-solde-lbl">Solde</span>
+                      </div>
+                    )}
                     {/* Solde vacances */}
                     <div className={`sh-vac ${vac.restant <= 3 ? 'sh-vac-low' : ''}`}>
                       <span className="sh-vac-icon">🌴</span>

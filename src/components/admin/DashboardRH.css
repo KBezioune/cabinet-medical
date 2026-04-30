@@ -114,6 +114,19 @@
   white-space: nowrap;
 }
 
+/* ── Badge aucun pointage ─────────────────────────────────── */
+.drh-no-pointage {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1875rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: var(--gray-100);
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+
 /* ── Colonne vacances ─────────────────────────────────────── */
 .drh-vac { display: flex; flex-direction: column; gap: 0.125rem; }
 .drh-vac-restant {
