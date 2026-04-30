@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getAssistants } from '../../lib/localData'
+import { getUsers } from '../../lib/localData'
 import { getPlanningForUsers, getPointagesByDateRange, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -62,7 +62,7 @@ export default function SoldeHeures() {
   const [loading,   setLoading]   = useState(true)
   const [expanded,  setExpanded]  = useState(null)
 
-  const assistants = getAssistants()
+  const assistants = getUsers().filter(u => u.role !== 'admin')
 
   useEffect(() => {
     const load = async () => {
