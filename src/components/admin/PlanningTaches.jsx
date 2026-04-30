@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getPlanningTaches, insertPlanningTache, updatePlanningTache, deletePlanningTache } from '../../lib/db'
 import { format, addWeeks, subWeeks } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import Breadcrumb from '../shared/Breadcrumb'
 import './PlanningTaches.css'
 
 const TACHES = {
@@ -104,6 +105,7 @@ export default function PlanningTaches() {
 
   return (
     <div className="pt-wrap">
+      <Breadcrumb items={['Cabinet Médical', 'Planning', 'Tâches assignées']} />
       <div className="card">
         {/* Navigation semaine */}
         <div className="schedule-header" style={{ marginBottom: '1rem' }}>

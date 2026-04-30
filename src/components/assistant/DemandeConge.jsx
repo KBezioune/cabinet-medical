@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { insertConge, getCongesByUser, deleteConge, insertNotification } from '../../lib/db'
 import { getUsers } from '../../lib/localData'
+import Breadcrumb from '../shared/Breadcrumb'
 import './DemandeConge.css'
 
 const TYPE_LABELS = {
@@ -107,6 +108,7 @@ export default function DemandeConge() {
 
   return (
     <div className="conge-page">
+      <Breadcrumb items={['Mon espace', 'Mes congés']} />
 
       <div className="conge-header">
         <div>
@@ -192,10 +194,14 @@ export default function DemandeConge() {
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
       ) : conges.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🌴</div>
-          <p>Aucune demande de congé pour l'instant.</p>
-          <p className="empty-sub">Cliquez sur "Nouvelle demande" pour commencer.</p>
+        <div className="empty-state-pro">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            <line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/>
+          </svg>
+          <p className="empty-state-pro-title">Aucune demande de congé</p>
+          <p className="empty-state-pro-sub">Cliquez sur "Nouvelle demande" pour soumettre votre première demande.</p>
         </div>
       ) : (
         <div className="conges-list">

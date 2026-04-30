@@ -4,6 +4,7 @@ import { getUsers } from '../../lib/localData'
 import { getPointagesByUserAndMonth, getPlanningForUsers, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval, getDay, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import Breadcrumb from '../shared/Breadcrumb'
 import './MonthlyExport.css'
 
 const timeToMin = (t) => {
@@ -254,6 +255,7 @@ export default function MonthlyExport() {
 
   return (
     <div className="me-wrap">
+      <Breadcrumb items={['Cabinet Médical', 'Admin', 'Export comptabilité']} />
       {/* Barre de contrôle */}
       <div className="card">
         <div className="export-header">

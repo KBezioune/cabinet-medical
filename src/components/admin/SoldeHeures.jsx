@@ -4,6 +4,7 @@ import { getPlanningForUsers, getPointagesByDateRange, getAllConges } from '../.
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import Breadcrumb from '../shared/Breadcrumb'
 import './SoldeHeures.css'
 
 const timeToMin = (t) => {
@@ -121,6 +122,7 @@ export default function SoldeHeures() {
 
   return (
     <div className="sh-wrap">
+      <Breadcrumb items={['Cabinet Médical', 'RH', 'Soldes des heures']} />
       {/* Sélecteurs */}
       <div className="card sh-controls">
         <h2 className="section-title">Soldes des heures</h2>

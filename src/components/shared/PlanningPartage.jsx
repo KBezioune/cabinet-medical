@@ -4,6 +4,7 @@ import { getPlanningForUsers, getPlanningTaches, getAllConges } from '../../lib/
 import { JOURS, getWeekDays } from '../../utils/dateUtils'
 import { format, addWeeks, subWeeks, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import Breadcrumb from './Breadcrumb'
 import './PlanningPartage.css'
 
 const TACHES_CFG = {
@@ -73,6 +74,7 @@ export default function PlanningPartage() {
 
   return (
     <div className="pp-wrap">
+      <Breadcrumb items={['Cabinet Médical', 'Planning', 'Planning équipe']} />
       <div className="card pp-card">
         {/* En-tête + navigation */}
         <div className="pp-header">

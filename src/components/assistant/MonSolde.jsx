@@ -4,6 +4,7 @@ import { getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser } from '
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import Breadcrumb from '../shared/Breadcrumb'
 import './MonSolde.css'
 
 const timeToMin = (t) => {
@@ -115,6 +116,7 @@ export default function MonSolde() {
 
   return (
     <div className="ms-wrap">
+      <Breadcrumb items={['Mon espace', 'Mon Solde']} />
       {/* Sélecteur de période */}
       <div className="card ms-head">
         <div className="ms-period">

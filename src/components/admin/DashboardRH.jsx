@@ -4,6 +4,7 @@ import { getPlanningForUsers, getPointagesByDateRange, getAllConges } from '../.
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import Breadcrumb from '../shared/Breadcrumb'
 import './DashboardRH.css'
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
@@ -170,6 +171,7 @@ export default function DashboardRH() {
 
   return (
     <div className="drh-wrap">
+      <Breadcrumb items={['Cabinet Médical', 'Équipe', 'Dashboard RH']} />
       {/* Barre de contrôle */}
       <div className="card drh-controls">
         <div>

@@ -4,6 +4,7 @@ import { todayISO, formatDate, formatDateTime, minutesToHHMM } from '../../utils
 import { getAssistants } from '../../lib/localData'
 import { getAllPointagesFiltered } from '../../lib/db'
 import EditPointageModal from './EditPointageModal'
+import Breadcrumb from '../shared/Breadcrumb'
 import './AllPointages.css'
 
 export default function AllPointages() {
@@ -54,6 +55,7 @@ export default function AllPointages() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <Breadcrumb items={['Cabinet Médical', 'Présences & Pointages']} />
       <div className="stats-row">
         <div className="stat-card">
           <div className="stat-number green">{presentCount}</div>
@@ -90,7 +92,14 @@ export default function AllPointages() {
 
         {loading ? <div className="loading-center"><div className="spinner"/></div>
         : records.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--gray-400)', padding: '2rem' }}>Aucun pointage trouvé</p>
+          <div className="empty-state-pro">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+            <p className="empty-state-pro-title">Aucun pointage trouvé</p>
+            <p className="empty-state-pro-sub">Modifiez les filtres ou sélectionnez une autre date.</p>
+          </div>
         ) : (
           <div className="table-wrapper">
             <table>

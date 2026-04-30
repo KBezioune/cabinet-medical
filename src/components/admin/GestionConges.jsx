@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getAllConges, updateCongeStatut, insertNotification } from '../../lib/db'
 import { getUserById } from '../../lib/localData'
+import Breadcrumb from '../shared/Breadcrumb'
 import './GestionConges.css'
 
 const TYPE_LABELS = {
@@ -91,6 +92,7 @@ export default function GestionConges() {
 
   return (
     <div className="gc-page">
+      <Breadcrumb items={['Cabinet Médical', 'RH', 'Gestion des congés']} />
 
       <div className="gc-header">
         <div>
@@ -127,9 +129,15 @@ export default function GestionConges() {
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
       ) : filtered.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🎉</div>
-          <p>Aucune demande {filter !== 'tous' ? `"${STATUT_CONFIG[filter]?.label || filter}"` : ''}.</p>
+        <div className="empty-state-pro">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <p className="empty-state-pro-title">Aucune demande</p>
+          <p className="empty-state-pro-sub">
+            {filter !== 'tous' ? `Aucune demande "${STATUT_CONFIG[filter]?.label || filter}" pour le moment.` : 'Aucune demande de congé enregistrée.'}
+          </p>
         </div>
       ) : (
         <div className="gc-list">
