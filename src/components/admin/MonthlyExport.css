@@ -36,8 +36,9 @@
 /* ── Cartes résumé par collaborateur ─────────────────────── */
 .summary-cards {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.875rem;
+  overflow: hidden;
 }
 
 .user-summary-card { padding: 1.125rem; }
@@ -77,7 +78,7 @@
 .summary-stat { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }
 
 .summary-stat-value {
-  font-size: 0.9375rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--gray-800);
   font-variant-numeric: tabular-nums;
@@ -87,7 +88,7 @@
 .summary-stat-value.red   { color: var(--red-600); }
 
 .summary-stat-label {
-  font-size: 0.5625rem;
+  font-size: 0.6rem;
   color: var(--gray-400);
   text-align: center;
   text-transform: uppercase;
@@ -218,10 +219,8 @@
   /* summary-cards reste 1 colonne jusqu'à 1200px (sidebar occupe ~240px) */
 }
 
-/* ── ≥ 1200px : 3 cards côte à côte, tailles normales ──────── */
+/* ── ≥ 1200px : auto-fit laisse déjà passer 3 cards, on peut grandir les valeurs ── */
 @media (min-width: 1200px) {
-  .summary-cards      { grid-template-columns: repeat(3, 1fr); }
-  .summary-stat-value { font-size: 1.125rem; }
+  .summary-stat-value { font-size: 1rem; }
   .summary-stat-label { font-size: 0.625rem; }
-  .user-summary-card  { padding: 1.125rem; }
 }
