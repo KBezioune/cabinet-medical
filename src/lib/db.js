@@ -198,6 +198,16 @@ export const deleteConge = async (id) => {
 
 // ── LOGS D'ACCÈS ─────────────────────────────────────────────
 
+export const getAccessLogs = async (limit = 50) => {
+  const { data, error } = await supabase
+    .from('access_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) { log('getAccessLogs', error); throw error }
+  return data || []
+}
+
 export const logAccess = async ({ userId, action, userAgent }) => {
   try {
     await supabase.from('access_logs').insert({

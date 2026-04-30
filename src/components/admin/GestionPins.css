@@ -100,15 +100,26 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pwd-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .pin-edit-input {
-  width: 6rem !important;
-  text-align: center;
-  font-size: 1.25rem !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.2em;
-  padding: 0.375rem 0.5rem !important;
+  width: 10rem !important;
+  font-size: 0.9375rem !important;
+  font-weight: 500 !important;
+  padding: 0.375rem 2.25rem 0.375rem 0.75rem !important;
+  letter-spacing: normal;
+}
+
+.pwd-input-wrap .pin-reveal-btn {
+  position: absolute;
+  right: 0.375rem;
 }
 
 /* Note bas de page */

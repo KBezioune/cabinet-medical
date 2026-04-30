@@ -5,6 +5,7 @@ import AllPointages from './AllPointages'
 import PlanningTaches from './PlanningTaches'
 import MonthlyExport from './MonthlyExport'
 import GestionPins from './GestionPins'
+import JournauxAcces from './JournauxAcces'
 import GestionConges from './GestionConges'
 import SoldeHeures from './SoldeHeures'
 import DashboardRH from './DashboardRH'
@@ -68,6 +69,11 @@ const IC = {
       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
     </svg>
   ),
+  logs: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  ),
 }
 
 // ── Onglets avec sections ──────────────────────────────────────
@@ -80,7 +86,8 @@ const ALL_TABS = [
   { id: 'soldes',    label: 'Soldes des heures',   roles: ['admin', 'manager'], section: 'RH' },
   { id: 'conges',    label: 'Congés',              roles: ['admin', 'manager'], section: null },
   { id: 'export',    label: 'Export comptabilité', roles: ['admin'],             section: 'Admin' },
-  { id: 'pins',      label: 'Gestion des PINs',    roles: ['admin'],             section: null },
+  { id: 'pins',      label: 'Mots de passe',       roles: ['admin'],             section: null },
+  { id: 'logs',      label: "Journaux d'accès",    roles: ['admin'],             section: null },
 ]
 
 export default function AdminDashboard() {
@@ -153,6 +160,7 @@ export default function AdminDashboard() {
           {tab === 'conges'    && <GestionConges />}
           {tab === 'export'    && <MonthlyExport />}
           {tab === 'pins'      && <GestionPins />}
+          {tab === 'logs'      && <JournauxAcces />}
         </div>
       </div>
 

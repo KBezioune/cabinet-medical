@@ -6,7 +6,7 @@ const MAX_ATTEMPTS = 5
 const LOCKOUT_SECS = 30
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, sessionExpired } = useAuth()
   const [password, setPassword]   = useState('')
   const [showPwd, setShowPwd]     = useState(false)
   const [error, setError]         = useState('')
@@ -83,6 +83,15 @@ export default function Login() {
           <h1 className="login-title">KB Medical</h1>
           <p className="login-tagline">Système de Gestion RH</p>
         </div>
+
+        {sessionExpired && (
+          <div className="login-session-expired" role="alert">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Session expirée pour inactivité. Veuillez vous reconnecter.
+          </div>
+        )}
 
         <div className="login-divider" />
 
