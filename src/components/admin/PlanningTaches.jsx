@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { JOURS, getWeekDays } from '../../utils/dateUtils'
-import { getAssistants } from '../../lib/localData'
+import { getUsers } from '../../lib/localData'
 import { useAuth } from '../../contexts/AuthContext'
 import { getPlanningTaches, insertPlanningTache, updatePlanningTache, deletePlanningTache } from '../../lib/db'
 import { format, addWeeks, subWeeks } from 'date-fns'
@@ -17,7 +17,7 @@ const TACHES = {
 
 export default function PlanningTaches() {
   const { user } = useAuth()
-  const assistants = getAssistants()
+  const assistants = getUsers().filter(u => u.role !== 'admin')
 
   const [weekRef, setWeekRef] = useState(new Date())
   const [taches,  setTaches]  = useState([])
