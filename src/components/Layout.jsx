@@ -18,7 +18,7 @@ export default function Layout({ children }) {
             </div>
             <div className="header-texts">
               <span className="header-title">Centre Médical Dr Bezioune</span>
-              <span className="header-subtitle">Système de pointage</span>
+              <span className="header-subtitle">Gestion RH &amp; Pointage</span>
             </div>
           </div>
 

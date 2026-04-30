@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import './Login.css'
 
-const MAX_ATTEMPTS  = 3
-const LOCKOUT_SECS  = 30
+const MAX_ATTEMPTS = 3
+const LOCKOUT_SECS = 30
 
 export default function Login() {
   const { login } = useAuth()
@@ -14,7 +14,6 @@ export default function Login() {
   const [countdown, setCountdown] = useState(0)
   const timerRef = useRef(null)
 
-  // Décompte du blocage
   useEffect(() => {
     if (!locked) return
     setCountdown(LOCKOUT_SECS)
@@ -47,7 +46,6 @@ export default function Login() {
       setPin('')
       if (next >= MAX_ATTEMPTS) {
         setLocked(true)
-        setError('')
       } else {
         setError(`PIN incorrect. ${MAX_ATTEMPTS - next} tentative${MAX_ATTEMPTS - next > 1 ? 's' : ''} restante${MAX_ATTEMPTS - next > 1 ? 's' : ''}.`)
       }
@@ -56,35 +54,45 @@ export default function Login() {
 
   const digits = ['1','2','3','4','5','6','7','8','9','','0','⌫']
 
-  // Anneau SVG du compte à rebours de blocage
   const radius = 22
   const circ   = 2 * Math.PI * radius
   const offset = locked ? circ * (1 - countdown / LOCKOUT_SECS) : 0
 
   return (
     <div className="login-bg">
-      <div className="login-card">
+      {/* Orbes décoratifs */}
+      <div className="login-orb login-orb-1" aria-hidden="true" />
+      <div className="login-orb login-orb-2" aria-hidden="true" />
+      <div className="login-orb login-orb-3" aria-hidden="true" />
 
+      <div className="login-card">
+        {/* Accent coloré en haut de la card */}
+        <div className="login-card-accent" aria-hidden="true" />
+
+        {/* Logo */}
         <div className="login-logo">
-          <img src="/logo.png" alt="Centre Médical Dr Bezioune" className="login-logo-img" />
+          <img src="/logo.png" alt="KB Medical" className="login-logo-img" />
         </div>
 
-        <p className="login-tagline">Système de Pointage</p>
-        <h1 className="login-title">Centre Médical<br/>Dr Bezioune</h1>
+        {/* Titre */}
+        <div className="login-brand">
+          <h1 className="login-title">KB Medical</h1>
+          <p className="login-tagline">Système de Gestion RH</p>
+        </div>
+
         <div className="login-divider" />
 
         {locked ? (
-          /* Écran de blocage */
           <div className="lockout-screen">
-            <svg width="56" height="56" viewBox="0 0 56 56">
-              <circle cx="28" cy="28" r={radius} fill="none" stroke="var(--gray-100)" strokeWidth="4"/>
-              <circle cx="28" cy="28" r={radius} fill="none"
+            <svg width="60" height="60" viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r={radius} fill="none" stroke="var(--gray-100)" strokeWidth="4"/>
+              <circle cx="30" cy="30" r={radius} fill="none"
                 stroke="var(--red-500)" strokeWidth="4"
                 strokeDasharray={circ} strokeDashoffset={offset}
-                strokeLinecap="round" transform="rotate(-90 28 28)"
+                strokeLinecap="round" transform="rotate(-90 30 30)"
                 style={{ transition: 'stroke-dashoffset 0.9s linear' }}
               />
-              <text x="28" y="33" textAnchor="middle" fontSize="15" fontWeight="800" fill="var(--gray-700)">
+              <text x="30" y="35" textAnchor="middle" fontSize="15" fontWeight="800" fill="var(--gray-700)">
                 {countdown}
               </text>
             </svg>
@@ -98,33 +106,42 @@ export default function Login() {
           <>
             <p className="login-subtitle">Entrez votre code PIN à 4 chiffres</p>
 
-            <div className="pin-display">
+            {/* Points PIN */}
+            <div className="pin-display" role="status" aria-label={`${pin.length} chiffre${pin.length > 1 ? 's' : ''} saisi${pin.length > 1 ? 's' : ''}`}>
               {[0,1,2,3].map(i => (
-                <div key={i} className={`pin-dot ${pin.length > i ? 'filled' : ''}`} />
+                <div key={i} className={`pin-dot${pin.length > i ? ' filled' : ''}`} />
               ))}
             </div>
 
-            {error && <p className="error-msg" style={{ textAlign: 'center', width: '100%' }}>{error}</p>}
+            {error && <p className="login-error">{error}</p>}
 
+            {/* Clavier */}
             <div className="pin-grid">
               {digits.map((d, i) => (
                 <button
                   key={i}
-                  className={`pin-btn ${d === '' ? 'pin-btn-empty' : ''}`}
+                  className={`pin-btn${d === '' ? ' pin-btn-empty' : ''}`}
                   onClick={() => { if (d === '⌫') handleDelete(); else if (d !== '') handleDigit(d) }}
                   disabled={d === ''}
+                  aria-label={d === '⌫' ? 'Supprimer' : d === '' ? undefined : d}
                 >
-                  {d}
+                  {d === '⌫' ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+                      <line x1="18" y1="9" x2="12" y2="15"/>
+                      <line x1="12" y1="9" x2="18" y2="15"/>
+                    </svg>
+                  ) : d}
                 </button>
               ))}
             </div>
 
             <button
-              className="btn btn-primary login-submit"
+              className="login-submit"
               onClick={handleSubmit}
               disabled={pin.length !== 4}
             >
-              Connexion
+              Se connecter
             </button>
           </>
         )}
