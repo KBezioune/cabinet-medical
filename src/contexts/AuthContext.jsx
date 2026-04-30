@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { getUsers } from '../lib/localData'
-import { syncPinsFromDb } from '../lib/db'
+import { syncPinsFromDb, logAccess } from '../lib/db'
 
 const AuthContext = createContext(null)
 
@@ -9,21 +9,29 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Restaurer la session
     const stored = sessionStorage.getItem('cabinet_user')
     if (stored) {
       try { setUser(JSON.parse(stored)) } catch {}
     }
     setLoading(false)
 
-    // Synchroniser les PINs depuis Supabase en arrière-plan
+    // Synchroniser les mots de passe depuis Supabase en arrière-plan
     syncPinsFromDb().catch(() => {})
   }, [])
 
-  const login = (pin) => {
-    // getUsers() relit localStorage (mis à jour par syncPinsFromDb)
-    const found = getUsers().find(u => u.pin === pin.trim())
-    if (!found) throw new Error('PIN incorrect')
+  const login = async (password) => {
+    const found = getUsers().find(u => u.pin === password.trim())
+    const ua    = navigator.userAgent
+
+    if (!found) {
+      // Log tentative échouée (non bloquant)
+      logAccess({ userId: null, action: 'login_failure', userAgent: ua }).catch(() => {})
+      throw new Error('Mot de passe incorrect')
+    }
+
+    // Log connexion réussie (non bloquant)
+    logAccess({ userId: found.id, action: 'login_success', userAgent: ua }).catch(() => {})
+
     sessionStorage.setItem('cabinet_user', JSON.stringify(found))
     setUser(found)
     return found

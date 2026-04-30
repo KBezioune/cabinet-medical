@@ -2,18 +2,22 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import './Login.css'
 
-const MAX_ATTEMPTS = 3
+const MAX_ATTEMPTS = 5
 const LOCKOUT_SECS = 30
 
 export default function Login() {
   const { login } = useAuth()
-  const [pin, setPin]           = useState('')
-  const [error, setError]       = useState('')
-  const [attempts, setAttempts] = useState(0)
-  const [locked, setLocked]     = useState(false)
+  const [password, setPassword]   = useState('')
+  const [showPwd, setShowPwd]     = useState(false)
+  const [error, setError]         = useState('')
+  const [attempts, setAttempts]   = useState(0)
+  const [locked, setLocked]       = useState(false)
   const [countdown, setCountdown] = useState(0)
-  const timerRef = useRef(null)
+  const [loading, setLoading]     = useState(false)
+  const timerRef  = useRef(null)
+  const inputRef  = useRef(null)
 
+  // Décompte blocage
   useEffect(() => {
     if (!locked) return
     setCountdown(LOCKOUT_SECS)
@@ -26,33 +30,35 @@ export default function Login() {
         setLocked(false)
         setAttempts(0)
         setError('')
-        setPin('')
+        setPassword('')
+        setTimeout(() => inputRef.current?.focus(), 50)
       }
     }, 1000)
     return () => clearInterval(timerRef.current)
   }, [locked])
 
-  const handleDigit  = (d) => { if (!locked && pin.length < 4) setPin(p => p + d) }
-  const handleDelete = () => { if (!locked) setPin(p => p.slice(0, -1)) }
-
-  const handleSubmit = () => {
-    if (pin.length !== 4 || locked) return
+  const handleSubmit = async (e) => {
+    e?.preventDefault()
+    if (!password.trim() || locked || loading) return
+    setLoading(true)
     setError('')
     try {
-      login(pin)
+      await login(password)
     } catch {
       const next = attempts + 1
       setAttempts(next)
-      setPin('')
+      setPassword('')
       if (next >= MAX_ATTEMPTS) {
         setLocked(true)
       } else {
-        setError(`PIN incorrect. ${MAX_ATTEMPTS - next} tentative${MAX_ATTEMPTS - next > 1 ? 's' : ''} restante${MAX_ATTEMPTS - next > 1 ? 's' : ''}.`)
+        const left = MAX_ATTEMPTS - next
+        setError(`Mot de passe incorrect. ${left} tentative${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}.`)
+        inputRef.current?.focus()
       }
+    } finally {
+      setLoading(false)
     }
   }
-
-  const digits = ['1','2','3','4','5','6','7','8','9','','0','⌫']
 
   const radius = 22
   const circ   = 2 * Math.PI * radius
@@ -60,13 +66,11 @@ export default function Login() {
 
   return (
     <div className="login-bg">
-      {/* Orbes décoratifs */}
       <div className="login-orb login-orb-1" aria-hidden="true" />
       <div className="login-orb login-orb-2" aria-hidden="true" />
       <div className="login-orb login-orb-3" aria-hidden="true" />
 
       <div className="login-card">
-        {/* Accent coloré en haut de la card */}
         <div className="login-card-accent" aria-hidden="true" />
 
         {/* Logo */}
@@ -83,6 +87,7 @@ export default function Login() {
         <div className="login-divider" />
 
         {locked ? (
+          /* Écran de blocage */
           <div className="lockout-screen">
             <svg width="60" height="60" viewBox="0 0 60 60">
               <circle cx="30" cy="30" r={radius} fill="none" stroke="var(--gray-100)" strokeWidth="4"/>
@@ -103,47 +108,91 @@ export default function Login() {
             </div>
           </div>
         ) : (
-          <>
-            <p className="login-subtitle">Entrez votre code PIN à 4 chiffres</p>
+          /* Formulaire */
+          <form className="login-form" onSubmit={handleSubmit} noValidate>
+            <p className="login-subtitle">Identifiez-vous pour accéder au système</p>
 
-            {/* Points PIN */}
-            <div className="pin-display" role="status" aria-label={`${pin.length} chiffre${pin.length > 1 ? 's' : ''} saisi${pin.length > 1 ? 's' : ''}`}>
-              {[0,1,2,3].map(i => (
-                <div key={i} className={`pin-dot${pin.length > i ? ' filled' : ''}`} />
-              ))}
-            </div>
+            <div className="login-field">
+              <label className="login-label" htmlFor="login-pwd">Mot de passe</label>
+              <div className="login-input-wrap">
+                {/* Icône cadenas */}
+                <span className="login-input-icon" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </span>
 
-            {error && <p className="login-error">{error}</p>}
+                <input
+                  id="login-pwd"
+                  ref={inputRef}
+                  type={showPwd ? 'text' : 'password'}
+                  className="login-input"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Entrez votre mot de passe"
+                  autoComplete="current-password"
+                  autoFocus
+                  disabled={locked || loading}
+                  aria-describedby={error ? 'login-error' : undefined}
+                />
 
-            {/* Clavier */}
-            <div className="pin-grid">
-              {digits.map((d, i) => (
+                {/* Bouton œil */}
                 <button
-                  key={i}
-                  className={`pin-btn${d === '' ? ' pin-btn-empty' : ''}`}
-                  onClick={() => { if (d === '⌫') handleDelete(); else if (d !== '') handleDigit(d) }}
-                  disabled={d === ''}
-                  aria-label={d === '⌫' ? 'Supprimer' : d === '' ? undefined : d}
+                  type="button"
+                  className="login-eye-btn"
+                  onClick={() => setShowPwd(v => !v)}
+                  aria-label={showPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  tabIndex={-1}
                 >
-                  {d === '⌫' ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
-                      <line x1="18" y1="9" x2="12" y2="15"/>
-                      <line x1="12" y1="9" x2="18" y2="15"/>
+                  {showPwd ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
                     </svg>
-                  ) : d}
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
                 </button>
-              ))}
+              </div>
+
+              {error && (
+                <p id="login-error" className="login-error" role="alert">{error}</p>
+              )}
             </div>
+
+            {/* Indicateur de tentatives */}
+            {attempts > 0 && (
+              <div className="login-attempts">
+                {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                  <span key={i} className={`login-attempt-dot ${i < attempts ? 'used' : ''}`} />
+                ))}
+              </div>
+            )}
 
             <button
+              type="submit"
               className="login-submit"
-              onClick={handleSubmit}
-              disabled={pin.length !== 4}
+              disabled={!password.trim() || loading}
             >
-              Se connecter
+              {loading ? (
+                <span className="login-spinner" />
+              ) : (
+                <>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                    <polyline points="10 17 15 12 10 7"/>
+                    <line x1="15" y1="12" x2="3" y2="12"/>
+                  </svg>
+                  Se connecter
+                </>
+              )}
             </button>
-          </>
+          </form>
         )}
       </div>
     </div>

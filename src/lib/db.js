@@ -196,6 +196,19 @@ export const deleteConge = async (id) => {
   if (error) { log('deleteConge', error); throw error }
 }
 
+// ── LOGS D'ACCÈS ─────────────────────────────────────────────
+
+export const logAccess = async ({ userId, action, userAgent }) => {
+  try {
+    await supabase.from('access_logs').insert({
+      user_id:    userId ?? null,
+      action,
+      ip:         null, // non disponible côté client
+      user_agent: userAgent ?? null,
+    })
+  } catch {} // non bloquant — ne doit jamais interrompre le flux de connexion
+}
+
 // ── NOTIFICATIONS ─────────────────────────────────────────────
 
 export const insertNotification = async (notif) => {
