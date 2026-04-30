@@ -62,8 +62,16 @@
   font-weight: 500;
 }
 
+/* Zone droite du header : cloche + user */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 /* User area */
-.header-user { display: flex; align-items: center; position: relative; flex-shrink: 0; }
+.header-user { display: flex; align-items: center; position: relative; }
 
 .header-btn {
   display: flex;

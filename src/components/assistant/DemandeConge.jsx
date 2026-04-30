@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { insertConge, getCongesByUser, deleteConge } from '../../lib/db'
+import { insertConge, getCongesByUser, deleteConge, insertNotification } from '../../lib/db'
+import { getUsers } from '../../lib/localData'
 import './DemandeConge.css'
 
 const TYPE_LABELS = {
@@ -62,7 +63,7 @@ export default function DemandeConge() {
     if (form.date_fin < form.date_debut) { setError('La date de fin doit être après la date de début.'); return }
     setSaving(true)
     try {
-      await insertConge({
+      const newConge = await insertConge({
         user_id: user.id,
         type: form.type,
         date_debut: form.date_debut,
@@ -70,6 +71,18 @@ export default function DemandeConge() {
         motif: form.motif || null,
         statut: 'en_attente',
       })
+      // Notifier tous les managers et admins
+      const typeLabel = TYPE_LABELS[form.type]?.label ?? form.type
+      const recipients = getUsers().filter(u => u.role === 'admin' || u.role === 'manager')
+      await Promise.allSettled(recipients.map(r =>
+        insertNotification({
+          user_id:  r.id,
+          type:     'conge_demande',
+          message:  `${user.name} a soumis une demande de ${typeLabel} du ${form.date_debut} au ${form.date_fin}.`,
+          lu:       false,
+          conge_id: newConge?.id ?? null,
+        })
+      ))
       setSuccess('Demande envoyée avec succès !')
       setShowForm(false)
       setForm({ type: 'vacances', date_debut: '', date_fin: '', motif: '' })

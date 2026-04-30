@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getAllConges, updateCongeStatut } from '../../lib/db'
+import { getAllConges, updateCongeStatut, insertNotification } from '../../lib/db'
 import { getUserById } from '../../lib/localData'
 import './GestionConges.css'
 
@@ -64,6 +64,23 @@ export default function GestionConges() {
     setError('')
     try {
       await updateCongeStatut(modal.id, statut, user.id, commentaire)
+
+      // Notifier l'employé concerné
+      const typeLabel = TYPE_LABELS[modal.type]?.label ?? modal.type
+      const statutMsg = {
+        approuve: 'approuvée ✅',
+        refuse:   'refusée ❌',
+        modifie:  'à modifier ✏️',
+      }[statut] ?? statut
+      const detail = commentaire ? ` Commentaire : ${commentaire}` : ''
+      await insertNotification({
+        user_id:  modal.user_id,
+        type:     `conge_${statut}`,
+        message:  `Votre demande de ${typeLabel} du ${modal.date_debut} au ${modal.date_fin} a été ${statutMsg}.${detail}`,
+        lu:       false,
+        conge_id: modal.id,
+      }).catch(() => {}) // non bloquant
+
       setSuccess(`Demande ${statut === 'approuve' ? 'approuvée' : statut === 'refuse' ? 'refusée' : 'mise à jour'} avec succès.`)
       setModal(null)
       await load()

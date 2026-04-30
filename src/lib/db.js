@@ -196,6 +196,41 @@ export const deleteConge = async (id) => {
   if (error) { log('deleteConge', error); throw error }
 }
 
+// ── NOTIFICATIONS ─────────────────────────────────────────────
+
+export const insertNotification = async (notif) => {
+  const { error } = await supabase.from('notifications').insert(notif)
+  if (error) { log('insertNotification', error); throw error }
+}
+
+export const getNotificationsForUser = async (userId) => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(40)
+  if (error) { log('getNotificationsForUser', error); throw error }
+  return data || []
+}
+
+export const markNotificationRead = async (id) => {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ lu: true })
+    .eq('id', id)
+  if (error) { log('markNotificationRead', error); throw error }
+}
+
+export const markAllNotificationsRead = async (userId) => {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ lu: true })
+    .eq('user_id', userId)
+    .eq('lu', false)
+  if (error) { log('markAllNotificationsRead', error); throw error }
+}
+
 // ── PLANNING TÂCHES ───────────────────────────────────────────
 
 export const getPlanningTaches = async (userIds, from, to) => {
