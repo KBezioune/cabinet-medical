@@ -1,0 +1,378 @@
+/* ── Layout ──────────────────────────────────────────────────── */
+.ann-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.ann-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+}
+
+.ann-count {
+  font-size: 0.8125rem;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+
+/* ── Grille des fiches ───────────────────────────────────────── */
+.ann-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.ann-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1.125rem 1rem;
+  background: #fff;
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+
+.ann-card:hover {
+  border-color: var(--brand-200, #bfdbfe);
+  box-shadow: 0 4px 16px rgb(79 142 247 / 0.12);
+  transform: translateY(-1px);
+}
+
+.ann-card-active {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgb(79 142 247 / 0.15);
+}
+
+/* Avatar */
+.ann-card-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Infos */
+.ann-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ann-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.ann-card-poste {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+/* Meta */
+.ann-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ann-taux {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--brand-600, #2563eb);
+  background: var(--brand-50);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.ann-role-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ann-role-dot.ann-role-admin     { background: #059669; }
+.ann-role-dot.ann-role-manager   { background: #8b5cf6; }
+.ann-role-dot.ann-role-assistant { background: #0891b2; }
+
+/* Contacts */
+.ann-card-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  border-top: 1px solid var(--gray-100);
+  padding-top: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.ann-card-phone,
+.ann-card-email {
+  font-size: 0.6875rem;
+  color: var(--gray-400);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Panneau latéral ─────────────────────────────────────────── */
+.ann-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.25);
+  z-index: 200;
+}
+
+.ann-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 96vw);
+  background: #fff;
+  box-shadow: -8px 0 32px rgb(0 0 0 / 0.12);
+  z-index: 201;
+  overflow-y: auto;
+  animation: slideInRight 0.22s ease-out;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to   { transform: translateX(0);    opacity: 1;   }
+}
+
+.ann-panel-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-100);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--gray-600);
+  z-index: 1;
+  transition: background 0.15s;
+}
+.ann-panel-close:hover { background: var(--gray-200); }
+
+/* Contenu du panneau */
+.ann-panel-inner { padding: 1.5rem 1.25rem; }
+
+.ann-panel-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-right: 2.5rem;
+}
+
+.ann-panel-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ann-panel-name {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--gray-800);
+  margin: 0 0 0.125rem;
+}
+
+.ann-panel-poste {
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+  margin: 0 0 0.375rem;
+}
+
+.ann-role-badge {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+}
+.ann-role-badge.ann-role-admin     { background: #d1fae5; color: #065f46; }
+.ann-role-badge.ann-role-manager   { background: #ede9fe; color: #5b21b6; }
+.ann-role-badge.ann-role-assistant { background: #e0f2fe; color: #0c4a6e; }
+
+/* Onglets */
+.ann-panel-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--gray-100);
+  margin-bottom: 1.25rem;
+}
+
+.ann-panel-tab {
+  flex: 1;
+  padding: 0.625rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.ann-panel-tab:hover { color: var(--brand-600, #2563eb); }
+.ann-panel-tab.active {
+  color: var(--brand-600, #2563eb);
+  border-bottom-color: var(--brand-500);
+}
+
+/* Infos */
+.ann-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+
+.ann-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+.ann-info-row:last-child { border-bottom: none; }
+
+.ann-info-row dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.ann-info-row dd {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  text-align: right;
+  margin: 0;
+}
+
+.ann-info-row dd a {
+  color: var(--brand-600, #2563eb);
+  text-decoration: none;
+}
+
+.ann-anciennete { color: var(--gray-400); font-weight: 400; }
+
+/* Planning */
+.ann-planning-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.ann-planning-table th {
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-400);
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.ann-planning-table td {
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid var(--gray-50);
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+.ann-jour { font-weight: 700; color: var(--gray-800); }
+
+/* Congés */
+.ann-conges-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.ann-conge-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-100);
+}
+
+.ann-conge-icon { font-size: 1.125rem; flex-shrink: 0; }
+
+.ann-conge-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.ann-conge-type {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+
+.ann-conge-dates {
+  font-size: 0.6875rem;
+  color: var(--gray-400);
+  font-variant-numeric: tabular-nums;
+}
+
+.ann-conge-statut {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+.ann-cst-wait { background: #fef9c3; color: #92400e; }
+.ann-cst-ok   { background: #d1fae5; color: #065f46; }
+.ann-cst-ko   { background: #fee2e2; color: #991b1b; }
+
+.ann-empty {
+  text-align: center;
+  color: var(--gray-400);
+  font-size: 0.875rem;
+  padding: 2rem 0;
+}
+
+@media (max-width: 600px) {
+  .ann-grid { grid-template-columns: 1fr; }
+  .ann-panel { width: 100vw; }
+}

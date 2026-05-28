@@ -9,8 +9,10 @@ import JournauxAcces from './JournauxAcces'
 import GestionConges from './GestionConges'
 import SoldeHeures from './SoldeHeures'
 import DashboardRH from './DashboardRH'
+import Annuaire from './Annuaire'
 import ClockInOut from '../assistant/ClockInOut'
 import PlanningPartage from '../shared/PlanningPartage'
+import NotesDefrais from '../shared/NotesDefrais'
 import './AdminDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
@@ -74,6 +76,20 @@ const IC = {
       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
     </svg>
   ),
+  annuaire: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ),
+  frais: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <line x1="2" y1="10" x2="22" y2="10"/>
+    </svg>
+  ),
 }
 
 // ── Onglets avec sections ──────────────────────────────────────
@@ -81,10 +97,12 @@ const ALL_TABS = [
   { id: 'pointage',  label: 'Pointage',           roles: ['manager'],           section: null },
   { id: 'pointages', label: 'Pointages',           roles: ['admin'],             section: null },
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
+  { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
   { id: 'equipe',    label: 'Planning équipe',     roles: ['admin', 'manager'], section: 'Planning' },
   { id: 'planning',  label: 'Planning tâches',     roles: ['admin', 'manager'], section: null },
   { id: 'soldes',    label: 'Soldes des heures',   roles: ['admin', 'manager'], section: 'RH' },
   { id: 'conges',    label: 'Congés',              roles: ['admin', 'manager'], section: null },
+  { id: 'frais',     label: 'Notes de frais',      roles: ['admin', 'manager'], section: null },
   { id: 'export',    label: 'Export comptabilité', roles: ['admin'],             section: 'Admin' },
   { id: 'pins',      label: 'Mots de passe',       roles: ['admin'],             section: null },
   { id: 'logs',      label: "Journaux d'accès",    roles: ['admin'],             section: null },
@@ -154,10 +172,12 @@ export default function AdminDashboard() {
           {tab === 'pointage'  && <ClockInOut />}
           {tab === 'pointages' && <AllPointages />}
           {tab === 'dashboard' && <DashboardRH />}
+          {tab === 'annuaire'  && <Annuaire />}
           {tab === 'equipe'    && <PlanningPartage />}
           {tab === 'planning'  && <PlanningTaches />}
           {tab === 'soldes'    && <SoldeHeures />}
           {tab === 'conges'    && <GestionConges />}
+          {tab === 'frais'     && <NotesDefrais />}
           {tab === 'export'    && <MonthlyExport />}
           {tab === 'pins'      && <GestionPins />}
           {tab === 'logs'      && <JournauxAcces />}
