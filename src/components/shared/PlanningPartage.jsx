@@ -6,7 +6,7 @@ import {
   insertPlanningTache, updatePlanningTache, deletePlanningTache,
 } from '../../lib/db'
 import { JOURS, getWeekDays } from '../../utils/dateUtils'
-import { format, addWeeks, subWeeks, getDay } from 'date-fns'
+import { format, addWeeks, subWeeks, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from './Breadcrumb'
 import './PlanningPartage.css'
@@ -28,7 +28,9 @@ export default function PlanningPartage() {
   const { user }  = useAuth()
   const isAdmin   = user?.role === 'admin'
 
+  const [viewMode,  setViewMode]  = useState('semaine') // 'semaine' | 'mois'
   const [weekRef,   setWeekRef]   = useState(new Date())
+  const [monthRef,  setMonthRef]  = useState(new Date())
   const [planning,  setPlanning]  = useState([])
   const [taches,    setTaches]    = useState([])
   const [conges,    setConges]    = useState([])
@@ -48,12 +50,23 @@ export default function PlanningPartage() {
   const weekDays = getWeekDays(weekRef)
   const today    = format(new Date(), 'yyyy-MM-dd')
 
+  // Jours du mois sélectionné
+  const monthStart  = startOfMonth(monthRef)
+  const monthEnd    = endOfMonth(monthRef)
+  const monthDays   = eachDayOfInterval({ start: monthStart, end: monthEnd })
+
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const from = format(weekDays[0], 'yyyy-MM-dd')
-      const to   = format(weekDays[6], 'yyyy-MM-dd')
       const ids  = users.map(u => u.id)
+      let from, to
+      if (viewMode === 'semaine') {
+        from = format(weekDays[0], 'yyyy-MM-dd')
+        to   = format(weekDays[6], 'yyyy-MM-dd')
+      } else {
+        from = format(monthStart, 'yyyy-MM-dd')
+        to   = format(monthEnd,   'yyyy-MM-dd')
+      }
       try {
         const [pl, tch, cg] = await Promise.all([
           getPlanningForUsers(ids),
@@ -67,7 +80,7 @@ export default function PlanningPartage() {
       finally { setLoading(false) }
     }
     load()
-  }, [weekRef, reloadKey])
+  }, [weekRef, monthRef, viewMode, reloadKey])
 
   // Horaires récurrents — fallback 08:30-17:30 les jours ouvrables
   const getDayPlan = (userId, day) => {
@@ -138,7 +151,8 @@ export default function PlanningPartage() {
     finally { setSaving(false) }
   }
 
-  const weekLabel = `${format(weekDays[0], 'dd MMM', { locale: fr })} – ${format(weekDays[6], 'dd MMM yyyy', { locale: fr })}`
+  const weekLabel  = `${format(weekDays[0], 'dd MMM', { locale: fr })} – ${format(weekDays[6], 'dd MMM yyyy', { locale: fr })}`
+  const monthLabel = format(monthRef, 'MMMM yyyy', { locale: fr })
 
   return (
     <div className="pp-wrap">
@@ -150,11 +164,19 @@ export default function PlanningPartage() {
           <div>
             <h2 className="pp-title">Planning de l'équipe</h2>
             <p className="pp-subtitle">
-              {editMode ? '✏️ Mode édition — cliquez sur un créneau ou sur + pour ajouter' : 'Vue semaine · lecture seule'}
+              {editMode ? '✏️ Mode édition — cliquez sur un créneau ou sur + pour ajouter'
+                : viewMode === 'mois' ? 'Vue mensuelle · lecture seule'
+                : 'Vue semaine · lecture seule'}
             </p>
           </div>
           <div className="pp-header-right">
-            {isAdmin && (
+            {/* Toggle vue */}
+            <div className="pp-view-toggle">
+              <button className={`pp-view-btn${viewMode === 'semaine' ? ' active' : ''}`} onClick={() => setViewMode('semaine')}>Semaine</button>
+              <button className={`pp-view-btn${viewMode === 'mois'    ? ' active' : ''}`} onClick={() => setViewMode('mois')}>Mois</button>
+            </div>
+
+            {isAdmin && viewMode === 'semaine' && (
               <button
                 className={`btn pp-edit-btn ${editMode ? 'pp-edit-active' : 'btn-outline'}`}
                 onClick={() => { setEditMode(v => !v); setModal(null) }}
@@ -177,11 +199,19 @@ export default function PlanningPartage() {
                 )}
               </button>
             )}
-            <div className="pp-nav">
-              <button className="btn btn-outline pp-btn-nav" onClick={() => setWeekRef(d => subWeeks(d, 1))}>← Préc.</button>
-              <span className="pp-week-label">{weekLabel}</span>
-              <button className="btn btn-outline pp-btn-nav" onClick={() => setWeekRef(d => addWeeks(d, 1))}>Suiv. →</button>
-            </div>
+            {viewMode === 'semaine' ? (
+              <div className="pp-nav">
+                <button className="btn btn-outline pp-btn-nav" onClick={() => setWeekRef(d => subWeeks(d, 1))}>← Préc.</button>
+                <span className="pp-week-label">{weekLabel}</span>
+                <button className="btn btn-outline pp-btn-nav" onClick={() => setWeekRef(d => addWeeks(d, 1))}>Suiv. →</button>
+              </div>
+            ) : (
+              <div className="pp-nav">
+                <button className="btn btn-outline pp-btn-nav" onClick={() => setMonthRef(d => subMonths(d, 1))}>← Préc.</button>
+                <span className="pp-week-label" style={{ textTransform: 'capitalize' }}>{monthLabel}</span>
+                <button className="btn btn-outline pp-btn-nav" onClick={() => setMonthRef(d => addMonths(d, 1))}>Suiv. →</button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -194,6 +224,72 @@ export default function PlanningPartage() {
 
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
+        ) : viewMode === 'mois' ? (
+          /* ── Vue mensuelle ─────────────────────────────────── */
+          <div className="pp-table-wrap">
+            <table className="pp-table pp-month-table">
+              <thead>
+                <tr>
+                  <th className="pp-th-user">Collaborateur</th>
+                  {monthDays.map((day, i) => {
+                    const ds      = format(day, 'yyyy-MM-dd')
+                    const isToday = ds === today
+                    const isWE    = getDay(day) === 0 || getDay(day) === 6
+                    return (
+                      <th key={i} className={`pp-th-day pp-th-month${isToday ? ' pp-th-today' : ''}${isWE ? ' pp-th-we' : ''}`}>
+                        <span className="pp-th-jour">{format(day, 'EEE', { locale: fr }).slice(0,2)}</span>
+                        <span className="pp-th-date">{format(day, 'd')}</span>
+                        {isToday && <span className="pp-today-dot" aria-hidden="true" />}
+                      </th>
+                    )
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id} className={`pp-row pp-row-${u.role}`}>
+                    <td className="pp-td-user">
+                      <div className="pp-user">
+                        <div className={`pp-avatar pp-avatar-${u.role}`}>{u.name[0]}</div>
+                        <span className="pp-user-name">{u.name}</span>
+                      </div>
+                    </td>
+                    {monthDays.map((day, i) => {
+                      const ds      = format(day, 'yyyy-MM-dd')
+                      const isToday = ds === today
+                      const isWE    = getDay(day) === 0 || getDay(day) === 6
+                      const conge   = getDayConge(u.id, ds)
+                      const plan    = getDayPlan(u.id, day)
+                      const tasks   = getDayTaches(u.id, ds)
+                      let cellClass = 'pp-month-cell'
+                      let content   = null
+                      if (conge) {
+                        cellClass += conge.statut === 'approuve' ? ' pp-mc-conge' : ' pp-mc-wait'
+                        content    = <span title={conge.statut === 'approuve' ? 'Congé approuvé' : 'Congé en attente'}>🌴</span>
+                      } else if (isWE) {
+                        cellClass += ' pp-mc-we'
+                      } else if (tasks.length > 0) {
+                        const cfg  = TACHES_CFG[tasks[0].tache] || TACHES_CFG.autre
+                        cellClass += ` pp-mc-task pp-mc-task-${cfg.color}`
+                        content    = <span title={cfg.label}>{cfg.icon}</span>
+                      } else if (plan && !plan.fallback) {
+                        cellClass += ' pp-mc-planned'
+                        content    = <span className="pp-mc-dot" />
+                      } else if (plan?.fallback) {
+                        cellClass += ' pp-mc-fallback'
+                        content    = <span className="pp-mc-dot pp-mc-dot-gray" />
+                      }
+                      return (
+                        <td key={i} className={`pp-td pp-month-td${isToday ? ' pp-td-today' : ''}`}>
+                          <div className={cellClass}>{content}</div>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <div className="pp-table-wrap">
             <table className="pp-table">
