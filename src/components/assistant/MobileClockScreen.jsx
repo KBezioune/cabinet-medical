@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { todayISO, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
+import { todayISO, formatDateTime, minutesToHHMM, planNetMinutes } from '../../utils/dateUtils'
 import {
   getPointageByUserAndDate, insertPointage, updatePointage,
   getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser,
@@ -87,7 +87,7 @@ export default function MobileClockScreen() {
           const ds = format(d, 'yyyy-MM-dd')
           const js = getDay(d) === 0 ? 7 : getDay(d)
           const plan = pl.find(p => p.jour_semaine === js)
-          if (plan) planned += timeToMin(plan.heure_fin) - timeToMin(plan.heure_debut)
+          if (plan) planned += planNetMinutes(plan.heure_debut, plan.heure_fin)
           const p = pts.find(x => x.date === ds)
           if (p) worked += p.duree_minutes || 0
         })

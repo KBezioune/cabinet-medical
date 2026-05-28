@@ -7,6 +7,7 @@ import { startOfMonth, endOfMonth, eachDayOfInterval, isWeekend, format, startOf
 import { fr } from 'date-fns/locale'
 import { getUsers } from '../../lib/localData'
 import { getPointagesByDateRange, getPlanningForUsers, getAllConges } from '../../lib/db'
+import { planNetMinutes } from '../../utils/dateUtils'
 import Breadcrumb from '../shared/Breadcrumb'
 import './Statistiques.css'
 
@@ -74,10 +75,11 @@ export default function Statistiques() {
             .filter(p => p.user_id === u.id && p.heure_debut && p.heure_fin)
             .reduce((acc, p) => acc + (timeToH(p.heure_fin) - timeToH(p.heure_debut)), 0)
 
-          const userPlan = planning.filter(p => p.user_id === u.id && p.actif)
-          const dailyH   = userPlan.reduce((acc, p) => acc + (timeToH(p.heure_fin) - timeToH(p.heure_debut)), 0)
-          const weeks    = wdays / 5
-          const planned  = Math.round(dailyH * weeks * 10) / 10
+          const userPlan  = planning.filter(p => p.user_id === u.id && p.actif)
+          // Sum net minutes per day (pause déjeuner déduite) puis convertit en heures
+          const dailyMin  = userPlan.reduce((acc, p) => acc + planNetMinutes(p.heure_debut, p.heure_fin), 0)
+          const weeks     = wdays / 5
+          const planned   = Math.round((dailyMin / 60) * weeks * 10) / 10
 
           return {
             name: u.name.split(' ')[0],

@@ -22,7 +22,7 @@ const TACHES_CFG = {
 
 const ROLE_LABEL = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante' }
 const DEFAULT_DEBUT = '08:30'
-const DEFAULT_FIN   = '17:30'
+const DEFAULT_FIN   = '16:30'
 
 export default function PlanningPartage() {
   const { user }  = useAuth()
@@ -82,12 +82,13 @@ export default function PlanningPartage() {
     load()
   }, [weekRef, monthRef, viewMode, reloadKey])
 
-  // Horaires récurrents — fallback 08:30-17:30 les jours ouvrables
+  // Horaires récurrents — fallback 08:30-16:30 les jours ouvrables (mercredi fermé)
   const getDayPlan = (userId, day) => {
     const jourSem = getDay(day) === 0 ? 7 : getDay(day)
     const found   = planning.find(p => p.user_id === userId && p.jour_semaine === jourSem && p.actif)
     if (found) return found
-    if (jourSem >= 1 && jourSem <= 5) return { heure_debut: DEFAULT_DEBUT, heure_fin: DEFAULT_FIN, fallback: true }
+    // Lun/Mar/Jeu/Ven ouverts, Mer (3) / Sam (6) / Dim (7) fermés
+    if (jourSem >= 1 && jourSem <= 5 && jourSem !== 3) return { heure_debut: DEFAULT_DEBUT, heure_fin: DEFAULT_FIN, fallback: true }
     return null
   }
 

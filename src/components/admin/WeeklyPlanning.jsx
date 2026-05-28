@@ -141,8 +141,8 @@ export default function WeeklyPlanning() {
 }
 
 function PlanEditor({ plan, onSave, onCancel }) {
-  const [debut, setDebut] = useState(plan?.heure_debut?.slice(0,5) || '08:00')
-  const [fin,   setFin]   = useState(plan?.heure_fin?.slice(0,5)   || '17:00')
+  const [debut, setDebut] = useState(plan?.heure_debut?.slice(0,5) || '08:30')
+  const [fin,   setFin]   = useState(plan?.heure_fin?.slice(0,5)   || '16:30')
   return (
     <div className="plan-editor">
       <input type="time" value={debut} onChange={e => setDebut(e.target.value)} className="time-input"/>

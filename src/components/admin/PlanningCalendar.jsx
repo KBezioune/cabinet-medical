@@ -91,8 +91,8 @@ export default function PlanningCalendar() {
     const tm  = templates[`${userId}_${jourSemaine(date)}`]
     setModal({ userId, date })
     setFStatus(ev?.status || 'travail')
-    setFDebut(ev?.heure_debut?.slice(0, 5) || tm?.heure_debut?.slice(0, 5) || '08:00')
-    setFFin(ev?.heure_fin?.slice(0, 5)   || tm?.heure_fin?.slice(0, 5)   || '17:00')
+    setFDebut(ev?.heure_debut?.slice(0, 5) || tm?.heure_debut?.slice(0, 5) || '08:30')
+    setFFin(ev?.heure_fin?.slice(0, 5)   || tm?.heure_fin?.slice(0, 5)   || '16:30')
     setFNote(ev?.note || '')
     setFAll(false)
     setErr('')

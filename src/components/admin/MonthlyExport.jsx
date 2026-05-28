@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear, planNetMinutes } from '../../utils/dateUtils'
 import { getUsers } from '../../lib/localData'
 import { getPointagesByUserAndMonth, getPlanningForUsers, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval, getDay, parseISO } from 'date-fns'
@@ -68,7 +68,7 @@ export default function MonthlyExport() {
     const date    = parseISO(dateStr)
     const jourSem = getDay(date) === 0 ? 7 : getDay(date)
     const plan    = planning.find(p => p.user_id === userId && p.jour_semaine === jourSem && p.actif)
-    return plan ? timeToMin(plan.heure_fin) - timeToMin(plan.heure_debut) : 0
+    return plan ? planNetMinutes(plan.heure_debut, plan.heure_fin) : 0
   }
 
   // Total planifié sur le mois entier pour un utilisateur
@@ -78,7 +78,7 @@ export default function MonthlyExport() {
     return days.reduce((s, d) => {
       const jourSem = getDay(d) === 0 ? 7 : getDay(d)
       const plan    = userPlan.find(p => p.jour_semaine === jourSem)
-      return s + (plan ? timeToMin(plan.heure_fin) - timeToMin(plan.heure_debut) : 0)
+      return s + (plan ? planNetMinutes(plan.heure_debut, plan.heure_fin) : 0)
     }, 0)
   }
 

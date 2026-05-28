@@ -64,8 +64,8 @@ export default function PlanningTaches() {
   const openEdit = (t) => {
     setModal({ userId: t.user_id, date: t.date, tache: t })
     setFTache(t.tache)
-    setFDebut(t.heure_debut?.slice(0, 5) || '08:00')
-    setFFin(t.heure_fin?.slice(0, 5)   || '17:00')
+    setFDebut(t.heure_debut?.slice(0, 5) || '08:30')
+    setFFin(t.heure_fin?.slice(0, 5)   || '16:30')
     setFNote(t.note || '')
     setErr('')
   }

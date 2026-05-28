@@ -33,7 +33,7 @@ function ContratTab({ emp, isAdmin }) {
   const [contract, setContract] = useState({
     type_contrat:   emp.type_contrat    || 'CDI',
     taux_activite:  emp.taux_activite   ?? 100,
-    heures_par_jour: emp.heures_par_jour ?? 8,
+    heures_par_jour: emp.heures_par_jour ?? 6,
     date_entree:    emp.date_entree     || '',
     droit_vacances: emp.droit_vacances  ?? 25,
     salaire_brut:   emp.salaire_brut    || '',

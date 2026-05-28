@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser } from '../../lib/db'
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import { minutesToHHMM, currentMonthYear, planNetMinutes } from '../../utils/dateUtils'
 import Breadcrumb from '../shared/Breadcrumb'
 import CircularGauge from '../shared/CircularGauge'
 import '../shared/CircularGauge.css'
@@ -99,7 +99,7 @@ export default function MonSolde() {
     const jourSem = getDay(d) === 0 ? 7 : getDay(d)
     const plan    = planning.find(p => p.jour_semaine === jourSem)
     const pt      = pointages.find(p => p.date === dateStr)
-    const dayPlan = plan ? timeToMin(plan.heure_fin) - timeToMin(plan.heure_debut) : 0
+    const dayPlan = plan ? planNetMinutes(plan.heure_debut, plan.heure_fin) : 0
     const dayWork = pt?.duree_minutes || 0
 
     totalPlanned += dayPlan
