@@ -4,6 +4,44 @@
   gap: 0.875rem;
 }
 
+/* ── Jauges circulaires ──────────────────────────────────── */
+.ms-gauges-card { padding: 1.5rem 1.25rem; }
+
+.ms-gauges-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.ms-gauges-sep {
+  width: 1px;
+  height: 100px;
+  background: var(--gray-100);
+}
+
+.ms-gauges-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gray-100);
+}
+
+.ms-gauges-hint {
+  font-size: 0.8125rem;
+  color: var(--gray-400);
+  font-weight: 500;
+}
+
+@media (max-width: 400px) {
+  .ms-gauges-sep { display: none; }
+  .ms-gauges-row { gap: 1rem; }
+}
+
 /* ── Header ──────────────────────────────────────────────── */
 .ms-head { padding: 0.875rem 1.25rem; }
 

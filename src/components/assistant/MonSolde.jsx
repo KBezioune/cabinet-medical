@@ -5,6 +5,8 @@ import { format, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
 import Breadcrumb from '../shared/Breadcrumb'
+import CircularGauge from '../shared/CircularGauge'
+import '../shared/CircularGauge.css'
 import './MonSolde.css'
 
 const timeToMin = (t) => {
@@ -136,51 +138,33 @@ export default function MonSolde() {
         <div className="loading-center"><div className="spinner" /></div>
       ) : (
         <>
-          {/* KPIs heures */}
-          <div className="ms-kpis">
-            <div className="ms-kpi ms-kpi-gray">
-              <span className="ms-kpi-icon">📅</span>
-              <span className="ms-kpi-val">{minutesToHHMM(totalPlanned)}</span>
-              <span className="ms-kpi-lbl">Heures planifiées</span>
+          {/* Jauges circulaires */}
+          <div className="card ms-gauges-card">
+            <div className="ms-gauges-row">
+              <CircularGauge
+                value={Math.round(totalWorked / 60 * 10) / 10}
+                max={Math.max(Math.round(totalPlanned / 60 * 10) / 10, 0.1)}
+                color="var(--green-500)"
+                label={`Heures travaillées / ${minutesToHHMM(totalPlanned)} planifiées`}
+                unit="h"
+                size={148}
+              />
+              <div className="ms-gauges-sep" />
+              <CircularGauge
+                value={vacances.restant}
+                max={vacances.quota}
+                color="#3b82f6"
+                label={`Jours de vacances restants / ${vacances.quota} quota`}
+                unit="j"
+                size={148}
+              />
             </div>
-            <div className="ms-kpi ms-kpi-blue">
-              <span className="ms-kpi-icon">⏱️</span>
-              <span className="ms-kpi-val">{minutesToHHMM(totalWorked)}</span>
-              <span className="ms-kpi-lbl">Heures travaillées</span>
-            </div>
-            <div className={`ms-kpi ms-kpi-${soldeClass}`}>
-              <span className="ms-kpi-icon">{solde >= 0 ? '✅' : '⚠️'}</span>
-              <span className="ms-kpi-val ms-kpi-big">{formatSolde(solde)}</span>
-              <span className="ms-kpi-lbl">
-                {solde > 0 ? 'Heures suppl.' : solde < 0 ? 'Heures manquantes' : 'À l\'équilibre'}
+            <div className="ms-gauges-detail">
+              <span className={`ms-badge ms-badge-${soldeClass}`}>{formatSolde(solde)}</span>
+              <span className="ms-gauges-hint">
+                {solde > 0 ? 'Heures supplémentaires' : solde < 0 ? 'Heures manquantes' : 'À l\'équilibre'}
               </span>
             </div>
-          </div>
-
-          {/* Solde vacances */}
-          <div className="card ms-vac-card">
-            <h3 className="ms-vac-title">🌴 Solde vacances {THIS_YEAR}</h3>
-            <div className="ms-vac-grid">
-              <div className="ms-vac-item ms-vac-quota">
-                <span className="ms-vac-val">{vacances.quota}</span>
-                <span className="ms-vac-lbl">Quota annuel</span>
-              </div>
-              <div className="ms-vac-item ms-vac-used">
-                <span className="ms-vac-val">{vacances.consomme}</span>
-                <span className="ms-vac-lbl">Consommés</span>
-              </div>
-              <div className={`ms-vac-item ${vacances.restant <= 3 ? 'ms-vac-low' : 'ms-vac-ok'}`}>
-                <span className="ms-vac-val">{vacances.restant}</span>
-                <span className="ms-vac-lbl">Restants</span>
-              </div>
-            </div>
-            <div className="ms-vac-bar">
-              <div className="ms-vac-bar-fill" style={{ width: `${pct}%` }} />
-            </div>
-            <p className="ms-vac-note">
-              {vacances.consomme} jour{vacances.consomme !== 1 ? 's' : ''} de congés approuvés
-              sur {vacances.quota} jours ouvrables annuels
-            </p>
           </div>
 
           {/* Tableau jour par jour */}
