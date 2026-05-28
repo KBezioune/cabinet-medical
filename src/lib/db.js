@@ -254,6 +254,49 @@ export const markAllNotificationsRead = async (userId) => {
   if (error) { log('markAllNotificationsRead', error); throw error }
 }
 
+// ── NOTES DE FRAIS ────────────────────────────────────────────
+// Table SQL : CREATE TABLE expense_reports (
+//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//   user_id TEXT NOT NULL, date DATE NOT NULL,
+//   montant NUMERIC(10,2) NOT NULL,
+//   categorie TEXT NOT NULL CHECK (categorie IN ('repas','transport','materiel','autre')),
+//   description TEXT, justificatif_url TEXT,
+//   statut TEXT DEFAULT 'en_attente' CHECK (statut IN ('en_attente','approuve','refuse')),
+//   traite_par TEXT, traite_le TIMESTAMPTZ, commentaire TEXT,
+//   created_at TIMESTAMPTZ DEFAULT NOW()
+// );
+
+export const getExpenseReports = async () => {
+  const { data, error } = await supabase.from('expense_reports').select('*').order('created_at', { ascending: false })
+  if (error) { log('getExpenseReports', error); throw error }
+  return data || []
+}
+
+export const getExpenseReportsByUser = async (userId) => {
+  const { data, error } = await supabase.from('expense_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) { log('getExpenseReportsByUser', error); throw error }
+  return data || []
+}
+
+export const insertExpenseReport = async (report) => {
+  const { data, error } = await supabase.from('expense_reports').insert(report).select().single()
+  if (error) { log('insertExpenseReport', error); throw error }
+  return data
+}
+
+export const updateExpenseReportStatut = async (id, statut, traitePar, commentaire = '') => {
+  const { data, error } = await supabase.from('expense_reports')
+    .update({ statut, traite_par: traitePar, traite_le: new Date().toISOString(), commentaire })
+    .eq('id', id).select().single()
+  if (error) { log('updateExpenseReportStatut', error); throw error }
+  return data
+}
+
+export const deleteExpenseReport = async (id) => {
+  const { error } = await supabase.from('expense_reports').delete().eq('id', id)
+  if (error) { log('deleteExpenseReport', error); throw error }
+}
+
 // ── PLANNING TÂCHES ───────────────────────────────────────────
 
 export const getPlanningTaches = async (userIds, from, to) => {
