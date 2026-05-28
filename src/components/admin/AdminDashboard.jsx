@@ -1,5 +1,4 @@
-import { Fragment } from 'react'
-import { useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import AllPointages from './AllPointages'
 import PlanningTaches from './PlanningTaches'
@@ -10,9 +9,13 @@ import GestionConges from './GestionConges'
 import SoldeHeures from './SoldeHeures'
 import DashboardRH from './DashboardRH'
 import Annuaire from './Annuaire'
+import Statistiques from './Statistiques'
 import ClockInOut from '../assistant/ClockInOut'
 import PlanningPartage from '../shared/PlanningPartage'
 import NotesDefrais from '../shared/NotesDefrais'
+import Aide from '../shared/Aide'
+import Messages from '../shared/Messages'
+import { getUnreadMessageCount } from '../../lib/db'
 import './AdminDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
@@ -90,6 +93,25 @@ const IC = {
       <line x1="2" y1="10" x2="22" y2="10"/>
     </svg>
   ),
+  stats: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+    </svg>
+  ),
+  aide: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  ),
+  messages: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+  ),
 }
 
 // ── Onglets avec sections ──────────────────────────────────────
@@ -98,14 +120,17 @@ const ALL_TABS = [
   { id: 'pointages', label: 'Pointages',           roles: ['admin'],             section: null },
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
   { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
+  { id: 'stats',     label: 'Statistiques',        roles: ['admin'],             section: null },
   { id: 'equipe',    label: 'Planning équipe',     roles: ['admin', 'manager'], section: 'Planning' },
   { id: 'planning',  label: 'Planning tâches',     roles: ['admin', 'manager'], section: null },
   { id: 'soldes',    label: 'Soldes des heures',   roles: ['admin', 'manager'], section: 'RH' },
   { id: 'conges',    label: 'Congés',              roles: ['admin', 'manager'], section: null },
   { id: 'frais',     label: 'Notes de frais',      roles: ['admin', 'manager'], section: null },
+  { id: 'messages',  label: 'Messages',            roles: ['admin', 'manager'], section: null },
   { id: 'export',    label: 'Export comptabilité', roles: ['admin'],             section: 'Admin' },
   { id: 'pins',      label: 'Mots de passe',       roles: ['admin'],             section: null },
   { id: 'logs',      label: "Journaux d'accès",    roles: ['admin'],             section: null },
+  { id: 'aide',      label: 'Aide & Support',      roles: ['admin', 'manager'], section: null },
 ]
 
 export default function AdminDashboard() {
@@ -113,10 +138,23 @@ export default function AdminDashboard() {
 
   const tabs     = ALL_TABS.filter(t => t.roles.includes(user.role))
   const [tab, setTab] = useState(tabs[0]?.id || 'pointages')
+  const [unreadMsg, setUnreadMsg] = useState(0)
 
   const isAdmin   = user.role === 'admin'
   const pageTitle = isAdmin ? 'Cabinet Médical Dr Bezioune' : `Bonjour, ${user.name}`
   const pageSub   = isAdmin ? 'Bienvenue, Dr. Bezioune' : 'Responsable — Assistante médicale'
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const n = await getUnreadMessageCount(user.id, isAdmin)
+        setUnreadMsg(n)
+      } catch {}
+    }
+    fetch()
+    const iv = setInterval(fetch, 30000)
+    return () => clearInterval(iv)
+  }, [user.id, isAdmin])
 
   return (
     <div className="admin-layout">
@@ -145,6 +183,9 @@ export default function AdminDashboard() {
               >
                 <span className="admin-sidebar-icon">{IC[t.id]}</span>
                 <span className="admin-sidebar-label">{t.label}</span>
+                {t.id === 'messages' && unreadMsg > 0 && (
+                  <span className="admin-msg-badge">{unreadMsg > 9 ? '9+' : unreadMsg}</span>
+                )}
               </button>
             </Fragment>
           ))}
@@ -173,14 +214,17 @@ export default function AdminDashboard() {
           {tab === 'pointages' && <AllPointages />}
           {tab === 'dashboard' && <DashboardRH />}
           {tab === 'annuaire'  && <Annuaire />}
+          {tab === 'stats'     && <Statistiques />}
           {tab === 'equipe'    && <PlanningPartage />}
           {tab === 'planning'  && <PlanningTaches />}
           {tab === 'soldes'    && <SoldeHeures />}
           {tab === 'conges'    && <GestionConges />}
           {tab === 'frais'     && <NotesDefrais />}
+          {tab === 'messages'  && <Messages onUnreadChange={setUnreadMsg} />}
           {tab === 'export'    && <MonthlyExport />}
           {tab === 'pins'      && <GestionPins />}
           {tab === 'logs'      && <JournauxAcces />}
+          {tab === 'aide'      && <Aide />}
         </div>
       </div>
 
@@ -194,7 +238,12 @@ export default function AdminDashboard() {
             title={t.label}
             aria-label={t.label}
           >
-            <span className="admin-bottom-icon">{IC[t.id]}</span>
+            <span className="admin-bottom-icon" style={{ position: 'relative' }}>
+              {IC[t.id]}
+              {t.id === 'messages' && unreadMsg > 0 && (
+                <span className="admin-msg-badge-dot" />
+              )}
+            </span>
             {tab === t.id && <span className="admin-bottom-dot" aria-hidden="true" />}
           </button>
         ))}

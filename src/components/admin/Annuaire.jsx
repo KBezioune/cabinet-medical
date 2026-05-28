@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getUsers } from '../../lib/localData'
-import { getPlanningByUser, getCongesByUser } from '../../lib/db'
+import { getPlanningByUser, getCongesByUser, getUserContract, updateUserContract } from '../../lib/db'
 import { format, differenceInYears } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
@@ -24,10 +24,152 @@ const CONGE_TYPES = {
   absence:    { label: 'Absence',    icon: '📝' },
 }
 
+const TYPE_CONTRAT_OPTIONS = ['CDI', 'CDD', 'Temps partiel', 'Indépendant', 'Stage']
+
 const timeToMin = t => { if (!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m }
 const minToHHMM = m => { const h = Math.floor(m / 60); return `${h}h${String(m % 60).padStart(2, '0')}` }
 
-function PanelContent({ user: emp }) {
+function ContratTab({ emp, isAdmin }) {
+  const [contract, setContract] = useState({
+    type_contrat:   emp.type_contrat    || 'CDI',
+    taux_activite:  emp.taux_activite   ?? 100,
+    heures_par_jour: emp.heures_par_jour ?? 8,
+    date_entree:    emp.date_entree     || '',
+    droit_vacances: emp.droit_vacances  ?? 25,
+    salaire_brut:   emp.salaire_brut    || '',
+  })
+  const [editing, setEditing]   = useState(false)
+  const [saving,  setSaving]    = useState(false)
+  const [saved,   setSaved]     = useState(false)
+  const [err,     setErr]       = useState('')
+
+  useEffect(() => {
+    getUserContract(emp.id).then(data => {
+      if (data) {
+        setContract(prev => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(data).filter(([, v]) => v !== null)),
+        }))
+      }
+    }).catch(() => {})
+  }, [emp.id])
+
+  const anciennete = contract.date_entree
+    ? differenceInYears(new Date(), new Date(contract.date_entree))
+    : null
+
+  const handleSave = async () => {
+    setSaving(true)
+    setErr('')
+    try {
+      await updateUserContract(emp.id, {
+        type_contrat:    contract.type_contrat,
+        taux_activite:   Number(contract.taux_activite),
+        heures_par_jour: Number(contract.heures_par_jour),
+        date_entree:     contract.date_entree || null,
+        droit_vacances:  Number(contract.droit_vacances),
+        salaire_brut:    contract.salaire_brut ? Number(contract.salaire_brut) : null,
+      })
+      setEditing(false)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch (e) {
+      setErr(e?.message || 'Erreur lors de la sauvegarde')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const field = (label, key, type = 'text', extra = {}) => (
+    <div className="ann-info-row">
+      <dt>{label}</dt>
+      <dd>
+        {editing && isAdmin
+          ? type === 'select'
+            ? (
+              <select
+                className="ann-input"
+                value={contract[key]}
+                onChange={e => setContract(p => ({ ...p, [key]: e.target.value }))}
+              >
+                {extra.options?.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            )
+            : (
+              <input
+                className="ann-input"
+                type={type}
+                value={contract[key]}
+                min={extra.min}
+                max={extra.max}
+                onChange={e => setContract(p => ({ ...p, [key]: e.target.value }))}
+              />
+            )
+          : formatFieldValue(key, contract[key], anciennete)
+        }
+      </dd>
+    </div>
+  )
+
+  return (
+    <div>
+      {isAdmin && (
+        <div className="ann-contrat-actions">
+          {!editing
+            ? (
+              <button className="btn btn-secondary ann-edit-btn" onClick={() => setEditing(true)}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Modifier
+              </button>
+            )
+            : (
+              <div className="ann-edit-btns">
+                <button className="btn btn-secondary" onClick={() => { setEditing(false); setErr('') }}>Annuler</button>
+                <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                  {saving ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+              </div>
+            )
+          }
+          {saved && <span className="ann-saved">✓ Sauvegardé</span>}
+          {err   && <span className="ann-err">{err}</span>}
+        </div>
+      )}
+
+      <dl className="ann-info-list">
+        {field('Type de contrat',    'type_contrat',    'select', { options: TYPE_CONTRAT_OPTIONS })}
+        {field("Taux d'activité (%)", 'taux_activite',  'number', { min: 0, max: 100 })}
+        {field('Heures / jour',      'heures_par_jour', 'number', { min: 1, max: 24 })}
+        {field('Date d\'entrée',     'date_entree',     'date')}
+        {field('Vacances (j/an)',    'droit_vacances',  'number', { min: 0, max: 50 })}
+        {field('Salaire brut (CHF)', 'salaire_brut',    'number', { min: 0 })}
+        {anciennete !== null && (
+          <div className="ann-info-row">
+            <dt>Ancienneté</dt>
+            <dd>{anciennete} an{anciennete !== 1 ? 's' : ''}</dd>
+          </div>
+        )}
+      </dl>
+    </div>
+  )
+}
+
+function formatFieldValue(key, val, anciennete) {
+  if (!val && val !== 0) return '—'
+  switch (key) {
+    case 'taux_activite':   return `${val} %`
+    case 'heures_par_jour': return `${val} h/jour`
+    case 'droit_vacances':  return `${val} jours/an`
+    case 'salaire_brut':    return `CHF ${Number(val).toLocaleString('fr-CH')}`
+    case 'date_entree':     return format(new Date(val), 'dd MMMM yyyy', { locale: fr })
+    default:                return String(val)
+  }
+}
+
+function PanelContent({ user: emp, canEditContracts }) {
   const [tab,      setTab]      = useState('info')
   const [planning, setPlanning] = useState([])
   const [conges,   setConges]   = useState([])
@@ -48,7 +190,6 @@ function PanelContent({ user: emp }) {
 
   return (
     <div className="ann-panel-inner">
-      {/* Avatar + nom */}
       <div className="ann-panel-hero">
         <div className="ann-panel-avatar" style={{ background: emp.color }}>
           {emp.name[0]}
@@ -60,7 +201,6 @@ function PanelContent({ user: emp }) {
         </div>
       </div>
 
-      {/* Onglets */}
       <div className="ann-panel-tabs">
         {[['info','Informations'],['contrat','Contrat'],['planning','Planning'],['conges','Congés']].map(([id, lbl]) => (
           <button key={id} className={`ann-panel-tab${tab === id ? ' active' : ''}`} onClick={() => setTab(id)}>
@@ -101,28 +241,7 @@ function PanelContent({ user: emp }) {
         )}
 
         {tab === 'contrat' && (
-          <dl className="ann-info-list">
-            <div className="ann-info-row">
-              <dt>Type de contrat</dt>
-              <dd>{emp.type_contrat || '—'}</dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>Taux d'activité</dt>
-              <dd>{emp.taux_activite != null ? `${emp.taux_activite} %` : '—'}</dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>Heures hebdo.</dt>
-              <dd>{emp.heures_hebdo != null ? `${emp.heures_hebdo} h` : '—'}</dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>Début du contrat</dt>
-              <dd>{emp.date_entree ? format(new Date(emp.date_entree), 'dd MMMM yyyy', { locale: fr }) : '—'}</dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>Ancienneté</dt>
-              <dd>{anciennete !== null ? `${anciennete} an${anciennete !== 1 ? 's' : ''}` : '—'}</dd>
-            </div>
-          </dl>
+          <ContratTab emp={emp} isAdmin={canEditContracts} />
         )}
 
         {tab === 'planning' && (
@@ -186,11 +305,20 @@ function PanelContent({ user: emp }) {
 }
 
 export default function Annuaire() {
-  const { user } = useAuth()
-  const users    = getUsers()
+  const { user }   = useAuth()
+  const users      = getUsers()
   const [selected, setSelected] = useState(null)
 
-  const handleKey = e => { if (e.key === 'Escape') setSelected(null) }
+  const isAdmin    = user.role === 'admin'
+  const handleKey  = e => { if (e.key === 'Escape') setSelected(null) }
+
+  const contractSummary = (emp) => {
+    const parts = []
+    if (emp.taux_activite != null)  parts.push(`${emp.taux_activite}%`)
+    if (emp.heures_par_jour != null) parts.push(`${emp.heures_par_jour}h/j`)
+    if (emp.droit_vacances != null)  parts.push(`${emp.droit_vacances}j/an`)
+    return parts.join(' · ')
+  }
 
   return (
     <div className="ann-wrap" onKeyDown={handleKey}>
@@ -201,36 +329,38 @@ export default function Annuaire() {
         <p className="ann-count">{users.length} collaborateur{users.length > 1 ? 's' : ''}</p>
       </div>
 
-      {/* Grille des fiches */}
       <div className="ann-grid">
-        {users.map(emp => (
-          <button
-            key={emp.id}
-            className={`ann-card${selected?.id === emp.id ? ' ann-card-active' : ''}`}
-            onClick={() => setSelected(s => s?.id === emp.id ? null : emp)}
-          >
-            <div className="ann-card-avatar" style={{ background: emp.color }}>
-              {emp.name[0]}
-            </div>
-            <div className="ann-card-info">
-              <span className="ann-card-name">{emp.name}</span>
-              <span className="ann-card-poste">{emp.poste || ROLE_LABEL[emp.role]}</span>
-            </div>
-            <div className="ann-card-meta">
-              {emp.taux_activite != null && (
-                <span className="ann-taux">{emp.taux_activite} %</span>
-              )}
-              <span className={`ann-role-dot ann-role-${emp.role}`} />
-            </div>
-            <div className="ann-card-contact">
-              {emp.phone && <span className="ann-card-phone">{emp.phone}</span>}
-              {emp.email && <span className="ann-card-email">{emp.email}</span>}
-            </div>
-          </button>
-        ))}
+        {users.map(emp => {
+          const summary = contractSummary(emp)
+          return (
+            <button
+              key={emp.id}
+              className={`ann-card${selected?.id === emp.id ? ' ann-card-active' : ''}`}
+              onClick={() => setSelected(s => s?.id === emp.id ? null : emp)}
+            >
+              <div className="ann-card-avatar" style={{ background: emp.color }}>
+                {emp.name[0]}
+              </div>
+              <div className="ann-card-info">
+                <span className="ann-card-name">{emp.name}</span>
+                <span className="ann-card-poste">{emp.poste || ROLE_LABEL[emp.role]}</span>
+                {summary && <span className="ann-card-summary">{summary}</span>}
+              </div>
+              <div className="ann-card-meta">
+                {emp.taux_activite != null && (
+                  <span className="ann-taux">{emp.taux_activite} %</span>
+                )}
+                <span className={`ann-role-dot ann-role-${emp.role}`} />
+              </div>
+              <div className="ann-card-contact">
+                {emp.phone && <span className="ann-card-phone">{emp.phone}</span>}
+                {emp.email && <span className="ann-card-email">{emp.email}</span>}
+              </div>
+            </button>
+          )
+        })}
       </div>
 
-      {/* Panneau latéral droit */}
       {selected && (
         <>
           <div className="ann-overlay" onClick={() => setSelected(null)} />
@@ -240,7 +370,7 @@ export default function Annuaire() {
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
-            <PanelContent user={selected} />
+            <PanelContent user={selected} canEditContracts={isAdmin} />
           </aside>
         </>
       )}

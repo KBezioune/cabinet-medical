@@ -128,3 +128,31 @@
   /* Masquer la bottom nav */
   .asst-bottom-nav { display: none; }
 }
+
+/* ── Badge messages ─────────────────────────────────────────── */
+.asst-msg-badge {
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.25rem;
+  vertical-align: middle;
+}
+
+.asst-msg-dot {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 1.5px solid #fff;
+}

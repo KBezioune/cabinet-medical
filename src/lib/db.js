@@ -331,3 +331,76 @@ export const deletePlanningTache = async (id) => {
   const { error } = await supabase.from('planning_taches').delete().eq('id', id)
   if (error) { log('deletePlanningTache', error); throw error }
 }
+
+// ── CONTRATS ──────────────────────────────────────────────────
+
+export const getUserContract = async (userId) => {
+  const { data, error } = await supabase.from('users')
+    .select('taux_activite, heures_par_jour, date_entree, type_contrat, droit_vacances, salaire_brut')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) { log('getUserContract', error); return null }
+  return data
+}
+
+export const updateUserContract = async (userId, contractData) => {
+  const { error } = await supabase.from('users').update(contractData).eq('id', userId)
+  if (error) { log('updateUserContract', error); throw error }
+}
+
+export const getAllUserContracts = async () => {
+  const { data, error } = await supabase.from('users')
+    .select('id, taux_activite, heures_par_jour, date_entree, type_contrat, droit_vacances, salaire_brut')
+  if (error) { log('getAllUserContracts', error); return [] }
+  return data || []
+}
+
+// ── MESSAGES ──────────────────────────────────────────────────
+// SQL : CREATE TABLE messages (
+//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//   from_user_id TEXT NOT NULL,
+//   to_user_id TEXT,   -- NULL = broadcast à toute l'équipe
+//   content TEXT NOT NULL,
+//   read BOOLEAN DEFAULT false,
+//   created_at TIMESTAMPTZ DEFAULT NOW()
+// );
+
+export const getMessages = async (userId, isAdmin) => {
+  let q
+  if (isAdmin) {
+    q = supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(200)
+  } else {
+    q = supabase.from('messages').select('*')
+      .or(`from_user_id.eq.${userId},to_user_id.eq.${userId},to_user_id.is.null`)
+      .order('created_at', { ascending: false }).limit(200)
+  }
+  const { data, error } = await q
+  if (error) { log('getMessages', error); throw error }
+  return data || []
+}
+
+export const sendMessage = async (message) => {
+  const { data, error } = await supabase.from('messages').insert(message).select().single()
+  if (error) { log('sendMessage', error); throw error }
+  return data
+}
+
+export const markMessageRead = async (id) => {
+  const { error } = await supabase.from('messages').update({ read: true }).eq('id', id)
+  if (error) { log('markMessageRead', error) }
+}
+
+export const getUnreadMessageCount = async (userId, isAdmin) => {
+  let q
+  if (isAdmin) {
+    q = supabase.from('messages').select('*', { count: 'exact', head: true })
+      .eq('read', false).neq('from_user_id', userId)
+  } else {
+    q = supabase.from('messages').select('*', { count: 'exact', head: true })
+      .eq('read', false).neq('from_user_id', userId)
+      .or(`to_user_id.eq.${userId},to_user_id.is.null`)
+  }
+  const { count, error } = await q
+  if (error) { return 0 }
+  return count || 0
+}

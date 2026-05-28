@@ -372,6 +372,65 @@
   padding: 2rem 0;
 }
 
+/* Résumé contrat dans la carte */
+.ann-card-summary {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--brand-600, #2563eb);
+  margin-top: 0.125rem;
+}
+
+/* Onglet contrat — édition */
+.ann-contrat-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.875rem;
+  flex-wrap: wrap;
+}
+
+.ann-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+}
+
+.ann-edit-btns {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ann-saved {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.ann-err {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.ann-input {
+  padding: 0.3rem 0.5rem;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-sm, 4px);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  background: var(--gray-50);
+  width: 100%;
+  max-width: 160px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.ann-input:focus { border-color: var(--brand-400, #60a5fa); background: #fff; }
+
+select.ann-input { cursor: pointer; }
+
 @media (max-width: 600px) {
   .ann-grid { grid-template-columns: 1fr; }
   .ann-panel { width: 100vw; }

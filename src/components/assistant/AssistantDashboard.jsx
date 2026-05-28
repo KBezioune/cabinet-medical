@@ -7,6 +7,10 @@ import DemandeConge from './DemandeConge'
 import MonSolde from './MonSolde'
 import PlanningPartage from '../shared/PlanningPartage'
 import NotesDefrais from '../shared/NotesDefrais'
+import Aide from '../shared/Aide'
+import Messages from '../shared/Messages'
+import { useAuth } from '../../contexts/AuthContext'
+import { getUnreadMessageCount } from '../../lib/db'
 import './AssistantDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
@@ -55,6 +59,19 @@ const IC = {
       <line x1="2" y1="10" x2="22" y2="10"/>
     </svg>
   ),
+  messages: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+  ),
+  aide: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  ),
 }
 
 const TABS = [
@@ -65,17 +82,33 @@ const TABS = [
   { id: 'history',  label: 'Mes Pointages'   },
   { id: 'conges',   label: 'Congés'          },
   { id: 'frais',    label: 'Notes de frais'  },
+  { id: 'messages', label: 'Messages'        },
+  { id: 'aide',     label: 'Aide'            },
 ]
 
 export default function AssistantDashboard() {
-  const [tab,      setTab]      = useState('clock')
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const { user } = useAuth()
+  const [tab,       setTab]       = useState('clock')
+  const [isMobile,  setIsMobile]  = useState(() => window.innerWidth < 768)
+  const [unreadMsg, setUnreadMsg] = useState(0)
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
   }, [])
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const n = await getUnreadMessageCount(user.id, false)
+        setUnreadMsg(n)
+      } catch {}
+    }
+    fetch()
+    const iv = setInterval(fetch, 30000)
+    return () => clearInterval(iv)
+  }, [user.id])
 
   return (
     <div className="assistant-dashboard">
@@ -87,9 +120,13 @@ export default function AssistantDashboard() {
             key={t.id}
             className={`tab-btn ${tab === t.id ? 'active' : ''}`}
             onClick={() => setTab(t.id)}
+            style={{ position: 'relative' }}
           >
             <span className="tab-icon">{IC[t.id]}</span>
             <span>{t.label}</span>
+            {t.id === 'messages' && unreadMsg > 0 && (
+              <span className="asst-msg-badge">{unreadMsg > 9 ? '9+' : unreadMsg}</span>
+            )}
           </button>
         ))}
       </nav>
@@ -103,6 +140,8 @@ export default function AssistantDashboard() {
         {tab === 'history'  && <MyHistory />}
         {tab === 'conges'   && <DemandeConge />}
         {tab === 'frais'    && <NotesDefrais />}
+        {tab === 'messages' && <Messages onUnreadChange={setUnreadMsg} />}
+        {tab === 'aide'     && <Aide />}
       </div>
 
       {/* Bottom nav mobile */}
@@ -115,7 +154,12 @@ export default function AssistantDashboard() {
             title={t.label}
             aria-label={t.label}
           >
-            <span className="asst-bottom-icon">{IC[t.id]}</span>
+            <span className="asst-bottom-icon" style={{ position: 'relative' }}>
+              {IC[t.id]}
+              {t.id === 'messages' && unreadMsg > 0 && (
+                <span className="asst-msg-dot" />
+              )}
+            </span>
             {tab === t.id && <span className="asst-bottom-dot" aria-hidden="true" />}
           </button>
         ))}

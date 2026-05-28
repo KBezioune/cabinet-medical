@@ -279,3 +279,31 @@
 
 /* ── Bottom nav : icônes SVG ────────────────────────────────── */
 .admin-bottom-icon svg { width: 1.5rem; height: 1.5rem; }
+
+/* ── Badge messages ─────────────────────────────────────────── */
+.admin-msg-badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-msg-badge-dot {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 1.5px solid #fff;
+}
