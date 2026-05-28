@@ -28,7 +28,8 @@ export default function AllPointages() {
         getAllPointagesFiltered({}),
       ])
       setRecords(filtered)
-      setInService(all.filter(r => r.heure_arrivee && !r.heure_depart).length)
+      const t = todayISO()
+      setInService(all.filter(r => r.date === t && r.heure_arrivee && !r.heure_depart).length)
     } catch { /* silencieux */ }
     finally { setLoading(false) }
   }, [filterUser, filterDate])
