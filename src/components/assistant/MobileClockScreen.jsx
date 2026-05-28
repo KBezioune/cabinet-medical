@@ -31,8 +31,6 @@ const verifierPosition = () => new Promise((resolve, reject) => {
   )
 })
 
-const timeToMin = t => { if (!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m }
-
 const countWorkDays = (a, b) => {
   const s = new Date(a + 'T12:00:00'); const e = new Date(b + 'T12:00:00')
   if (s > e) return 0
@@ -41,16 +39,15 @@ const countWorkDays = (a, b) => {
 
 export default function MobileClockScreen() {
   const { user, logout } = useAuth()
-  const [now,       setNow]       = useState(new Date())
-  const [pointage,  setPointage]  = useState(null)
-  const [loading,   setLoading]   = useState(true)
-  const [actionBusy,setActionBusy]= useState(false)
-  const [gpsLoading,setGpsLoading]= useState(false)
-  const [error,     setError]     = useState(null)
-  const [confirmed, setConfirmed] = useState(null)
-  const [countdown, setCountdown] = useState(null)
+  const [now,        setNow]        = useState(new Date())
+  const [pointage,   setPointage]   = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [actionBusy, setActionBusy] = useState(false)
+  const [gpsLoading, setGpsLoading] = useState(false)
+  const [error,      setError]      = useState(null)
+  const [confirmed,  setConfirmed]  = useState(null)
+  const [countdown,  setCountdown]  = useState(null)
 
-  // Gauge data
   const [monthWorked,  setMonthWorked]  = useState(0)
   const [monthPlanned, setMonthPlanned] = useState(0)
   const [vacRestant,   setVacRestant]   = useState(VAC_QUOTA)
@@ -79,8 +76,6 @@ export default function MobileClockScreen() {
           getCongesByUser(user.id),
         ])
         setPointage(pt)
-
-        // Calcul heures mois
         const days = eachDayOfInterval({ start: new Date(year, month-1, 1), end: new Date(year, month, 0) })
         let worked = 0, planned = 0
         days.forEach(d => {
@@ -92,15 +87,10 @@ export default function MobileClockScreen() {
           if (p) worked += p.duree_minutes || 0
         })
         setMonthWorked(worked); setMonthPlanned(planned)
-
-        // Calcul vacances
-        const y0 = `${year}-01-01`; const y1 = `${year}-12-31`
+        const y0 = `${year}-01-01`, y1 = `${year}-12-31`
         const consomme = cg
           .filter(c => c.statut === 'approuve' && c.date_debut <= y1 && c.date_fin >= y0)
-          .reduce((s, c) => s + countWorkDays(
-            c.date_debut < y0 ? y0 : c.date_debut,
-            c.date_fin   > y1 ? y1 : c.date_fin
-          ), 0)
+          .reduce((s, c) => s + countWorkDays(c.date_debut < y0 ? y0 : c.date_debut, c.date_fin > y1 ? y1 : c.date_fin), 0)
         setVacRestant(Math.max(0, VAC_QUOTA - consomme))
       } catch (e) { setError(e.message) }
       finally { setLoading(false) }
@@ -148,106 +138,137 @@ export default function MobileClockScreen() {
     finally { setActionBusy(false) }
   }
 
-  const timeStr  = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  const secondStr= String(now.getSeconds()).padStart(2, '0')
-  const dateStr  = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-  const status   = !pointage?.heure_arrivee ? 'absent' : !pointage?.heure_depart ? 'present' : 'done'
-  const busy     = actionBusy || gpsLoading
+  const timeStr   = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  const secondStr = String(now.getSeconds()).padStart(2, '0')
+  const dateStr   = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const status    = !pointage?.heure_arrivee ? 'absent' : !pointage?.heure_depart ? 'present' : 'done'
+  const busy      = actionBusy || gpsLoading
 
-  // Écran confirmation
+  // ── Écran confirmation ─────────────────────────────────────
   if (confirmed) {
-    const R = 28, circ = 2 * Math.PI * R, offset = circ * (1 - countdown / COUNTDOWN)
+    const R = 30, circ = 2 * Math.PI * R, offset = circ * (1 - countdown / COUNTDOWN)
     return (
-      <div className="mob-screen mob-confirm">
-        <div className={`mob-confirm-banner ${confirmed.isArrivee ? 'mob-confirm-in' : 'mob-confirm-out'}`}>
-          <div className="mob-confirm-icon">{confirmed.isArrivee ? '✅' : '👋'}</div>
-          <strong>{confirmed.text} !</strong>
-          <span>Bonne {confirmed.isArrivee ? 'journée' : 'soirée'}, {user.name}</span>
+      <div className="mob-screen mob-confirm-screen">
+        <div className={`mob-confirm-card ${confirmed.isArrivee ? 'mob-card-in' : 'mob-card-out'}`}>
+          <div className="mob-confirm-emoji">{confirmed.isArrivee ? '✅' : '👋'}</div>
+          <strong className="mob-confirm-title">{confirmed.text} !</strong>
+          <span className="mob-confirm-sub">Bonne {confirmed.isArrivee ? 'journée' : 'soirée'}, {user.name}</span>
         </div>
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r={R} fill="none" stroke="var(--gray-100)" strokeWidth="5"/>
+        <svg width="78" height="78" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r={R} fill="none" stroke="#e5e7eb" strokeWidth="5"/>
           <circle cx="36" cy="36" r={R} fill="none"
-            stroke={confirmed.isArrivee ? 'var(--green-500)' : 'var(--brand-500)'}
+            stroke={confirmed.isArrivee ? '#16a34a' : '#2563eb'}
             strokeWidth="5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
             transform="rotate(-90 36 36)" style={{ transition: 'stroke-dashoffset 0.9s linear' }}
           />
-          <text x="36" y="41" textAnchor="middle" fontSize="18" fontWeight="700" fill="var(--gray-700)">{countdown}</text>
+          <text x="36" y="41" textAnchor="middle" fontSize="18" fontWeight="700" fill="#374151">{countdown}</text>
         </svg>
-        <button className="btn btn-outline" onClick={logout}>Déconnecter maintenant</button>
+        <button className="btn btn-outline mob-logout-btn" onClick={logout}>Déconnecter maintenant</button>
       </div>
     )
   }
 
   return (
     <div className="mob-screen">
-      {/* Heure */}
-      <div className="mob-time-block">
-        <div className="mob-time">
-          <span className="mob-time-hm">{timeStr}</span>
-          <span className="mob-time-sec">{secondStr}</span>
-        </div>
-        <div className="mob-date">{dateStr}</div>
+
+      {/* ── Section haut : heure + date ───────────────────── */}
+      <div className="mob-header">
         <div className="mob-greeting">Bonjour, <strong>{user.name}</strong></div>
-      </div>
-
-      {/* Statut */}
-      <div className={`mob-status mob-status-${status}`}>
-        {status === 'absent'  && "Non pointé aujourd'hui"}
-        {status === 'present' && `En service depuis ${formatDateTime(pointage.heure_arrivee)}`}
-        {status === 'done'    && `Journée terminée · ${minutesToHHMM(pointage?.duree_minutes)}`}
-      </div>
-
-      {/* Jauges */}
-      {!loading && (
-        <div className="mob-gauges">
-          <CircularGauge
-            value={Math.round(monthWorked / 60 * 10) / 10}
-            max={Math.round(monthPlanned / 60 * 10) / 10 || 1}
-            color="var(--green-500)"
-            label="Heures ce mois"
-            unit="h"
-            size={130}
-          />
-          <CircularGauge
-            value={vacRestant}
-            max={VAC_QUOTA}
-            color="#3b82f6"
-            label="Jours de vacances"
-            unit="j"
-            size={130}
-          />
+        <div className="mob-date">{dateStr}</div>
+        <div className="mob-clock">
+          <span className="mob-clock-hm">{timeStr}</span>
+          <span className="mob-clock-sec">{secondStr}</span>
         </div>
-      )}
-      {loading && <div className="loading-center"><div className="spinner" /></div>}
+      </div>
 
-      {/* Erreur */}
+      {/* ── Statut ────────────────────────────────────────── */}
+      <div className={`mob-status mob-status-${status}`}>
+        {status === 'absent'  && <><span className="mob-status-dot" />Non pointé aujourd'hui</>}
+        {status === 'present' && <><span className="mob-status-dot mob-dot-green" />En service depuis {formatDateTime(pointage.heure_arrivee)}</>}
+        {status === 'done'    && <><span className="mob-status-dot mob-dot-blue" />Journée terminée · {minutesToHHMM(pointage?.duree_minutes)}</>}
+      </div>
+
+      {/* ── Erreur GPS ────────────────────────────────────── */}
       {error && <div className="mob-error">{error}</div>}
 
-      {/* Boutons d'action en bas */}
-      <div className="mob-actions">
+      {/* ── ACTION PRINCIPALE ─────────────────────────────── */}
+      <div className="mob-action-zone">
         {status === 'absent' && (
-          <button className="mob-btn mob-btn-in" onClick={clockIn} disabled={busy}>
-            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            {gpsLoading ? 'GPS…' : actionBusy ? 'Enregistrement…' : 'Arrivée'}
+          <button className="mob-action-btn mob-btn-arrive" onClick={clockIn} disabled={busy}>
+            {gpsLoading ? (
+              <><span className="mob-action-spinner" />Vérification GPS…</>
+            ) : actionBusy ? (
+              <><span className="mob-action-spinner" />Enregistrement…</>
+            ) : (
+              <>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Pointer mon arrivée
+              </>
+            )}
           </button>
         )}
+
         {status === 'present' && (
-          <button className="mob-btn mob-btn-out" onClick={clockOut} disabled={busy}>
-            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            {gpsLoading ? 'GPS…' : actionBusy ? 'Enregistrement…' : 'Départ'}
+          <button className="mob-action-btn mob-btn-depart" onClick={clockOut} disabled={busy}>
+            {gpsLoading ? (
+              <><span className="mob-action-spinner" />Vérification GPS…</>
+            ) : actionBusy ? (
+              <><span className="mob-action-spinner" />Enregistrement…</>
+            ) : (
+              <>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Pointer mon départ
+              </>
+            )}
           </button>
         )}
+
         {status === 'done' && (
-          <div className="mob-done">
-            <span>🎉</span>
-            <span>Bonne fin de journée !</span>
+          <div className="mob-done-card">
+            <span className="mob-done-emoji">🎉</span>
+            <div>
+              <div className="mob-done-title">Bonne fin de journée !</div>
+              <div className="mob-done-sub">{minutesToHHMM(pointage?.duree_minutes)} travaillées aujourd'hui</div>
+            </div>
           </div>
         )}
       </div>
+
+      {/* ── Jauges ────────────────────────────────────────── */}
+      {!loading ? (
+        <div className="mob-gauges">
+          <div className="mob-gauge-wrap">
+            <CircularGauge
+              value={Math.round(monthWorked / 60 * 10) / 10}
+              max={Math.round(monthPlanned / 60 * 10) / 10 || 1}
+              color="#16a34a"
+              label="Heures ce mois"
+              unit="h"
+              size={120}
+            />
+          </div>
+          <div className="mob-gauge-wrap">
+            <CircularGauge
+              value={vacRestant}
+              max={VAC_QUOTA}
+              color="#2563eb"
+              label="Jours vacances"
+              unit="j"
+              size={120}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="loading-center" style={{ padding: '1.5rem' }}>
+          <div className="spinner" />
+        </div>
+      )}
+
     </div>
   )
 }

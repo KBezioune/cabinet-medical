@@ -16,6 +16,7 @@ import NotesDefrais from '../shared/NotesDefrais'
 import Aide from '../shared/Aide'
 import Messages from '../shared/Messages'
 import { getUnreadMessageCount } from '../../lib/db'
+import KBLogo from '../shared/KBLogo'
 import './AdminDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
@@ -162,11 +163,7 @@ export default function AdminDashboard() {
       {/* ── Sidebar desktop ─────────────────────────────────── */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
-          <div className="admin-sidebar-logo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-            </svg>
-          </div>
+          <KBLogo size={34} variant="rounded" />
           <div className="admin-sidebar-brand-text">
             <span className="admin-sidebar-brand-title">KB Medical</span>
             <span className="admin-sidebar-brand-sub">Gestion RH</span>

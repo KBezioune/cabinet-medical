@@ -142,19 +142,7 @@
     border-bottom: 1px solid var(--gray-100);
   }
 
-  .admin-sidebar-logo {
-    width: 2.125rem;
-    height: 2.125rem;
-    background: linear-gradient(135deg, var(--brand-600), var(--teal-600));
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.125rem;
-    flex-shrink: 0;
-  }
-
-  .admin-sidebar-brand-text { display: flex; flex-direction: column; min-width: 0; }
+.admin-sidebar-brand-text { display: flex; flex-direction: column; min-width: 0; }
   .admin-sidebar-brand-title {
     font-size: 0.75rem;
     font-weight: 800;
