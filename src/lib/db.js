@@ -332,6 +332,40 @@ export const deletePlanningTache = async (id) => {
   if (error) { log('deletePlanningTache', error); throw error }
 }
 
+// ── PLANNING SHIFTS ───────────────────────────────────────────
+// SQL : CREATE TABLE planning_shifts (
+//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+//   user_id TEXT NOT NULL,
+//   date DATE NOT NULL,
+//   heure_debut TIME,
+//   heure_fin TIME,
+//   type_poste TEXT DEFAULT 'consultation',
+//   created_at TIMESTAMPTZ DEFAULT NOW(),
+//   UNIQUE(user_id, date)
+// );
+// ALTER TABLE planning_shifts ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "allow_all" ON planning_shifts FOR ALL USING (true);
+
+export const getPlanningShifts = async (userIds, from, to) => {
+  const { data, error } = await supabase.from('planning_shifts').select('*')
+    .in('user_id', userIds).gte('date', from).lte('date', to)
+  if (error) { log('getPlanningShifts', error); throw error }
+  return data || []
+}
+
+export const upsertPlanningShift = async (shift) => {
+  const { data, error } = await supabase.from('planning_shifts')
+    .upsert(shift, { onConflict: 'user_id,date' }).select().single()
+  if (error) { log('upsertPlanningShift', error); throw error }
+  return data
+}
+
+export const deletePlanningShift = async (userId, date) => {
+  const { error } = await supabase.from('planning_shifts')
+    .delete().eq('user_id', userId).eq('date', date)
+  if (error) { log('deletePlanningShift', error); throw error }
+}
+
 // ── CONTRATS ──────────────────────────────────────────────────
 
 export const getUserContract = async (userId) => {
