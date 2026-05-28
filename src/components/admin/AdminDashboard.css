@@ -18,7 +18,7 @@
 .admin-content {
   flex: 1;
   min-width: 0;
-  padding: 1rem 1rem calc(60px + 1.25rem); /* bottom = bottom-nav + marge */
+  padding: 1rem 1rem calc(60px + env(safe-area-inset-bottom, 0px) + 1.25rem); /* bottom-nav + safe area + marge */
   display: flex;
   flex-direction: column;
   gap: 1.25rem;

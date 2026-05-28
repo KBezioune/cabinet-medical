@@ -14,6 +14,7 @@
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   height: calc(100vh - 260px);
+  height: calc(100dvh - 260px);
   min-height: 420px;
 }
 
@@ -113,11 +114,13 @@
 .msg-list {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 1rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   background: #fafafa;
+  min-height: 0;
 }
 
 .msg-empty {
@@ -186,7 +189,7 @@
   border-radius: 1rem 1rem 1rem 0.25rem;
   background: #fff;
   border: 1.5px solid var(--gray-100);
-  font-size: 0.875rem;
+  font-size: 1rem;        /* ≥16px : empêche le zoom iOS */
   color: var(--gray-800);
   line-height: 1.5;
   word-break: break-word;
@@ -215,6 +218,10 @@
   border-top: 1.5px solid var(--gray-100);
   background: #fff;
   flex-shrink: 0;
+  /* Colle en bas même quand le clavier iPhone monte */
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .msg-input {
@@ -222,7 +229,7 @@
   padding: 0.625rem 0.875rem;
   border: 1.5px solid var(--gray-200);
   border-radius: 1.5rem;
-  font-size: 0.875rem;
+  font-size: 1rem;         /* ≥16px : empêche le zoom automatique iOS */
   outline: none;
   transition: border-color 0.15s;
   background: var(--gray-50);
@@ -286,11 +293,91 @@
 
 .msg-copy-btn { margin-top: 0.25rem; }
 
-/* ── Responsive ─────────────────────────────────────────────── */
+/* ── Responsive mobile ───────────────────────────────────────── */
 @media (max-width: 640px) {
-  .msg-container { flex-direction: column; height: auto; min-height: 0; }
-  .msg-sidebar { width: 100%; flex-direction: row; border-right: none; border-bottom: 1.5px solid var(--gray-100); overflow-x: auto; }
+
+  /* Le wrapper ne crée plus de gap superflu */
+  .msg-wrap { gap: 0.5rem; }
+
+  /*
+   * Hauteur calculée pour tenir entre le header de l'app,
+   * le breadcrumb/titre et la bottom nav (60 px).
+   * 100dvh = viewport dynamique : se réduit quand le clavier iPhone s'ouvre.
+   * Fallback 100vh pour les anciens Safari.
+   */
+  .msg-container {
+    flex-direction: column;
+    height: calc(100vh  - 210px);   /* fallback */
+    height: calc(100dvh - 210px);   /* dynamique clavier iOS */
+    min-height: 300px;
+    border-radius: var(--radius, 8px);
+  }
+
+  /* Sidebar conversations : défile horizontalement en haut */
+  .msg-sidebar {
+    width: 100%;
+    flex-direction: row;
+    height: auto;
+    border-right: none;
+    border-bottom: 1.5px solid var(--gray-100);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+  }
   .msg-sidebar-title { display: none; }
-  .msg-conv-btn { padding: 0.5rem 0.75rem; white-space: nowrap; }
-  .msg-chat { height: 480px; }
+  .msg-conv-btn      { padding: 0.5rem 0.75rem; white-space: nowrap; }
+
+  /* Zone de chat : remplit tout l'espace restant */
+  .msg-chat {
+    flex: 1;
+    min-height: 0;          /* nécessaire pour que flex respecte overflow */
+    height: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Liste des messages : scroll fluide iOS */
+  .msg-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /*
+     * Padding bas = safe area (bouton home iPhone X+).
+     * Quand le clavier est ouvert la safe-area passe à 0 — adaptatif.
+     */
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /*
+   * Barre de saisie : sticky bottom.
+   * padding-bottom = safe area pour ne pas couvrir le home indicator.
+   * La bottom nav (60 px) est déjà compensée par le padding-bottom
+   * de .assistant-dashboard / .admin-content — pas de doublon nécessaire.
+   */
+  .msg-input-bar {
+    position: sticky;
+    bottom: 0;
+    padding-top: 0.625rem;
+    padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0px));
+    background: #fff;
+    z-index: 20;
+    /* Séparateur plus visible sur mobile */
+    border-top: 1.5px solid var(--gray-200, #e5e7eb);
+    box-shadow: 0 -2px 8px rgb(0 0 0 / 0.06);
+  }
+
+  /* Bulles : lisibles sans zoom (min 16 px) */
+  .msg-bubble       { font-size: 1rem; }
+  .msg-bubble-time  { font-size: 0.6875rem; }
+  .msg-bubble-sender { font-size: 0.75rem; }
+
+  /* Champ texte : 16 px strict — iOS ne zoomera plus au tap */
+  .msg-input {
+    font-size: 1rem;
+    padding: 0.5625rem 0.875rem;
+  }
+
+  /* Bulles un peu plus larges sur petit écran */
+  .msg-bubble-wrap { max-width: 88%; }
 }
