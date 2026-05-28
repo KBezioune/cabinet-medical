@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ClockInOut from './ClockInOut'
+import MobileClockScreen from './MobileClockScreen'
 import MonPlanningTaches from './MonPlanningTaches'
 import MyHistory from './MyHistory'
 import DemandeConge from './DemandeConge'
 import MonSolde from './MonSolde'
 import PlanningPartage from '../shared/PlanningPartage'
+import NotesDefrais from '../shared/NotesDefrais'
 import './AssistantDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
@@ -47,19 +49,33 @@ const IC = {
       <path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"/>
     </svg>
   ),
+  frais: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <line x1="2" y1="10" x2="22" y2="10"/>
+    </svg>
+  ),
 }
 
 const TABS = [
-  { id: 'clock',    label: 'Pointage'       },
-  { id: 'schedule', label: 'Mon Planning'   },
-  { id: 'equipe',   label: 'Planning équipe'},
-  { id: 'solde',    label: 'Mon Solde'      },
-  { id: 'history',  label: 'Mes Pointages'  },
-  { id: 'conges',   label: 'Congés'         },
+  { id: 'clock',    label: 'Pointage'        },
+  { id: 'schedule', label: 'Mon Planning'    },
+  { id: 'equipe',   label: 'Planning équipe' },
+  { id: 'solde',    label: 'Mon Solde'       },
+  { id: 'history',  label: 'Mes Pointages'   },
+  { id: 'conges',   label: 'Congés'          },
+  { id: 'frais',    label: 'Notes de frais'  },
 ]
 
 export default function AssistantDashboard() {
-  const [tab, setTab] = useState('clock')
+  const [tab,      setTab]      = useState('clock')
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   return (
     <div className="assistant-dashboard">
@@ -80,12 +96,13 @@ export default function AssistantDashboard() {
 
       {/* Contenu */}
       <div className="tab-content">
-        {tab === 'clock'    && <ClockInOut />}
+        {tab === 'clock'    && (isMobile ? <MobileClockScreen /> : <ClockInOut />)}
         {tab === 'schedule' && <MonPlanningTaches />}
         {tab === 'equipe'   && <PlanningPartage />}
         {tab === 'solde'    && <MonSolde />}
         {tab === 'history'  && <MyHistory />}
         {tab === 'conges'   && <DemandeConge />}
+        {tab === 'frais'    && <NotesDefrais />}
       </div>
 
       {/* Bottom nav mobile */}
