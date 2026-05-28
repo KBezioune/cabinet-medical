@@ -115,7 +115,16 @@ const IC = {
   ),
 }
 
-// ── Onglets avec sections ──────────────────────────────────────
+// Icône hamburger pour le bouton Menu
+const IC_MENU = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="6"  x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+)
+
+// ── Tous les onglets ───────────────────────────────────────────
 const ALL_TABS = [
   { id: 'pointage',  label: 'Pointage',           roles: ['manager'],           section: null },
   { id: 'pointages', label: 'Pointages',           roles: ['admin'],             section: null },
@@ -134,33 +143,46 @@ const ALL_TABS = [
   { id: 'aide',      label: 'Aide & Support',      roles: ['admin', 'manager'], section: null },
 ]
 
+// IDs épinglés dans la bottom nav mobile (4 + Menu)
+const PINNED_IDS = ['pointages', 'pointage', 'equipe', 'soldes', 'messages']
+
 export default function AdminDashboard() {
   const { user } = useAuth()
 
-  const tabs     = ALL_TABS.filter(t => t.roles.includes(user.role))
-  const [tab, setTab] = useState(tabs[0]?.id || 'pointages')
+  const tabs       = ALL_TABS.filter(t => t.roles.includes(user.role))
+  const [tab, setTab]           = useState(tabs[0]?.id || 'pointages')
   const [unreadMsg, setUnreadMsg] = useState(0)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   const isAdmin   = user.role === 'admin'
   const pageTitle = isAdmin ? 'Cabinet Médical Dr Bezioune' : `Bonjour, ${user.name}`
   const pageSub   = isAdmin ? 'Bienvenue, Dr. Bezioune' : 'Responsable — Assistante médicale'
 
+  // 4 onglets épinglés (filtrés selon le rôle, max 4)
+  const pinnedTabs  = tabs.filter(t => PINNED_IDS.includes(t.id))
+  // Onglets dans le drawer = tout le reste
+  const drawerTabs  = tabs.filter(t => !PINNED_IDS.includes(t.id))
+  // Le tab actif est-il dans le drawer ?
+  const tabInDrawer = drawerTabs.some(t => t.id === tab)
+
   useEffect(() => {
     const fetch = async () => {
-      try {
-        const n = await getUnreadMessageCount(user.id, isAdmin)
-        setUnreadMsg(n)
-      } catch {}
+      try { setUnreadMsg(await getUnreadMessageCount(user.id, isAdmin)) } catch {}
     }
     fetch()
     const iv = setInterval(fetch, 30000)
     return () => clearInterval(iv)
   }, [user.id, isAdmin])
 
+  const navigate = (id) => {
+    setTab(id)
+    setDrawerOpen(false)
+  }
+
   return (
     <div className="admin-layout">
 
-      {/* ── Sidebar desktop ─────────────────────────────────── */}
+      {/* ── Sidebar desktop uniquement ──────────────────────── */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
           <KBLogo size={34} variant="rounded" />
@@ -199,7 +221,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* ── Contenu principal ─────────────────────────────────── */}
+      {/* ── Contenu principal ───────────────────────────────── */}
       <div className="admin-content">
         <div className="admin-page-header">
           <h1 className="admin-title">{pageTitle}</h1>
@@ -225,15 +247,17 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Bottom nav mobile ─────────────────────────────────── */}
+      {/* ══ Bottom nav mobile : 5 icônes ════════════════════════ */}
       <nav className="admin-bottom-nav" aria-label="Navigation principale">
-        {tabs.map(t => (
+
+        {/* 4 onglets épinglés */}
+        {pinnedTabs.map(t => (
           <button
             key={t.id}
             className={`admin-bottom-btn${tab === t.id ? ' active' : ''}`}
-            onClick={() => setTab(t.id)}
-            title={t.label}
+            onClick={() => navigate(t.id)}
             aria-label={t.label}
+            title={t.label}
           >
             <span className="admin-bottom-icon" style={{ position: 'relative' }}>
               {IC[t.id]}
@@ -241,10 +265,100 @@ export default function AdminDashboard() {
                 <span className="admin-msg-badge-dot" />
               )}
             </span>
+            <span className="admin-bottom-label">{
+              t.id === 'pointages' || t.id === 'pointage' ? 'Pointage'
+              : t.id === 'equipe'   ? 'Planning'
+              : t.id === 'soldes'   ? 'Soldes'
+              : t.id === 'messages' ? 'Messages'
+              : t.label
+            }</span>
             {tab === t.id && <span className="admin-bottom-dot" aria-hidden="true" />}
           </button>
         ))}
+
+        {/* Bouton Menu — ouvre le drawer */}
+        <button
+          className={`admin-bottom-btn${drawerOpen || tabInDrawer ? ' active' : ''}`}
+          onClick={() => setDrawerOpen(v => !v)}
+          aria-label="Menu"
+          aria-expanded={drawerOpen}
+          title="Menu"
+        >
+          <span className="admin-bottom-icon">{IC_MENU}</span>
+          <span className="admin-bottom-label">Menu</span>
+          {tabInDrawer && !drawerOpen && <span className="admin-bottom-dot" aria-hidden="true" />}
+        </button>
+
       </nav>
+
+      {/* ══ Drawer menu ═════════════════════════════════════════ */}
+      {drawerOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="admin-drawer-overlay"
+            onClick={() => setDrawerOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Panneau */}
+          <div className="admin-drawer" role="dialog" aria-label="Menu de navigation">
+            <div className="admin-drawer-handle" />
+
+            <div className="admin-drawer-header">
+              <span className="admin-drawer-title">Navigation</span>
+              <button
+                className="admin-drawer-close"
+                onClick={() => setDrawerOpen(false)}
+                aria-label="Fermer le menu"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <nav className="admin-drawer-nav">
+              {drawerTabs.map((t, i) => {
+                const prevSection = i > 0 ? drawerTabs[i-1].section : null
+                const showSection = t.section && t.section !== prevSection
+                return (
+                  <Fragment key={t.id}>
+                    {showSection && (
+                      <div className="admin-drawer-section">{t.section}</div>
+                    )}
+                    <button
+                      className={`admin-drawer-item${tab === t.id ? ' active' : ''}`}
+                      onClick={() => navigate(t.id)}
+                    >
+                      <span className="admin-drawer-icon">{IC[t.id]}</span>
+                      <span className="admin-drawer-label">{t.label}</span>
+                      {t.id === 'messages' && unreadMsg > 0 && (
+                        <span className="admin-drawer-badge">{unreadMsg > 9 ? '9+' : unreadMsg}</span>
+                      )}
+                      {tab === t.id && (
+                        <svg className="admin-drawer-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </button>
+                  </Fragment>
+                )
+              })}
+            </nav>
+
+            {/* Footer utilisateur dans le drawer */}
+            <div className="admin-drawer-footer">
+              <div className="admin-sidebar-avatar">{user.name[0]}</div>
+              <div className="admin-sidebar-user-info">
+                <span className="admin-sidebar-user-name">{user.name}</span>
+                <span className="admin-sidebar-user-role">{isAdmin ? 'Médecin · Admin' : 'Manager'}</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
     </div>
   )
