@@ -3,7 +3,25 @@ import { getUserById } from './localData'
 
 const log = (fn, err) => console.error(`[db.${fn}]`, err?.code, err?.message, err)
 
-// Test de connexion — appelé au démarrage pour diagnostiquer
+// ── MODE TEST ─────────────────────────────────────────────────
+export const TEST_USER_ID = '00000000-0000-0000-0000-000000000099'
+
+const isTestMode = () => {
+  try {
+    const u = JSON.parse(sessionStorage.getItem('cabinet_user') || 'null')
+    return u?.id === TEST_USER_ID
+  } catch { return false }
+}
+
+// Renvoie un enregistrement fictif pour les inserts/updates en mode test
+const mockRec = (data = {}) => ({
+  ...data,
+  id: `test-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+  created_at: new Date().toISOString(),
+})
+
+// ── CONNEXION ─────────────────────────────────────────────────
+
 export const testConnection = async () => {
   try {
     const { error } = await supabase.from('pointages').select('id').limit(1)
@@ -19,11 +37,7 @@ export const testConnection = async () => {
 
 export const getPointageByUserAndDate = async (userId, date) => {
   const { data, error } = await supabase
-    .from('pointages')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('date', date)
-    .maybeSingle()
+    .from('pointages').select('*').eq('user_id', userId).eq('date', date).maybeSingle()
   if (error) { log('getPointageByUserAndDate', error); throw error }
   return data
 }
@@ -52,20 +66,29 @@ export const getAllPointagesFiltered = async ({ userId, date } = {}) => {
 }
 
 export const insertPointage = async (data) => {
+  if (isTestMode()) return mockRec({ ...data, duree_minutes: null })
   const { data: record, error } = await supabase.from('pointages').insert(data).select().single()
   if (error) { log('insertPointage', error); throw error }
   return record
 }
 
 export const updatePointage = async (id, data) => {
+  if (isTestMode()) return mockRec({ id, ...data })
   const { data: record, error } = await supabase.from('pointages').update(data).eq('id', id).select().single()
   if (error) { log('updatePointage', error); throw error }
   return record
 }
 
 export const deletePointage = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('pointages').delete().eq('id', id)
   if (error) { log('deletePointage', error); throw error }
+}
+
+// Nettoyage des pointages de test — bypass du guard intentionnel
+export const deleteTestUserPointages = async () => {
+  const { error } = await supabase.from('pointages').delete().eq('user_id', TEST_USER_ID)
+  if (error) { log('deleteTestUserPointages', error); throw error }
 }
 
 // ── USERS / PINS ─────────────────────────────────────────────
@@ -79,6 +102,7 @@ export const syncPinsFromDb = async () => {
 }
 
 export const updateUserPinInDb = async (userId, newPin) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('users').update({ pin: newPin }).eq('id', userId)
   if (error) { log('updateUserPinInDb', error); throw error }
 }
@@ -98,6 +122,7 @@ export const getPlanningForUsers = async (userIds) => {
 }
 
 export const upsertPlanning = async (userId, jour_semaine, heure_debut, heure_fin) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('planning').upsert(
     { user_id: userId, jour_semaine, heure_debut: heure_debut || null, heure_fin: heure_fin || null, actif: !!(heure_debut && heure_fin) },
     { onConflict: 'user_id,jour_semaine' }
@@ -122,6 +147,7 @@ export const getPlanningEventsByUser = async (userId, from, to) => {
 }
 
 export const upsertPlanningEvent = async (event) => {
+  if (isTestMode()) return mockRec(event)
   const { data, error } = await supabase.from('planning_events')
     .upsert(event, { onConflict: 'user_id,date' }).select().single()
   if (error) { log('upsertPlanningEvent', error); throw error }
@@ -129,6 +155,7 @@ export const upsertPlanningEvent = async (event) => {
 }
 
 export const deletePlanningEvent = async (userId, date) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('planning_events')
     .delete().eq('user_id', userId).eq('date', date)
   if (error) { log('deletePlanningEvent', error); throw error }
@@ -137,61 +164,43 @@ export const deletePlanningEvent = async (userId, date) => {
 // ── CONGÉS ────────────────────────────────────────────────────
 
 export const getCongesByUser = async (userId) => {
-  const { data, error } = await supabase
-    .from('conges')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('conges').select('*')
+    .eq('user_id', userId).order('created_at', { ascending: false })
   if (error) { log('getCongesByUser', error); throw error }
   return data || []
 }
 
 export const getAllConges = async () => {
-  const { data, error } = await supabase
-    .from('conges')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('conges').select('*').order('created_at', { ascending: false })
   if (error) { log('getAllConges', error); throw error }
   return data || []
 }
 
 export const getCongesPending = async () => {
-  const { data, error } = await supabase
-    .from('conges')
-    .select('*')
-    .eq('statut', 'en_attente')
-    .order('created_at', { ascending: true })
+  const { data, error } = await supabase.from('conges').select('*')
+    .eq('statut', 'en_attente').order('created_at', { ascending: true })
   if (error) { log('getCongesPending', error); throw error }
   return data || []
 }
 
 export const insertConge = async (conge) => {
-  const { data, error } = await supabase
-    .from('conges')
-    .insert(conge)
-    .select()
-    .single()
+  if (isTestMode()) return mockRec({ ...conge, statut: 'en_attente' })
+  const { data, error } = await supabase.from('conges').insert(conge).select().single()
   if (error) { log('insertConge', error); throw error }
   return data
 }
 
 export const updateCongeStatut = async (id, statut, traitePar, commentaire = '') => {
-  const { data, error } = await supabase
-    .from('conges')
-    .update({
-      statut,
-      traite_par: traitePar,
-      traite_le: new Date().toISOString(),
-      commentaire,
-    })
-    .eq('id', id)
-    .select()
-    .single()
+  if (isTestMode()) return mockRec({ id, statut, traite_par: traitePar, commentaire })
+  const { data, error } = await supabase.from('conges')
+    .update({ statut, traite_par: traitePar, traite_le: new Date().toISOString(), commentaire })
+    .eq('id', id).select().single()
   if (error) { log('updateCongeStatut', error); throw error }
   return data
 }
 
 export const deleteConge = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('conges').delete().eq('id', id)
   if (error) { log('deleteConge', error); throw error }
 }
@@ -199,72 +208,50 @@ export const deleteConge = async (id) => {
 // ── LOGS D'ACCÈS ─────────────────────────────────────────────
 
 export const getAccessLogs = async (limit = 50) => {
-  const { data, error } = await supabase
-    .from('access_logs')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit)
+  const { data, error } = await supabase.from('access_logs').select('*')
+    .order('created_at', { ascending: false }).limit(limit)
   if (error) { log('getAccessLogs', error); throw error }
   return data || []
 }
 
 export const logAccess = async ({ userId, action, userAgent }) => {
+  if (isTestMode()) return
   try {
     await supabase.from('access_logs').insert({
-      user_id:    userId ?? null,
-      action,
-      ip:         null, // non disponible côté client
-      user_agent: userAgent ?? null,
+      user_id: userId ?? null, action, ip: null, user_agent: userAgent ?? null,
     })
-  } catch {} // non bloquant — ne doit jamais interrompre le flux de connexion
+  } catch {}
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────
 
 export const insertNotification = async (notif) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('notifications').insert(notif)
   if (error) { log('insertNotification', error); throw error }
 }
 
 export const getNotificationsForUser = async (userId) => {
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(40)
+  const { data, error } = await supabase.from('notifications').select('*')
+    .eq('user_id', userId).order('created_at', { ascending: false }).limit(40)
   if (error) { log('getNotificationsForUser', error); throw error }
   return data || []
 }
 
 export const markNotificationRead = async (id) => {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ lu: true })
-    .eq('id', id)
+  if (isTestMode()) return
+  const { error } = await supabase.from('notifications').update({ lu: true }).eq('id', id)
   if (error) { log('markNotificationRead', error); throw error }
 }
 
 export const markAllNotificationsRead = async (userId) => {
-  const { error } = await supabase
-    .from('notifications')
-    .update({ lu: true })
-    .eq('user_id', userId)
-    .eq('lu', false)
+  if (isTestMode()) return
+  const { error } = await supabase.from('notifications').update({ lu: true })
+    .eq('user_id', userId).eq('lu', false)
   if (error) { log('markAllNotificationsRead', error); throw error }
 }
 
 // ── NOTES DE FRAIS ────────────────────────────────────────────
-// Table SQL : CREATE TABLE expense_reports (
-//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-//   user_id TEXT NOT NULL, date DATE NOT NULL,
-//   montant NUMERIC(10,2) NOT NULL,
-//   categorie TEXT NOT NULL CHECK (categorie IN ('repas','transport','materiel','autre')),
-//   description TEXT, justificatif_url TEXT,
-//   statut TEXT DEFAULT 'en_attente' CHECK (statut IN ('en_attente','approuve','refuse')),
-//   traite_par TEXT, traite_le TIMESTAMPTZ, commentaire TEXT,
-//   created_at TIMESTAMPTZ DEFAULT NOW()
-// );
 
 export const getExpenseReports = async () => {
   const { data, error } = await supabase.from('expense_reports').select('*').order('created_at', { ascending: false })
@@ -273,18 +260,21 @@ export const getExpenseReports = async () => {
 }
 
 export const getExpenseReportsByUser = async (userId) => {
-  const { data, error } = await supabase.from('expense_reports').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('expense_reports').select('*')
+    .eq('user_id', userId).order('created_at', { ascending: false })
   if (error) { log('getExpenseReportsByUser', error); throw error }
   return data || []
 }
 
 export const insertExpenseReport = async (report) => {
+  if (isTestMode()) return mockRec({ ...report, statut: 'en_attente' })
   const { data, error } = await supabase.from('expense_reports').insert(report).select().single()
   if (error) { log('insertExpenseReport', error); throw error }
   return data
 }
 
 export const updateExpenseReportStatut = async (id, statut, traitePar, commentaire = '') => {
+  if (isTestMode()) return mockRec({ id, statut, traite_par: traitePar, commentaire })
   const { data, error } = await supabase.from('expense_reports')
     .update({ statut, traite_par: traitePar, traite_le: new Date().toISOString(), commentaire })
     .eq('id', id).select().single()
@@ -293,6 +283,7 @@ export const updateExpenseReportStatut = async (id, statut, traitePar, commentai
 }
 
 export const deleteExpenseReport = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('expense_reports').delete().eq('id', id)
   if (error) { log('deleteExpenseReport', error); throw error }
 }
@@ -316,35 +307,26 @@ export const getPlanningTachesByUser = async (userId, from, to) => {
 }
 
 export const insertPlanningTache = async (tache) => {
+  if (isTestMode()) return mockRec(tache)
   const { data, error } = await supabase.from('planning_taches').insert(tache).select().single()
   if (error) { log('insertPlanningTache', error); throw error }
   return data
 }
 
 export const updatePlanningTache = async (id, data) => {
+  if (isTestMode()) return mockRec({ id, ...data })
   const { data: rec, error } = await supabase.from('planning_taches').update(data).eq('id', id).select().single()
   if (error) { log('updatePlanningTache', error); throw error }
   return rec
 }
 
 export const deletePlanningTache = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('planning_taches').delete().eq('id', id)
   if (error) { log('deletePlanningTache', error); throw error }
 }
 
 // ── PLANNING SHIFTS ───────────────────────────────────────────
-// SQL : CREATE TABLE planning_shifts (
-//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-//   user_id TEXT NOT NULL,
-//   date DATE NOT NULL,
-//   heure_debut TIME,
-//   heure_fin TIME,
-//   type_poste TEXT DEFAULT 'consultation',
-//   created_at TIMESTAMPTZ DEFAULT NOW(),
-//   UNIQUE(user_id, date)
-// );
-// ALTER TABLE planning_shifts ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "allow_all" ON planning_shifts FOR ALL USING (true);
 
 export const getPlanningShifts = async (userIds, from, to) => {
   const { data, error } = await supabase.from('planning_shifts').select('*')
@@ -354,19 +336,20 @@ export const getPlanningShifts = async (userIds, from, to) => {
 }
 
 export const upsertPlanningShift = async (shift) => {
-  const { data, error } = await supabase.from('planning_shifts')
-    .insert(shift).select().single()
+  if (isTestMode()) return mockRec(shift)
+  const { data, error } = await supabase.from('planning_shifts').insert(shift).select().single()
   if (error) { log('upsertPlanningShift', error); throw error }
   return data
 }
 
 export const deletePlanningShift = async (userId, date) => {
-  const { error } = await supabase.from('planning_shifts')
-    .delete().eq('user_id', userId).eq('date', date)
+  if (isTestMode()) return
+  const { error } = await supabase.from('planning_shifts').delete().eq('user_id', userId).eq('date', date)
   if (error) { log('deletePlanningShift', error); throw error }
 }
 
 export const updatePlanningShiftById = async (id, data) => {
+  if (isTestMode()) return mockRec({ id, ...data })
   const { data: rec, error } = await supabase.from('planning_shifts')
     .update(data).eq('id', id).select().single()
   if (error) { log('updatePlanningShiftById', error); throw error }
@@ -374,6 +357,7 @@ export const updatePlanningShiftById = async (id, data) => {
 }
 
 export const deletePlanningShiftById = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('planning_shifts').delete().eq('id', id)
   if (error) { log('deletePlanningShiftById', error); throw error }
 }
@@ -383,13 +367,13 @@ export const deletePlanningShiftById = async (id) => {
 export const getUserContract = async (userId) => {
   const { data, error } = await supabase.from('users')
     .select('taux_activite, heures_par_jour, date_entree, type_contrat, droit_vacances, salaire_brut')
-    .eq('id', userId)
-    .maybeSingle()
+    .eq('id', userId).maybeSingle()
   if (error) { log('getUserContract', error); return null }
   return data
 }
 
 export const updateUserContract = async (userId, contractData) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('users').update(contractData).eq('id', userId)
   if (error) { log('updateUserContract', error); throw error }
 }
@@ -402,14 +386,6 @@ export const getAllUserContracts = async () => {
 }
 
 // ── MESSAGES ──────────────────────────────────────────────────
-// SQL : CREATE TABLE messages (
-//   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-//   from_user_id TEXT NOT NULL,
-//   to_user_id TEXT,   -- NULL = broadcast à toute l'équipe
-//   content TEXT NOT NULL,
-//   read BOOLEAN DEFAULT false,
-//   created_at TIMESTAMPTZ DEFAULT NOW()
-// );
 
 export const getMessages = async (userId, isAdmin) => {
   let q
@@ -426,12 +402,14 @@ export const getMessages = async (userId, isAdmin) => {
 }
 
 export const sendMessage = async (message) => {
+  if (isTestMode()) return mockRec({ ...message, read: false })
   const { data, error } = await supabase.from('messages').insert(message).select().single()
   if (error) { log('sendMessage', error); throw error }
   return data
 }
 
 export const markMessageRead = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('messages').update({ read: true }).eq('id', id)
   if (error) { log('markMessageRead', error) }
 }
@@ -462,18 +440,21 @@ export const getPlanningTasks = async (userIds, from, to) => {
 }
 
 export const insertPlanningTask = async (task) => {
+  if (isTestMode()) return mockRec(task)
   const { data, error } = await supabase.from('planning_tasks').insert(task).select().single()
   if (error) { log('insertPlanningTask', error); throw error }
   return data
 }
 
 export const updatePlanningTask = async (id, data) => {
+  if (isTestMode()) return mockRec({ id, ...data })
   const { data: rec, error } = await supabase.from('planning_tasks').update(data).eq('id', id).select().single()
   if (error) { log('updatePlanningTask', error); throw error }
   return rec
 }
 
 export const deletePlanningTask = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('planning_tasks').delete().eq('id', id)
   if (error) { log('deletePlanningTask', error); throw error }
 }
@@ -481,16 +462,19 @@ export const deletePlanningTask = async (id) => {
 // ── GESTION EMPLOYÉES ─────────────────────────────────────────
 
 export const insertUserInDb = async ({ id, name, pin, role }) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('users').upsert({ id, name, pin, role }, { onConflict: 'id' })
   if (error) { log('insertUserInDb', error); throw error }
 }
 
 export const updateUserInDb = async (id, data) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('users').update(data).eq('id', id)
   if (error) { log('updateUserInDb', error); throw error }
 }
 
 export const deleteUserInDb = async (id) => {
+  if (isTestMode()) return
   const { error } = await supabase.from('users').delete().eq('id', id)
   if (error) { log('deleteUserInDb', error); throw error }
 }

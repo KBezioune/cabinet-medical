@@ -4,11 +4,18 @@ import Notifications from './shared/Notifications'
 import './Layout.css'
 
 export default function Layout({ children }) {
-  const { user, logout } = useAuth()
+  const { user, logout, isTestMode } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div className="layout">
+      {/* ── Barre mode test ───────────────────────────────── */}
+      {isTestMode && (
+        <div className="test-mode-banner">
+          ⚠️ MODE TEST — Les actions ne sont pas enregistrées en base de données
+        </div>
+      )}
+
       <header className="header">
         <div className="header-inner">
 
@@ -23,11 +30,12 @@ export default function Layout({ children }) {
           </div>
 
           <div className="header-right">
+            {isTestMode && <span className="test-mode-badge">TEST</span>}
             <Notifications />
 
             <div className="header-user">
               <button className="header-btn" onClick={() => setMenuOpen(m => !m)}>
-                <div className="header-avatar">{user.name[0]}</div>
+                <div className="header-avatar" style={isTestMode ? { background: '#dc2626' } : undefined}>{user.name[0]}</div>
                 <span className="header-btn-name">{user.name}</span>
                 <svg className="header-btn-chevron" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path d="m6 9 6 6 6-6"/>
@@ -39,7 +47,8 @@ export default function Layout({ children }) {
                   <div className="dropdown-info">
                     <p className="dropdown-name">{user.name}</p>
                     <p className="dropdown-role">{
-                      user.role === 'admin'
+                      isTestMode ? 'Session de test — aucune donnée enregistrée'
+                      : user.role === 'admin'
                         ? (user.badge === 'Manager · Admin' ? 'Manager — Administratrice' : 'Médecin — Administrateur')
                         : user.role === 'manager'
                         ? 'Responsable médicale'

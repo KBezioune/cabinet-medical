@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { getUsers } from '../lib/localData'
+import { getUsersForAuth } from '../lib/localData'
 import { syncPinsFromDb, logAccess } from '../lib/db'
 
 
@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
     if (stored) {
       try {
         const parsed  = JSON.parse(stored)
-        const current = getUsers().find(u => u.id === parsed.id)
+        const current = getUsersForAuth().find(u => u.id === parsed.id)
         const resolved = current ?? parsed
         sessionStorage.setItem('cabinet_user', JSON.stringify(resolved))
         setUser(resolved)
@@ -58,7 +58,7 @@ export function AuthProvider({ children }) {
   }, [user])
 
   const login = async (password) => {
-    const found = getUsers().find(u => u.pin === password.trim())
+    const found = getUsersForAuth().find(u => u.pin === password.trim())
     const ua    = navigator.userAgent
 
     if (!found) {
@@ -78,8 +78,10 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
+  const isTestMode = user?._isTestUser === true
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, sessionExpired }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, sessionExpired, isTestMode }}>
       {children}
     </AuthContext.Provider>
   )

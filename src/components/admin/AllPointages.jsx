@@ -2,16 +2,19 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { todayISO, formatDate, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
 import { getAssistants } from '../../lib/localData'
-import { getAllPointagesFiltered } from '../../lib/db'
+import { getAllPointagesFiltered, deleteTestUserPointages } from '../../lib/db'
+import { useAuth } from '../../contexts/AuthContext'
 import Breadcrumb from '../shared/Breadcrumb'
 import './AllPointages.css'
 
 export default function AllPointages() {
+  const { isTestMode } = useAuth()
   const [records, setRecords]       = useState([])
   const [inService, setInService]   = useState(0)
   const [loading, setLoading]       = useState(true)
   const [filterUser, setFilterUser] = useState('all')
   const [filterDate, setFilterDate] = useState(todayISO())
+  const [deleting, setDeleting]     = useState(false)
   const assistants = getAssistants()
 
   const refresh = useCallback(async () => {
@@ -85,6 +88,21 @@ export default function AllPointages() {
           <div className="filters-row-actions">
             <button className="btn btn-outline" onClick={() => setFilterDate('')}>Toutes les dates</button>
             <button className="btn btn-ghost" onClick={refresh}>↻ Actualiser</button>
+            {isTestMode && (
+              <button
+                className="btn btn-danger"
+                disabled={deleting}
+                onClick={async () => {
+                  if (!window.confirm('Supprimer tous les pointages créés par le compte test de Supabase ?')) return
+                  setDeleting(true)
+                  try { await deleteTestUserPointages(); await refresh() }
+                  catch (e) { alert('Erreur : ' + e.message) }
+                  finally { setDeleting(false) }
+                }}
+              >
+                {deleting ? 'Suppression…' : '🗑️ Supprimer mes pointages de test'}
+              </button>
+            )}
           </div>
         </div>
 

