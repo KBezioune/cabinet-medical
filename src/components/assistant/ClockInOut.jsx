@@ -48,7 +48,7 @@ const verifierPosition = () => new Promise((resolve, reject) => {
 export default function ClockInOut() {
   const { user, logout } = useAuth()
   // Dessa bénéficie du télétravail : pointage autorisé sans restriction GPS
-  const isTelework = user.badge === 'Manager · Admin'
+  const isTelework = user.name === 'Dessa' || user.badge === 'Manager · Admin'
   const [pointage, setPointage]    = useState(null)
   const [loading, setLoading]      = useState(true)
   const [actionLoading, setAction] = useState(false)

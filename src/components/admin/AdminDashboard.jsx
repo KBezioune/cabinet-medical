@@ -129,10 +129,13 @@ const IC_MENU = (
   </svg>
 )
 
+// Identificateur robuste de Dessa (double condition pour éviter tout problème d'encodage)
+const isDessa = u => u.name === 'Dessa' || u.badge === 'Manager · Admin'
+
 // ── Tous les onglets ───────────────────────────────────────────
 // condition(user) optionnel — filtre supplémentaire au-delà du rôle
 const ALL_TABS = [
-  { id: 'monpointage', label: 'Mon pointage',       roles: ['admin'],             section: null,     condition: u => u.badge === 'Manager · Admin' },
+  { id: 'monpointage', label: 'Mon pointage',       roles: ['admin'],             section: null,     condition: isDessa },
   { id: 'pointage',    label: 'Pointage',           roles: ['manager'],           section: null },
   { id: 'pointages',   label: 'Pointages',          roles: ['admin'],             section: null },
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
@@ -168,7 +171,7 @@ export default function AdminDashboard() {
     ? (user.badge ? `Bienvenue, ${user.name}` : 'Bienvenue, Dr. Bezioune')
     : 'Responsable — Assistante médicale'
 
-  const PINNED_IDS = user.badge === 'Manager · Admin' ? PINNED_DESSA
+  const PINNED_IDS = isDessa(user) ? PINNED_DESSA
     : isAdmin ? PINNED_ADMIN
     : PINNED_MANAGER
 
