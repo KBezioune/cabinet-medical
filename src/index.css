@@ -3,21 +3,21 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Brand */
-  --brand-50:  #eff6ff;
-  --brand-100: #dbeafe;
-  --brand-200: #bfdbfe;
-  --brand-400: #60a5fa;
-  --brand-500: #3b82f6;
-  --brand-600: #2563eb;
-  --brand-700: #1d4ed8;
-  --brand-800: #1e40af;
-  --brand-900: #1e3a8a;
+  /* Brand — vert médical #3D6B35 */
+  --brand-50:  #f0f7ef;
+  --brand-100: #d4e8cf;
+  --brand-200: #a9d09e;
+  --brand-400: #5a9651;
+  --brand-500: #3D6B35;
+  --brand-600: #2e5228;
+  --brand-700: #1f3a1c;
+  --brand-800: #142813;
+  --brand-900: #0a1a09;
 
-  /* Teal accent */
-  --teal-400: #2dd4bf;
-  --teal-500: #14b8a6;
-  --teal-600: #0d9488;
+  /* Accent taupe/beige #C4A882 */
+  --teal-400: #d4b99a;
+  --teal-500: #C4A882;
+  --teal-600: #a8895f;
 
   /* Green */
   --green-50:  #f0fdf4;
@@ -105,13 +105,13 @@ input  { font-family: inherit; font-size: inherit; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  background: linear-gradient(135deg, #1a3316, #3D6B35);
   color: white;
   border-radius: 10px;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32);
 }
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #162d4a, #1d4ed8);
+  background: linear-gradient(135deg, #142813, #2e5228);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.44);
   transform: translateY(-1px);
 }

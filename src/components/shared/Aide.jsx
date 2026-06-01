@@ -11,7 +11,7 @@ const FAQ = [
   },
   {
     q: 'Comment demander un congé ou des vacances ?',
-    a: "Dans l'onglet \"Congés\", cliquez sur \"Nouvelle demande\". Choisissez le type (vacances, maladie, formation…), les dates de début et de fin, puis envoyez votre demande. Le Dr Bezioune la validera ou la refusera, et vous recevrez une notification.",
+    a: "Dans l'onglet \"Congés\", cliquez sur \"Nouvelle demande\". Choisissez le type (vacances, maladie, formation…), les dates de début et de fin, puis envoyez votre demande. Le médecin responsable la validera ou la refusera, et vous recevrez une notification.",
   },
   {
     q: 'Comment voir mes soldes d\'heures et de vacances ?',
@@ -19,11 +19,11 @@ const FAQ = [
   },
   {
     q: 'Comment soumettre une note de frais ?',
-    a: "Dans l'onglet \"Notes de frais\", cliquez sur \"Ajouter une note\". Renseignez la date, le montant, la catégorie (repas, transport, matériel, autre) et une description. Votre note sera soumise à validation par le Dr Bezioune.",
+    a: "Dans l'onglet \"Notes de frais\", cliquez sur \"Ajouter une note\". Renseignez la date, le montant, la catégorie (repas, transport, matériel, autre) et une description. Votre note sera soumise à validation par le médecin responsable.",
   },
   {
     q: "Que faire si j'ai oublié de pointer ou si l'heure est incorrecte ?",
-    a: "Contactez directement le Dr Bezioune par message (onglet \"Messages\") ou par téléphone. En tant qu'administrateur, il peut modifier ou corriger un pointage depuis la page \"Pointages\".",
+    a: "Contactez directement le médecin responsable par message (onglet \"Messages\") ou par téléphone. En tant qu'administrateur, il peut modifier ou corriger un pointage depuis la page \"Pointages\".",
   },
 ]
 
@@ -35,13 +35,13 @@ export default function Aide() {
       <Breadcrumb items={['Cabinet Médical', 'Aide & Support']} />
 
       <div className="aide-grid">
-        {/* Contact Dr Bezioune */}
+        {/* Contact médecin */}
         <div className="card aide-section">
           <h2 className="section-title">Contact</h2>
           <div className="aide-contact-card">
             <div className="aide-contact-avatar">B</div>
             <div className="aide-contact-info">
-              <span className="aide-contact-name">Dr. Bezioune</span>
+              <span className="aide-contact-name">le médecin</span>
               <span className="aide-contact-role">Médecin généraliste · Administrateur</span>
               <a className="aide-contact-link aide-contact-tel" href="tel:+41791000004">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -49,12 +49,12 @@ export default function Aide() {
                 </svg>
                 +41 79 100 00 04
               </a>
-              <a className="aide-contact-link aide-contact-mail" href="mailto:dr.bezioune@cabinet-bezioune.ch">
+              <a className="aide-contact-link aide-contact-mail" href="mailto:contact@horizons-medical.ch">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                   <polyline points="22,6 12,13 2,6"/>
                 </svg>
-                dr.bezioune@cabinet-bezioune.ch
+                contact@horizons-medical.ch
               </a>
             </div>
           </div>
@@ -71,7 +71,7 @@ export default function Aide() {
               </svg>
             </div>
             <div className="aide-cabinet-info">
-              <span className="aide-cabinet-name">Centre Médical Dr Bezioune</span>
+              <span className="aide-cabinet-name">Centre Médical Horizons</span>
               <span className="aide-cabinet-addr">Lausanne, Vaud — Suisse</span>
               <a
                 className="aide-map-link"

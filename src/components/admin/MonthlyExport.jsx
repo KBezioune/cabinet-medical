@@ -239,9 +239,9 @@ export default function MonthlyExport() {
         @media print { body { padding: 1rem; } }
       </style></head><body>
       <h1>Export comptabilité — ${monthLabel}</h1>
-      <p class="subtitle">Centre Médical Dr Bezioune · Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}</p>
+      <p class="subtitle">Centre Médical Horizons · Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}</p>
       ${userSections}
-      <div class="footer">Document généré automatiquement par le système de pointage du Centre Médical Dr Bezioune</div>
+      <div class="footer">Document généré automatiquement par le système de pointage du Centre Médical Horizons</div>
       <script>window.onload = () => { window.print() }<\/script>
     </body></html>`
 
@@ -480,7 +480,7 @@ export default function MonthlyExport() {
                 </table>
               </div>
               <p className="me-recap-note">
-                Généré le {format(new Date(), 'dd/MM/yyyy à HH:mm')} · Centre Médical Dr Bezioune
+                Généré le {format(new Date(), 'dd/MM/yyyy à HH:mm')} · Centre Médical Horizons
               </p>
             </div>
           )}

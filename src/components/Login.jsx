@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import KBLogo from './shared/KBLogo'
+
 import './Login.css'
 
 const MAX_ATTEMPTS = 5
@@ -71,10 +71,10 @@ export default function Login() {
         {/* ── Hero : logo + titre sur fond dégradé ──────────── */}
         <div className="login-hero">
           <div className="login-hero-logo">
-            <KBLogo size={84} variant="hex" />
+            <img src="/logo.jpg" alt="Logo Centre Médical Horizons" style={{ height: 100, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
           </div>
           <div className="login-hero-texts">
-            <h1 className="login-title">Centre Médical<br/>Dr Bezioune</h1>
+            <h1 className="login-title">Centre Médical<br/>Horizons</h1>
             <p className="login-tagline">Gestion RH &amp; Pointage</p>
           </div>
         </div>

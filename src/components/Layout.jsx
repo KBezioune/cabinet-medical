@@ -24,7 +24,7 @@ export default function Layout({ children }) {
               <img src="/logo.png" alt="Logo" className="header-logo-img" />
             </div>
             <div className="header-texts">
-              <span className="header-title">Centre Médical Dr Bezioune</span>
+              <span className="header-title">Centre Médical Horizons</span>
               <span className="header-subtitle">Gestion RH &amp; Pointage</span>
             </div>
           </div>

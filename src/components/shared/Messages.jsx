@@ -147,7 +147,7 @@ export default function Messages({ onUnreadChange }) {
 
   const placeholder = isAdmin && convId === 'all'
     ? "Message à toute l'équipe…"
-    : `Message à ${isAdmin ? getUserById(convId)?.name ?? '' : 'Dr. Bezioune'}…`
+    : `Message à ${isAdmin ? getUserById(convId)?.name ?? '' : 'le médecin'}…`
 
   return (
     <div className="msg-wrap">
@@ -192,7 +192,7 @@ export default function Messages({ onUnreadChange }) {
               ? convId === 'all'
                 ? "Message à toute l'équipe"
                 : `Conversation avec ${getUserById(convId)?.name ?? ''}`
-              : 'Conversation avec Dr. Bezioune'}
+              : 'Conversation avec le médecin'}
           </div>
 
           <div className="msg-list">

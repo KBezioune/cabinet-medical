@@ -15,7 +15,7 @@ import NotesDefrais from '../shared/NotesDefrais'
 import Aide from '../shared/Aide'
 import Messages from '../shared/Messages'
 import { getUnreadMessageCount } from '../../lib/db'
-import KBLogo from '../shared/KBLogo'
+
 import './AdminDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
@@ -167,9 +167,9 @@ export default function AdminDashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   const isAdmin   = user.role === 'admin'
-  const pageTitle = isAdmin ? 'Cabinet Médical Dr Bezioune' : `Bonjour, ${user.name}`
+  const pageTitle = isAdmin ? 'Centre Médical Horizons' : `Bonjour, ${user.name}`
   const pageSub   = isAdmin
-    ? (user.badge ? `Bienvenue, ${user.name}` : 'Bienvenue, Dr. Bezioune')
+    ? (user.badge ? `Bienvenue, ${user.name}` : `Bienvenue, ${user.name}`)
     : 'Responsable — Assistante médicale'
 
   const PINNED_IDS = DESSA_NAMES.includes(user?.name) ? PINNED_DESSA
@@ -203,11 +203,7 @@ export default function AdminDashboard() {
       {/* ── Sidebar desktop uniquement ──────────────────────── */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
-          <KBLogo size={34} variant="rounded" />
-          <div className="admin-sidebar-brand-text">
-            <span className="admin-sidebar-brand-title">KB Medical</span>
-            <span className="admin-sidebar-brand-sub">Gestion RH</span>
-          </div>
+          <img src="/logo.jpg" alt="Logo" style={{ height: 55, objectFit: 'contain', display: 'block' }} />
         </div>
 
         <nav className="admin-sidebar-nav">
