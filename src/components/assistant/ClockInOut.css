@@ -18,7 +18,7 @@
 
 /* Horloge */
 .clock-display {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0d9488 100%);
+  background: linear-gradient(135deg, #2C4A23 0%, #3D6B35 100%);
   border-radius: var(--radius-lg);
   padding: 2rem 1.5rem;
   color: white;
