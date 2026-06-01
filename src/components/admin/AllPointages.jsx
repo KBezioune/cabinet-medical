@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabase'
 import { todayISO, formatDate, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
 import { getAssistants } from '../../lib/localData'
 import { getAllPointagesFiltered } from '../../lib/db'
-import EditPointageModal from './EditPointageModal'
 import Breadcrumb from '../shared/Breadcrumb'
 import './AllPointages.css'
 
@@ -13,8 +12,6 @@ export default function AllPointages() {
   const [loading, setLoading]       = useState(true)
   const [filterUser, setFilterUser] = useState('all')
   const [filterDate, setFilterDate] = useState(todayISO())
-  const [editing, setEditing]       = useState(null)
-
   const assistants = getAssistants()
 
   const refresh = useCallback(async () => {
@@ -105,7 +102,7 @@ export default function AllPointages() {
           <div className="table-wrapper">
             <table>
               <thead>
-                <tr><th>Assistante</th><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Statut</th><th>Note</th><th>Actions</th></tr>
+                <tr><th>Assistante</th><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Statut</th><th>Note</th></tr>
               </thead>
               <tbody>
                 {records.map(r => (
@@ -121,7 +118,6 @@ export default function AllPointages() {
                     <td>{r.duree_minutes != null ? <span className="badge badge-blue">{minutesToHHMM(r.duree_minutes)}</span> : '—'}</td>
                     <td>{statusBadge(r)}</td>
                     <td style={{ color: 'var(--gray-500)', fontSize: '0.8125rem' }}>{r.note || '—'}</td>
-                    <td><button className="btn btn-outline btn-sm" onClick={() => setEditing(r)}>✏️ Modifier</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -130,13 +126,7 @@ export default function AllPointages() {
         )}
       </div>
 
-      {editing && (
-        <EditPointageModal
-          pointage={editing}
-          onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); refresh() }}
-        />
-      )}
+
     </div>
   )
 }
