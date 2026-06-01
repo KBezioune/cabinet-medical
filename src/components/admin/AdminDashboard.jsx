@@ -20,6 +20,12 @@ import './AdminDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
 const IC = {
+  monpointage: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      <polyline points="7 18 10 21 17 14"/>
+    </svg>
+  ),
   pointage: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -124,9 +130,11 @@ const IC_MENU = (
 )
 
 // ── Tous les onglets ───────────────────────────────────────────
+// condition(user) optionnel — filtre supplémentaire au-delà du rôle
 const ALL_TABS = [
-  { id: 'pointage',  label: 'Pointage',           roles: ['manager'],           section: null },
-  { id: 'pointages', label: 'Pointages',           roles: ['admin'],             section: null },
+  { id: 'monpointage', label: 'Mon pointage',       roles: ['admin'],             section: null,     condition: u => u.badge === 'Manager · Admin' },
+  { id: 'pointage',    label: 'Pointage',           roles: ['manager'],           section: null },
+  { id: 'pointages',   label: 'Pointages',          roles: ['admin'],             section: null },
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
   { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
   { id: 'equipe',    label: 'Planning équipe',     roles: ['admin', 'manager'], section: 'Planning' },
@@ -141,14 +149,15 @@ const ALL_TABS = [
   { id: 'aide',      label: 'Aide & Support',      roles: ['admin', 'manager'], section: null },
 ]
 
-// IDs épinglés dans la bottom nav mobile (4 + Menu) — différenciés par rôle
-const PINNED_ADMIN   = ['pointages', 'equipe', 'soldes', 'messages']
-const PINNED_MANAGER = ['pointage',  'equipe', 'soldes', 'messages']
+// IDs épinglés dans la bottom nav mobile (4 + Menu) — différenciés par profil
+const PINNED_ADMIN   = ['pointages',    'equipe', 'soldes', 'messages']
+const PINNED_DESSA   = ['monpointage',  'pointages', 'equipe', 'messages']
+const PINNED_MANAGER = ['pointage',     'equipe', 'soldes', 'messages']
 
 export default function AdminDashboard() {
   const { user } = useAuth()
 
-  const tabs       = ALL_TABS.filter(t => t.roles.includes(user.role))
+  const tabs       = ALL_TABS.filter(t => t.roles.includes(user.role) && (!t.condition || t.condition(user)))
   const [tab, setTab]           = useState(tabs[0]?.id || 'pointages')
   const [unreadMsg, setUnreadMsg] = useState(0)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -159,7 +168,9 @@ export default function AdminDashboard() {
     ? (user.badge ? `Bienvenue, ${user.name}` : 'Bienvenue, Dr. Bezioune')
     : 'Responsable — Assistante médicale'
 
-  const PINNED_IDS = isAdmin ? PINNED_ADMIN : PINNED_MANAGER
+  const PINNED_IDS = user.badge === 'Manager · Admin' ? PINNED_DESSA
+    : isAdmin ? PINNED_ADMIN
+    : PINNED_MANAGER
 
   // 4 onglets épinglés (filtrés selon le rôle, max 4)
   const pinnedTabs  = tabs.filter(t => PINNED_IDS.includes(t.id))
@@ -232,6 +243,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="tab-content">
+          {tab === 'monpointage' && <ClockInOut />}
           {tab === 'pointage'  && <ClockInOut />}
           {tab === 'pointages' && <AllPointages />}
           {tab === 'dashboard' && <DashboardRH />}
@@ -268,7 +280,8 @@ export default function AdminDashboard() {
               )}
             </span>
             <span className="admin-bottom-label">{
-              t.id === 'pointages' || t.id === 'pointage' ? 'Pointage'
+              t.id === 'monpointage'                       ? 'Mon pointage'
+              : t.id === 'pointages' || t.id === 'pointage' ? 'Pointage'
               : t.id === 'equipe'   ? 'Planning'
               : t.id === 'soldes'   ? 'Soldes'
               : t.id === 'messages' ? 'Messages'
