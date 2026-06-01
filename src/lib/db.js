@@ -496,9 +496,20 @@ export const uploadToStorage = async (file, path) => {
   return data
 }
 
+// URL publique (bucket public uniquement) — utilisée pour référence en DB
 export const getStorageUrl = (path) => {
   const { data } = supabase.storage.from('dossiers-rh').getPublicUrl(path)
   return data.publicUrl
+}
+
+// URL signée valide 1h — fonctionne bucket public ET privé
+export const createSignedDownloadUrl = async (path) => {
+  if (isTestMode()) return '#'
+  const { data, error } = await supabase.storage
+    .from('dossiers-rh')
+    .createSignedUrl(path, 3600)
+  if (error) { log('createSignedDownloadUrl', error); throw error }
+  return data.signedUrl
 }
 
 export const deleteFromStorage = async (path) => {
