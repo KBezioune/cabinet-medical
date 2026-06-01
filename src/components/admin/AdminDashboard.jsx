@@ -129,8 +129,9 @@ const IC_MENU = (
   </svg>
 )
 
-// Identificateur robuste de Dessa (double condition pour éviter tout problème d'encodage)
-const isDessa = u => u.name === 'Dessa' || u.badge === 'Manager · Admin'
+// Noms reconnus pour Dessa (hardcodé, insensible à la casse)
+const DESSA_NAMES = ['Dessa', 'dessa', 'DESSA']
+const isDessa = u => DESSA_NAMES.includes(u?.name)
 
 // ── Tous les onglets ───────────────────────────────────────────
 // condition(user) optionnel — filtre supplémentaire au-delà du rôle
@@ -171,7 +172,7 @@ export default function AdminDashboard() {
     ? (user.badge ? `Bienvenue, ${user.name}` : 'Bienvenue, Dr. Bezioune')
     : 'Responsable — Assistante médicale'
 
-  const PINNED_IDS = isDessa(user) ? PINNED_DESSA
+  const PINNED_IDS = DESSA_NAMES.includes(user?.name) ? PINNED_DESSA
     : isAdmin ? PINNED_ADMIN
     : PINNED_MANAGER
 
