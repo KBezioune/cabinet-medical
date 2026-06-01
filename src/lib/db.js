@@ -91,6 +91,12 @@ export const deleteTestUserPointages = async () => {
   if (error) { log('deleteTestUserPointages', error); throw error }
 }
 
+// Réinitialisation d'un pointage (compte test uniquement) — bypass intentionnel
+export const deletePointageReal = async (id) => {
+  const { error } = await supabase.from('pointages').delete().eq('id', id)
+  if (error) { log('deletePointageReal', error); throw error }
+}
+
 // ── USERS / PINS ─────────────────────────────────────────────
 
 export const syncPinsFromDb = async () => {

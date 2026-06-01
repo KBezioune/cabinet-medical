@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { todayISO, formatDate, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
 import { getAssistants } from '../../lib/localData'
-import { getAllPointagesFiltered, deleteTestUserPointages } from '../../lib/db'
+import { getAllPointagesFiltered, deleteTestUserPointages, deletePointageReal } from '../../lib/db'
 import { useAuth } from '../../contexts/AuthContext'
 import Breadcrumb from '../shared/Breadcrumb'
 import './AllPointages.css'
@@ -14,7 +14,8 @@ export default function AllPointages() {
   const [loading, setLoading]       = useState(true)
   const [filterUser, setFilterUser] = useState('all')
   const [filterDate, setFilterDate] = useState(todayISO())
-  const [deleting, setDeleting]     = useState(false)
+  const [deleting,     setDeleting]     = useState(false)
+  const [resettingId,  setResettingId]  = useState(null)
   const assistants = getAssistants()
 
   const refresh = useCallback(async () => {
@@ -120,7 +121,10 @@ export default function AllPointages() {
           <div className="table-wrapper">
             <table>
               <thead>
-                <tr><th>Assistante</th><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Statut</th><th>Note</th></tr>
+                <tr>
+                  <th>Assistante</th><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Statut</th><th>Note</th>
+                  {isTestMode && <th>Réinit.</th>}
+                </tr>
               </thead>
               <tbody>
                 {records.map(r => (
@@ -136,6 +140,26 @@ export default function AllPointages() {
                     <td>{r.duree_minutes != null ? <span className="badge badge-blue">{minutesToHHMM(r.duree_minutes)}</span> : '—'}</td>
                     <td>{statusBadge(r)}</td>
                     <td style={{ color: 'var(--gray-500)', fontSize: '0.8125rem' }}>{r.note || '—'}</td>
+                    {isTestMode && (
+                      <td>
+                        <button
+                          className="btn btn-outline btn-sm"
+                          disabled={resettingId === r.id}
+                          title="Réinitialiser ce pointage"
+                          onClick={async () => {
+                            const name = r.users?.name || 'cette employée'
+                            const date = formatDate(r.date)
+                            if (!window.confirm(`Réinitialiser le pointage de ${name} du ${date} ?\nL'employée pourra repointer depuis zéro.`)) return
+                            setResettingId(r.id)
+                            try { await deletePointageReal(r.id); await refresh() }
+                            catch (e) { alert('Erreur : ' + e.message) }
+                            finally { setResettingId(null) }
+                          }}
+                        >
+                          {resettingId === r.id ? '…' : '🔄'}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
