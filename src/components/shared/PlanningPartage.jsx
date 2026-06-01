@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { getUsers } from '../../lib/localData'
 import { useAuth } from '../../contexts/AuthContext'
 import {
-  getPlanningForUsers, getPlanningTaches, getAllConges,
-  insertPlanningTache, updatePlanningTache, deletePlanningTache,
+  getPlanningForUsers, getAllConges,
   getPlanningShifts, upsertPlanningShift, deletePlanningShift,
+  getPlanningTasks, insertPlanningTask, updatePlanningTask, deletePlanningTask,
 } from '../../lib/db'
 import { JOURS, getWeekDays } from '../../utils/dateUtils'
 import { format, addWeeks, subWeeks, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns'
@@ -12,6 +12,7 @@ import { fr } from 'date-fns/locale'
 import Breadcrumb from './Breadcrumb'
 import './PlanningPartage.css'
 
+// Conservé pour les créneaux (type_poste)
 const TACHES_CFG = {
   consultation:  { label: 'Consultation',  icon: '🩺', color: 'blue'   },
   sterilisation: { label: 'Stérilisation', icon: '🧴', color: 'teal'   },
@@ -24,7 +25,6 @@ const TACHES_CFG = {
 const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante' }
 const DEFAULT_DEBUT = '08:30'
 const DEFAULT_FIN   = '16:30'
-// Affichage lisible des deux créneaux du cabinet
 const DEFAULT_MATIN = '08:30–12:00'
 const DEFAULT_APREM = '14:00–16:30'
 
@@ -55,40 +55,38 @@ export default function PlanningPartage() {
   const [monthRef,  setMonthRef]  = useState(new Date())
 
   // ── Données ──────────────────────────────────────────────────
-  const [planning,  setPlanning]  = useState([])
-  const [taches,    setTaches]    = useState([])
-  const [conges,    setConges]    = useState([])
-  const [shifts,    setShifts]    = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [noShiftTable, setNoShiftTable] = useState(false)
-  const [reloadKey, setReloadKey] = useState(0)
+  const [planning,      setPlanning]      = useState([])
+  const [tasks,         setTasks]         = useState([])  // planning_tasks (texte libre)
+  const [conges,        setConges]        = useState([])
+  const [shifts,        setShifts]        = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [noShiftTable,  setNoShiftTable]  = useState(false)
+  const [reloadKey,     setReloadKey]     = useState(0)
 
-  // ── Mode édition ─────────────────────────────────────────────
+  // ── Mode édition créneaux ─────────────────────────────────────
   const [editMode,  setEditMode]  = useState(false)
   const [sqlCopied, setSqlCopied] = useState(false)
 
-  // ── Modal tâche (planning_taches) ───────────────────────────
-  const [modal,   setModal]  = useState(null)
-  const [fType,   setFType]  = useState('consultation')
-  const [fDebut,  setFDebut] = useState(DEFAULT_DEBUT)
-  const [fFin,    setFFin]   = useState(DEFAULT_FIN)
-  const [saving,  setSaving] = useState(false)
-  const [err,     setErr]    = useState('')
+  // ── Modal tâche libre (planning_tasks) ───────────────────────
+  const [taskModal, setTaskModal] = useState(null) // { userId, userName, dateStr, existing }
+  const [fTexte,    setFTexte]    = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [err,       setErr]       = useState('')
 
   // ── Modal créneau shift (planning_shifts) ───────────────────
-  const [shiftModal, setShiftModal] = useState(null) // { userId, userName, dateStr, existing }
+  const [shiftModal, setShiftModal] = useState(null)
   const [sfType,  setSfType]  = useState('consultation')
   const [sfDebut, setSfDebut] = useState(DEFAULT_DEBUT)
   const [sfFin,   setSfFin]   = useState(DEFAULT_FIN)
   const [sfSaving,setSfSaving] = useState(false)
   const [sfErr,   setSfErr]   = useState('')
 
-  const users    = getUsers()
-  const weekDays = getWeekDays(weekRef)
-  const today    = format(new Date(), 'yyyy-MM-dd')
-  const monthStart  = startOfMonth(monthRef)
-  const monthEnd    = endOfMonth(monthRef)
-  const monthDays   = eachDayOfInterval({ start: monthStart, end: monthEnd })
+  const users      = getUsers()
+  const weekDays   = getWeekDays(weekRef)
+  const today      = format(new Date(), 'yyyy-MM-dd')
+  const monthStart = startOfMonth(monthRef)
+  const monthEnd   = endOfMonth(monthRef)
+  const monthDays  = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
   // ── Chargement données ───────────────────────────────────────
   useEffect(() => {
@@ -104,24 +102,21 @@ export default function PlanningPartage() {
         to   = format(monthEnd,   'yyyy-MM-dd')
       }
       try {
-        const [pl, tch, cg] = await Promise.all([
+        const [pl, tsk, cg] = await Promise.all([
           getPlanningForUsers(ids),
-          getPlanningTaches(ids, from, to),
+          getPlanningTasks(ids, from, to).catch(() => []),
           getAllConges(),
         ])
-        setPlanning(pl); setTaches(tch); setConges(cg)
+        setPlanning(pl); setTasks(tsk); setConges(cg)
       } catch (e) { console.error(e) }
 
-      // Planning shifts — chargement séparé avec gestion table manquante
       try {
         const sh = await getPlanningShifts(ids, from, to)
-        setShifts(sh)
-        setNoShiftTable(false)
+        setShifts(sh); setNoShiftTable(false)
       } catch (e) {
         if (isMissingTable(e)) setNoShiftTable(true)
         else console.error(e)
       }
-
       setLoading(false)
     }
     load()
@@ -133,7 +128,6 @@ export default function PlanningPartage() {
 
   const getDayPlan = (userId, day) => {
     const dateStr = format(day, 'yyyy-MM-dd')
-    // 1. Shift spécifique (planning_shifts) — priorité maximale
     const shift = getDayShift(userId, dateStr)
     if (shift) return {
       heure_debut: shift.heure_debut?.slice(0, 5),
@@ -142,19 +136,17 @@ export default function PlanningPartage() {
       isShift:     true,
       shiftObj:    shift,
     }
-    // 2. Planning hebdo récurrent
     const jourSem = getDay(day) === 0 ? 7 : getDay(day)
     const found   = planning.find(p => p.user_id === userId && p.jour_semaine === jourSem && p.actif)
     if (found) return found
-    // 3. Fallback cabinet : Lun/Mar/Jeu/Ven ouverts, Mer/Sam/Dim fermés
     if (jourSem >= 1 && jourSem <= 5 && jourSem !== 3)
       return { heure_debut: DEFAULT_DEBUT, heure_fin: DEFAULT_FIN, fallback: true }
     return null
   }
 
-  const getDayTaches = (userId, dateStr) =>
-    taches.filter(t => t.user_id === userId && t.date === dateStr)
-      .sort((a, b) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
+  const getDayTasks = (userId, dateStr) =>
+    tasks.filter(t => t.user_id === userId && t.date === dateStr)
+      .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
 
   const getDayConge = (userId, dateStr) =>
     conges.find(c =>
@@ -163,45 +155,45 @@ export default function PlanningPartage() {
       c.statut !== 'refuse'
     ) || null
 
-  // ── Handlers modal tâche ─────────────────────────────────────
-  const openNew = (userId, userName, dateStr) => {
-    setModal({ userId, userName, dateStr, existing: null })
-    setFType('consultation'); setFDebut(DEFAULT_DEBUT); setFFin(DEFAULT_FIN); setErr('')
+  // ── Handlers tâches libres ───────────────────────────────────
+  const openTaskNew = (userId, userName, dateStr) => {
+    setTaskModal({ userId, userName, dateStr, existing: null })
+    setFTexte(''); setErr('')
   }
-  const openEdit = (t, userName) => {
-    setModal({ userId: t.user_id, userName, dateStr: t.date, existing: t })
-    setFType(t.tache)
-    setFDebut(t.heure_debut?.slice(0, 5) || DEFAULT_DEBUT)
-    setFFin(t.heure_fin?.slice(0, 5)     || DEFAULT_FIN)
-    setErr('')
+  const openTaskEdit = (task, userName) => {
+    setTaskModal({ userId: task.user_id, userName, dateStr: task.date, existing: task })
+    setFTexte(task.texte || ''); setErr('')
   }
-  const handleSave = async () => {
+  const handleTaskSave = async () => {
+    if (!fTexte.trim()) { setErr('Le texte de la tâche est requis.'); return }
     setSaving(true); setErr('')
     try {
-      const payload = { user_id: modal.userId, date: modal.dateStr, tache: fType, heure_debut: fDebut || null, heure_fin: fFin || null, created_by: user?.id }
-      if (modal.existing) await updatePlanningTache(modal.existing.id, payload)
-      else                await insertPlanningTache(payload)
-      setModal(null); setReloadKey(k => k + 1)
+      if (taskModal.existing) {
+        await updatePlanningTask(taskModal.existing.id, { texte: fTexte.trim() })
+      } else {
+        await insertPlanningTask({ user_id: taskModal.userId, date: taskModal.dateStr, texte: fTexte.trim() })
+      }
+      setTaskModal(null); setReloadKey(k => k + 1)
     } catch (e) { setErr(e.message || 'Erreur') }
     finally { setSaving(false) }
   }
-  const handleDelete = async () => {
+  const handleTaskDelete = async () => {
     setSaving(true); setErr('')
     try {
-      await deletePlanningTache(modal.existing.id)
-      setModal(null); setReloadKey(k => k + 1)
+      await deletePlanningTask(taskModal.existing.id)
+      setTaskModal(null); setReloadKey(k => k + 1)
     } catch (e) { setErr(e.message || 'Erreur') }
     finally { setSaving(false) }
   }
 
-  // ── Handlers modal shift ─────────────────────────────────────
+  // ── Handlers créneaux shifts ─────────────────────────────────
   const openShiftNew = (u, dateStr) => {
     setShiftModal({ userId: u.id, userName: u.name, dateStr, existing: null })
     setSfType('consultation'); setSfDebut(DEFAULT_DEBUT); setSfFin(DEFAULT_FIN); setSfErr('')
   }
   const openShiftEdit = (u, dateStr, plan) => {
     setShiftModal({ userId: u.id, userName: u.name, dateStr, existing: plan?.shiftObj || null })
-    setSfType(plan?.type_poste  || 'consultation')
+    setSfType(plan?.type_poste || 'consultation')
     setSfDebut(plan?.heure_debut?.slice(0, 5) || DEFAULT_DEBUT)
     setSfFin(plan?.heure_fin?.slice(0, 5)     || DEFAULT_FIN)
     setSfErr('')
@@ -220,8 +212,7 @@ export default function PlanningPartage() {
     } catch (e) {
       if (isMissingTable(e)) setNoShiftTable(true)
       setSfErr(e.message || 'Erreur')
-    }
-    finally { setSfSaving(false) }
+    } finally { setSfSaving(false) }
   }
   const handleShiftDelete = async () => {
     if (!shiftModal.existing) { setShiftModal(null); return }
@@ -235,8 +226,7 @@ export default function PlanningPartage() {
 
   const copySql = () => {
     navigator.clipboard?.writeText(SQL_SHIFTS).then(() => {
-      setSqlCopied(true)
-      setTimeout(() => setSqlCopied(false), 2000)
+      setSqlCopied(true); setTimeout(() => setSqlCopied(false), 2000)
     })
   }
 
@@ -249,7 +239,7 @@ export default function PlanningPartage() {
 
       <div className="card pp-card">
 
-        {/* ── Bannière mode édition ────────────────────────── */}
+        {/* ── Bannière mode édition créneaux ─────────────────── */}
         {editMode && (
           <div className="pp-edit-banner">
             <span className="pp-edit-banner-label">
@@ -257,29 +247,30 @@ export default function PlanningPartage() {
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
-              Mode édition — cliquez sur un créneau ou sur&nbsp;<strong>+</strong>&nbsp;pour ajouter
+              Mode édition créneaux — cliquez sur un créneau pour le modifier
             </span>
             <div className="pp-edit-banner-btns">
-              <button className="btn btn-outline pp-banner-btn" onClick={() => { setEditMode(false); setShiftModal(null); setModal(null) }}>
+              <button className="btn btn-outline pp-banner-btn" onClick={() => { setEditMode(false); setShiftModal(null) }}>
                 Annuler
               </button>
-              <button className="btn btn-primary pp-banner-btn" onClick={() => { setEditMode(false); setShiftModal(null); setModal(null) }}>
+              <button className="btn btn-primary pp-banner-btn" onClick={() => { setEditMode(false); setShiftModal(null) }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                Sauvegarder
+                Terminer
               </button>
             </div>
           </div>
         )}
 
-        {/* ── En-tête ──────────────────────────────────────── */}
+        {/* ── En-tête ──────────────────────────────────────────── */}
         <div className="pp-header">
           <div>
             <h2 className="pp-title">Planning de l'équipe</h2>
             <p className="pp-subtitle">
-              {viewMode === 'mois' ? 'Vue mensuelle · lecture seule'
-                : editMode ? '✏️ Créneaux cliquables — modifications sauvegardées en temps réel'
+              {viewMode === 'mois'  ? 'Vue mensuelle · lecture seule'
+                : editMode         ? '✏️ Créneaux cliquables — modifications en temps réel'
+                : isAdmin          ? '📌 Cliquez sur + Tâche pour assigner des tâches'
                 : 'Vue semaine · lecture seule'}
             </p>
           </div>
@@ -295,7 +286,7 @@ export default function PlanningPartage() {
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
-                Modifier le planning
+                Modifier créneaux
               </button>
             )}
 
@@ -315,7 +306,7 @@ export default function PlanningPartage() {
           </div>
         </div>
 
-        {/* ── Avertissement table manquante ────────────────── */}
+        {/* ── Avertissement table planning_shifts manquante ───── */}
         {noShiftTable && editMode && (
           <div className="pp-no-table-warn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
@@ -326,18 +317,11 @@ export default function PlanningPartage() {
           </div>
         )}
 
-        {/* ── Légende ──────────────────────────────────────── */}
-        <div className="pp-legend">
-          {Object.entries(TACHES_CFG).map(([k, v]) => (
-            <span key={k} className={`pp-legend-chip pp-chip-${v.color}`}>{v.icon} {v.label}</span>
-          ))}
-        </div>
-
         {loading ? (
           <div className="loading-center"><div className="spinner" /></div>
 
         ) : viewMode === 'mois' ? (
-          /* ── Vue mensuelle ─────────────────────────────────── */
+          /* ── Vue mensuelle ──────────────────────────────────── */
           <div className="pp-table-wrap">
             <table className="pp-table pp-month-table">
               <thead>
@@ -365,18 +349,21 @@ export default function PlanningPartage() {
                       </div>
                     </td>
                     {monthDays.map((day, i) => {
-                      const ds = format(day, 'yyyy-MM-dd'), isToday = ds === today, isWE = getDay(day) === 0 || getDay(day) === 6
-                      const conge = getDayConge(u.id, ds), plan = getDayPlan(u.id, day), tasks = getDayTaches(u.id, ds)
+                      const ds        = format(day, 'yyyy-MM-dd')
+                      const isToday   = ds === today
+                      const isWE      = getDay(day) === 0 || getDay(day) === 6
+                      const conge     = getDayConge(u.id, ds)
+                      const plan      = getDayPlan(u.id, day)
+                      const dayTasks  = getDayTasks(u.id, ds)
                       let cellClass = 'pp-month-cell', content = null
                       if (conge) {
                         cellClass += conge.statut === 'approuve' ? ' pp-mc-conge' : ' pp-mc-wait'
                         content = <span title={conge.statut === 'approuve' ? 'Congé approuvé' : 'En attente'}>🌴</span>
                       } else if (isWE) {
                         cellClass += ' pp-mc-we'
-                      } else if (tasks.length > 0) {
-                        const cfg = TACHES_CFG[tasks[0].tache] || TACHES_CFG.autre
-                        cellClass += ` pp-mc-task pp-mc-task-${cfg.color}`
-                        content = <span title={cfg.label}>{cfg.icon}</span>
+                      } else if (dayTasks.length > 0) {
+                        cellClass += ' pp-mc-task pp-mc-task-blue'
+                        content = <span title={dayTasks.map(t => t.texte).join(', ')}>📌</span>
                       } else if (plan?.isShift) {
                         const cfg = TACHES_CFG[plan.type_poste] || TACHES_CFG.consultation
                         cellClass += ` pp-mc-task pp-mc-task-${cfg.color}`
@@ -399,7 +386,7 @@ export default function PlanningPartage() {
           </div>
 
         ) : (
-          /* ── Vue semaine ───────────────────────────────────── */
+          /* ── Vue semaine ────────────────────────────────────── */
           <div className="pp-table-wrap">
             <table className="pp-table">
               <thead>
@@ -431,14 +418,14 @@ export default function PlanningPartage() {
                     </td>
 
                     {weekDays.map((day, i) => {
-                      const dateStr   = format(day, 'yyyy-MM-dd')
-                      const isToday   = dateStr === today
-                      const isWE      = i >= 5
-                      const plan      = getDayPlan(u.id, day)
-                      const dayTaches = getDayTaches(u.id, dateStr)
-                      const conge     = getDayConge(u.id, dateStr)
-                      const hasShift  = plan?.isShift
-                      const hasPlan   = !!plan
+                      const dateStr  = format(day, 'yyyy-MM-dd')
+                      const isToday  = dateStr === today
+                      const isWE     = i >= 5
+                      const plan     = getDayPlan(u.id, day)
+                      const dayTasks = getDayTasks(u.id, dateStr)
+                      const conge    = getDayConge(u.id, dateStr)
+                      const hasShift = plan?.isShift
+                      const hasPlan  = !!plan
 
                       return (
                         <td
@@ -452,7 +439,7 @@ export default function PlanningPartage() {
                             </div>
                           ) : (
                             <>
-                              {/* ── Bloc horaire ── */}
+                              {/* ── Bloc horaire (créneau) ── */}
                               {plan && (
                                 <div
                                   className={`pp-hours${plan.fallback ? ' pp-hours-fallback' : ''}${hasShift ? ' pp-hours-shift' : ''}${editMode && !isWE ? ' pp-hours-editable' : ''}`}
@@ -472,7 +459,6 @@ export default function PlanningPartage() {
                                       {plan.heure_debut?.slice(0, 5)}–{plan.heure_fin?.slice(0, 5)}
                                     </span>
                                   )}
-                                  {/* Badge type poste pour les shifts */}
                                   {hasShift && plan.type_poste && (
                                     <span className={`pp-shift-badge pp-tache-${TACHES_CFG[plan.type_poste]?.color || 'gray'}`}>
                                       {TACHES_CFG[plan.type_poste]?.icon}
@@ -484,51 +470,32 @@ export default function PlanningPartage() {
                                 </div>
                               )}
 
-                              {/* ── Tâches ── */}
-                              {dayTaches.map(t => {
-                                const cfg = TACHES_CFG[t.tache] || TACHES_CFG.autre
-                                return (
-                                  <div
-                                    key={t.id}
-                                    className={`pp-tache pp-tache-${cfg.color}${editMode ? ' pp-tache-click' : ''}`}
-                                    title={editMode ? 'Cliquer pour modifier' : (t.note || cfg.label)}
-                                    onClick={() => editMode && openEdit(t, u.name)}
-                                  >
-                                    <span className="pp-tache-icon">{cfg.icon}</span>
-                                    <span className="pp-tache-body">
-                                      <span className="pp-tache-label">{cfg.label}</span>
-                                      {(t.heure_debut || t.heure_fin) && (
-                                        <span className="pp-tache-hours">{t.heure_debut?.slice(0,5)}–{t.heure_fin?.slice(0,5)}</span>
-                                      )}
-                                    </span>
-                                    {editMode && <span className="pp-tache-edit-dot" aria-hidden="true">✏</span>}
-                                  </div>
-                                )
-                              })}
-
-                              {/* ── Bouton + : créer créneau ou tâche ── */}
-                              {editMode && !isWE && (
-                                <div className="pp-add-row">
-                                  {!hasPlan && (
-                                    <button
-                                      className="pp-add-btn pp-add-shift"
-                                      onClick={() => openShiftNew(u, dateStr)}
-                                      title="Ajouter un créneau de travail"
-                                    >
-                                      + Créneau
-                                    </button>
-                                  )}
-                                  <button
-                                    className="pp-add-btn"
-                                    onClick={() => openNew(u.id, u.name, dateStr)}
-                                    title="Ajouter une tâche"
-                                  >
-                                    + Tâche
-                                  </button>
+                              {/* ── Tâches libres (planning_tasks) ── */}
+                              {dayTasks.map(t => (
+                                <div
+                                  key={t.id}
+                                  className={`pp-task-chip${isAdmin ? ' pp-task-click' : ''}`}
+                                  title={isAdmin ? 'Cliquer pour modifier' : t.texte}
+                                  onClick={() => isAdmin && openTaskEdit(t, u.name)}
+                                >
+                                  <span className="pp-task-label">📌 {t.texte}</span>
+                                  {isAdmin && <span className="pp-task-edit" aria-hidden="true">✏</span>}
                                 </div>
+                              ))}
+
+                              {/* ── Boutons + Créneau / + Tâche ── */}
+                              {editMode && !isWE && !hasPlan && (
+                                <button className="pp-add-btn pp-add-shift" onClick={() => openShiftNew(u, dateStr)} title="Ajouter un créneau">
+                                  + Créneau
+                                </button>
+                              )}
+                              {isAdmin && !isWE && (
+                                <button className="pp-add-btn pp-add-task" onClick={() => openTaskNew(u.id, u.name, dateStr)} title="Ajouter une tâche">
+                                  + Tâche
+                                </button>
                               )}
 
-                              {!editMode && !plan && dayTaches.length === 0 && (
+                              {!isAdmin && !plan && dayTasks.length === 0 && (
                                 <span className="pp-empty">{isWE ? '—' : ''}</span>
                               )}
                             </>
@@ -559,7 +526,6 @@ export default function PlanningPartage() {
             </div>
             <div className="modal-body">
               {sfErr && <div className="error-msg">{sfErr}</div>}
-
               <div className="form-group">
                 <label>Type de poste</label>
                 <div className="pp-type-grid">
@@ -574,7 +540,6 @@ export default function PlanningPartage() {
                   ))}
                 </div>
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="form-group">
                   <label>Heure de début</label>
@@ -599,53 +564,41 @@ export default function PlanningPartage() {
         </div>
       )}
 
-      {/* ══ Modal tâche (planning_taches) ════════════════════════ */}
-      {modal && isAdmin && (
-        <div className="modal-overlay" onClick={() => !saving && setModal(null)}>
+      {/* ══ Modal tâche libre (planning_tasks) ═══════════════════ */}
+      {taskModal && isAdmin && (
+        <div className="modal-overlay" onClick={() => !saving && setTaskModal(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div>
-                <h2>{modal.existing ? 'Modifier la tâche' : 'Nouvelle tâche'}</h2>
+                <h2>{taskModal.existing ? 'Modifier la tâche' : 'Nouvelle tâche'}</h2>
                 <p className="pt-modal-sub">
-                  {modal.userName} — {format(new Date(modal.dateStr + 'T12:00:00'), 'EEEE d MMMM yyyy', { locale: fr })}
+                  {taskModal.userName} — {format(new Date(taskModal.dateStr + 'T12:00:00'), 'EEEE d MMMM yyyy', { locale: fr })}
                 </p>
               </div>
-              <button className="btn btn-ghost" onClick={() => setModal(null)} disabled={saving}>✕</button>
+              <button className="btn btn-ghost" onClick={() => setTaskModal(null)} disabled={saving}>✕</button>
             </div>
             <div className="modal-body">
               {err && <div className="error-msg">{err}</div>}
               <div className="form-group">
-                <label>Type de tâche</label>
-                <div className="pp-type-grid">
-                  {Object.entries(TACHES_CFG).map(([k, v]) => (
-                    <button key={k} type="button"
-                      className={`pp-type-btn pp-type-${v.color}${fType === k ? ' active' : ''}`}
-                      onClick={() => setFType(k)}
-                    >
-                      <span className="pp-type-icon">{v.icon}</span>
-                      <span>{v.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div className="form-group">
-                  <label>Heure de début</label>
-                  <input type="time" value={fDebut} onChange={e => setFDebut(e.target.value)} disabled={saving} />
-                </div>
-                <div className="form-group">
-                  <label>Heure de fin</label>
-                  <input type="time" value={fFin} onChange={e => setFFin(e.target.value)} disabled={saving} />
-                </div>
+                <label>Tâche *</label>
+                <input
+                  type="text"
+                  value={fTexte}
+                  onChange={e => setFTexte(e.target.value)}
+                  placeholder="Ex : Stérilisation salle 2, Accueil patients, Commande fournitures…"
+                  autoFocus
+                  disabled={saving}
+                  onKeyDown={e => e.key === 'Enter' && !saving && handleTaskSave()}
+                />
               </div>
             </div>
             <div className="modal-footer">
-              {modal.existing && (
-                <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>Supprimer</button>
+              {taskModal.existing && (
+                <button className="btn btn-danger" onClick={handleTaskDelete} disabled={saving}>Supprimer</button>
               )}
-              <button className="btn btn-outline" onClick={() => setModal(null)} disabled={saving}>Annuler</button>
-              <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? 'Enregistrement…' : modal.existing ? 'Modifier' : 'Ajouter'}
+              <button className="btn btn-outline" onClick={() => setTaskModal(null)} disabled={saving}>Annuler</button>
+              <button className="btn btn-primary" onClick={handleTaskSave} disabled={saving}>
+                {saving ? 'Enregistrement…' : taskModal.existing ? 'Modifier' : 'Ajouter'}
               </button>
             </div>
           </div>

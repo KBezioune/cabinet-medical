@@ -439,6 +439,33 @@ export const getUnreadMessageCount = async (userId, isAdmin) => {
   return count || 0
 }
 
+// ── PLANNING TASKS (texte libre — planning équipe) ────────────
+
+export const getPlanningTasks = async (userIds, from, to) => {
+  const { data, error } = await supabase.from('planning_tasks').select('*')
+    .in('user_id', userIds).gte('date', from).lte('date', to)
+    .order('created_at', { ascending: true })
+  if (error) { log('getPlanningTasks', error); throw error }
+  return data || []
+}
+
+export const insertPlanningTask = async (task) => {
+  const { data, error } = await supabase.from('planning_tasks').insert(task).select().single()
+  if (error) { log('insertPlanningTask', error); throw error }
+  return data
+}
+
+export const updatePlanningTask = async (id, data) => {
+  const { data: rec, error } = await supabase.from('planning_tasks').update(data).eq('id', id).select().single()
+  if (error) { log('updatePlanningTask', error); throw error }
+  return rec
+}
+
+export const deletePlanningTask = async (id) => {
+  const { error } = await supabase.from('planning_tasks').delete().eq('id', id)
+  if (error) { log('deletePlanningTask', error); throw error }
+}
+
 // ── GESTION EMPLOYÉES ─────────────────────────────────────────
 
 export const insertUserInDb = async ({ id, name, pin, role }) => {
