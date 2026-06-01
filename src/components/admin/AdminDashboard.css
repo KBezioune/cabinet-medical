@@ -222,8 +222,8 @@
 }
 .admin-drawer-item:hover { background: var(--gray-50); }
 .admin-drawer-item.active {
-  background: var(--brand-50, #eff6ff);
-  color: var(--brand-700, #1d4ed8);
+  background: var(--brand-50);
+  color: var(--brand-700);
   font-weight: 700;
 }
 
@@ -316,9 +316,10 @@
   .admin-sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
-    padding: 1.25rem 1rem 1rem;
-    border-bottom: 1px solid var(--gray-100);
+    justify-content: center;
+    padding: 1.125rem 1rem;
+    background: #F5F0E8;
+    border-bottom: 1px solid rgba(196, 168, 130, 0.35);
   }
 
 .admin-sidebar-brand-text { display: flex; flex-direction: column; min-width: 0; }

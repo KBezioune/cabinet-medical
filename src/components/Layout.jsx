@@ -21,7 +21,7 @@ export default function Layout({ children }) {
 
           <div className="header-brand">
             <div className="header-logo-ring">
-              <img src="/logo.png" alt="Logo" className="header-logo-img" />
+              <img src="/logo.jpg" alt="Logo" className="header-logo-img" />
             </div>
             <div className="header-texts">
               <span className="header-title">Centre Médical Horizons</span>

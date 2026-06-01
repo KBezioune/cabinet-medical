@@ -68,7 +68,7 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+  background: #F8F5F0;
   background-attachment: fixed;
   color: var(--gray-800);
   line-height: 1.5;
@@ -108,11 +108,11 @@ input  { font-family: inherit; font-size: inherit; }
   background: linear-gradient(135deg, #1a3316, #3D6B35);
   color: white;
   border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32);
+  box-shadow: 0 4px 14px rgba(61, 107, 53, 0.32);
 }
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #142813, #2e5228);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.44);
+  box-shadow: 0 6px 20px rgba(61, 107, 53, 0.44);
   transform: translateY(-1px);
 }
 

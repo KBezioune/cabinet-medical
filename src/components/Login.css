@@ -7,13 +7,13 @@
   padding: 1rem;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(145deg, #0a1628 0%, #0f2a4e 45%, #0c3460 70%, #0a1f3d 100%);
+  background: linear-gradient(145deg, #F5F0E8 0%, #EDE8DF 45%, #F8F5F0 100%);
 }
 
 .login-orb { position: absolute; border-radius: 50%; pointer-events: none; }
-.login-orb-1 { width: 580px; height: 580px; background: radial-gradient(circle, rgba(37,99,235,0.16), transparent 70%); top: -240px; right: -160px; }
-.login-orb-2 { width: 440px; height: 440px; background: radial-gradient(circle, rgba(8,145,178,0.13), transparent 70%); bottom: -150px; left: -130px; }
-.login-orb-3 { width: 200px; height: 200px; background: radial-gradient(circle, rgba(99,102,241,0.13), transparent 70%); top: 38%; left: 8%; }
+.login-orb-1 { width: 580px; height: 580px; background: radial-gradient(circle, rgba(61,107,53,0.12), transparent 70%); top: -240px; right: -160px; }
+.login-orb-2 { width: 440px; height: 440px; background: radial-gradient(circle, rgba(196,168,130,0.18), transparent 70%); bottom: -150px; left: -130px; }
+.login-orb-3 { width: 200px; height: 200px; background: radial-gradient(circle, rgba(61,107,53,0.08), transparent 70%); top: 38%; left: 8%; }
 
 /* ── Card ──────────────────────────────────────────────────── */
 .login-card {
@@ -21,7 +21,7 @@
   border-radius: 1.75rem;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 48px 96px -20px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+  box-shadow: 0 24px 64px -12px rgba(44,74,35,0.18), 0 0 0 1px rgba(196,168,130,0.25);
   display: flex;
   flex-direction: column;
   align-items: stretch;
