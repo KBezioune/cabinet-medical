@@ -18,9 +18,9 @@ const DEFAULT_USERS = [
   },
   {
     id: '00000000-0000-0000-0000-000000000003',
-    name: 'Laëla', pin: '2003', role: 'assistant',
+    name: 'Talya', pin: '2003', role: 'assistant',
     poste: 'Assistante médicale', phone: '+41 79 100 00 03',
-    email: 'laela@cabinet-bezioune.ch', date_entree: '2023-02-06',
+    email: 'talya@cabinet-bezioune.ch', date_entree: '2023-02-06',
     taux_activite: 60, heures_hebdo: 14.4, type_contrat: 'CDI',
     color: '#0891b2',
   },
