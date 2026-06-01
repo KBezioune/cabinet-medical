@@ -465,6 +465,48 @@ export const deletePlanningTask = async (id) => {
   if (error) { log('deletePlanningTask', error); throw error }
 }
 
+// ── DOSSIERS RH — documents ──────────────────────────────────
+
+export const getDocumentsByUser = async (userId) => {
+  const { data, error } = await supabase.from('documents').select('*')
+    .eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) { log('getDocumentsByUser', error); throw error }
+  return data || []
+}
+
+export const insertDocument = async (doc) => {
+  if (isTestMode()) return mockRec(doc)
+  const { data, error } = await supabase.from('documents').insert(doc).select().single()
+  if (error) { log('insertDocument', error); throw error }
+  return data
+}
+
+export const deleteDocument = async (id) => {
+  if (isTestMode()) return
+  const { error } = await supabase.from('documents').delete().eq('id', id)
+  if (error) { log('deleteDocument', error); throw error }
+}
+
+// ── DOSSIERS RH — Supabase Storage ───────────────────────────
+
+export const uploadToStorage = async (file, path) => {
+  if (isTestMode()) return { path }
+  const { data, error } = await supabase.storage.from('dossiers-rh').upload(path, file, { upsert: false })
+  if (error) { log('uploadToStorage', error); throw error }
+  return data
+}
+
+export const getStorageUrl = (path) => {
+  const { data } = supabase.storage.from('dossiers-rh').getPublicUrl(path)
+  return data.publicUrl
+}
+
+export const deleteFromStorage = async (path) => {
+  if (isTestMode()) return
+  const { error } = await supabase.storage.from('dossiers-rh').remove([path])
+  if (error) { log('deleteFromStorage', error); throw error }
+}
+
 // ── GESTION EMPLOYÉES ─────────────────────────────────────────
 
 export const insertUserInDb = async ({ id, name, pin, role }) => {

@@ -8,6 +8,7 @@ import GestionConges from './GestionConges'
 import SoldeHeures from './SoldeHeures'
 import DashboardRH from './DashboardRH'
 import Annuaire from './Annuaire'
+import DossiersRH from './DossiersRH'
 import Statistiques from './Statistiques'
 import ClockInOut from '../assistant/ClockInOut'
 import PlanningPartage from '../shared/PlanningPartage'
@@ -93,6 +94,11 @@ const IC = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
     </svg>
   ),
+  dossiers: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
+  ),
   frais: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -141,6 +147,7 @@ const ALL_TABS = [
   { id: 'pointages',   label: 'Pointages',          roles: ['admin'],             section: null },
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
   { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
+  { id: 'dossiers',  label: 'Dossiers RH',         roles: ['admin'],             section: null },
   { id: 'equipe',    label: 'Planning équipe',     roles: ['admin', 'manager'], section: 'Planning' },
   { id: 'soldes',    label: 'Soldes des heures',   roles: ['admin', 'manager'], section: 'RH' },
   { id: 'conges',    label: 'Congés',              roles: ['admin', 'manager'], section: null },
@@ -250,6 +257,7 @@ export default function AdminDashboard() {
           {tab === 'pointages' && <AllPointages />}
           {tab === 'dashboard' && <DashboardRH />}
           {tab === 'annuaire'  && <Annuaire />}
+          {tab === 'dossiers'  && <DossiersRH />}
           {tab === 'stats'     && <Statistiques />}
           {tab === 'equipe'    && <PlanningPartage />}
           {tab === 'soldes'    && <SoldeHeures />}

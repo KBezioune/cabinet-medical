@@ -1,0 +1,268 @@
+.drh-wrap { display: flex; flex-direction: column; gap: 1rem; }
+
+.drh-header-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.drh-subtitle {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+/* ── Retour ──────────────────────────────────────── */
+.drh-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--brand-600);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: fit-content;
+  transition: color 0.15s;
+}
+.drh-back-btn:hover { color: var(--brand-700); }
+
+/* ── Hero employée ───────────────────────────────── */
+.drh-emp-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.drh-emp-avatar-lg {
+  width: 52px !important;
+  height: 52px !important;
+  font-size: 1.375rem !important;
+}
+
+.drh-emp-name-lg {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--gray-800);
+  margin: 0;
+}
+
+.drh-emp-poste-lg {
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* ── Grille employées ────────────────────────────── */
+.drh-emp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.drh-emp-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  background: #fff;
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+.drh-emp-card:hover {
+  border-color: var(--brand-200);
+  box-shadow: 0 4px 16px rgba(61,107,53,0.1);
+  transform: translateY(-1px);
+}
+
+.drh-emp-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.drh-emp-info { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
+.drh-emp-name { font-size: 0.9375rem; font-weight: 700; color: var(--gray-800); }
+.drh-emp-poste { font-size: 0.75rem; color: var(--gray-500); }
+
+.drh-emp-arrow { color: var(--gray-400); flex-shrink: 0; }
+
+/* ── Grille dossiers ─────────────────────────────── */
+.drh-doss-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.drh-doss-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1.125rem;
+  background: #fff;
+  border: 1.5px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.12s, transform 0.1s;
+}
+.drh-doss-card:hover {
+  border-color: var(--brand-200);
+  box-shadow: 0 3px 12px rgba(61,107,53,0.09);
+  transform: translateX(2px);
+}
+
+.drh-doss-icon { font-size: 1.375rem; flex-shrink: 0; }
+.drh-doss-icon-lg { font-size: 2rem; }
+
+.drh-doss-info { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
+.drh-doss-code { font-size: 0.625rem; font-weight: 700; color: var(--gray-400); letter-spacing: 0.06em; }
+.drh-doss-label { font-size: 0.875rem; font-weight: 700; color: var(--gray-800); }
+
+.drh-doss-count {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--gray-400);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.drh-doss-count.has-files { color: var(--brand-600); }
+
+/* ── Hero dossier ────────────────────────────────── */
+.drh-folder-hero {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 0.25rem;
+}
+.drh-folder-title { font-size: 1rem; font-weight: 800; color: var(--gray-800); margin: 0; }
+.drh-folder-sub   { font-size: 0.8125rem; color: var(--gray-500); margin: 0; }
+
+/* ── Zone upload ─────────────────────────────────── */
+.drh-upload-zone {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--gray-100);
+  margin-top: 0.25rem;
+}
+
+.drh-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  padding: 0.5rem 1rem;
+}
+
+.drh-upload-hint {
+  font-size: 0.6875rem;
+  color: var(--gray-400);
+}
+
+.drh-upload-err {
+  width: 100%;
+  margin: 0;
+}
+
+.drh-spinner {
+  width: 14px !important;
+  height: 14px !important;
+  border-width: 2px !important;
+  flex-shrink: 0;
+}
+
+/* ── Liste fichiers ──────────────────────────────── */
+.drh-files-card { padding: 0; overflow: hidden; }
+
+.drh-files-list { display: flex; flex-direction: column; }
+
+.drh-file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--gray-100);
+  transition: background 0.12s;
+}
+.drh-file-row:last-child { border-bottom: none; }
+.drh-file-row:hover { background: var(--gray-50); }
+
+.drh-file-icon { font-size: 1.375rem; flex-shrink: 0; }
+
+.drh-file-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  min-width: 0;
+}
+.drh-file-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.drh-file-date {
+  font-size: 0.6875rem;
+  color: var(--gray-400);
+  font-variant-numeric: tabular-nums;
+}
+
+.drh-file-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.drh-btn-dl, .drh-btn-del {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  padding: 0.3125rem 0.625rem;
+}
+
+/* ── Vide ─────────────────────────────────────────── */
+.drh-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--gray-500);
+  font-size: 0.9375rem;
+}
+.drh-empty-hint { font-size: 0.8125rem; color: var(--gray-400); }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (min-width: 560px) {
+  .drh-emp-grid  { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .drh-doss-grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .drh-doss-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 560px) {
+  .drh-file-actions { flex-direction: column; gap: 0.375rem; }
+  .drh-btn-dl span, .drh-btn-del span { display: none; }
+}
