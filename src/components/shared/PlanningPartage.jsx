@@ -23,10 +23,10 @@ const TACHES_CFG = {
 }
 
 const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante' }
-const DEFAULT_DEBUT = '08:30'
-const DEFAULT_FIN   = '16:30'
-const DEFAULT_MATIN = '08:30–12:00'
-const DEFAULT_APREM = '14:00–16:30'
+const DEFAULT_DEBUT = '08:00'
+const DEFAULT_FIN   = '17:00'
+const DEFAULT_MATIN = '08:00–12:00'
+const DEFAULT_APREM = '14:00–17:00'
 
 function isMissingTable(err) {
   return err?.message?.includes('does not exist') || err?.code === '42P01'

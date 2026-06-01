@@ -28,6 +28,9 @@ const formatSolde = (min) => {
 }
 
 const TODAY      = format(new Date(), 'yyyy-MM-dd')
+// Jours d'ouverture du cabinet (1=Lun…7=Dim) — Mer/Sam/Dim fermés
+const OPEN_DAYS  = new Set([1, 2, 4, 5])
+const DEFAULT_DAY_MIN = 420 // 7h
 const VAC_QUOTA  = 20
 const THIS_YEAR  = new Date().getFullYear()
 const YEAR_START = `${THIS_YEAR}-01-01`
@@ -104,10 +107,12 @@ export default function DashboardRH() {
       const jourSem  = getDay(d) === 0 ? 7 : getDay(d)
       const plan     = userPlan.find(p => p.jour_semaine === jourSem)
       const pt       = userPts.find(p => p.date === dateStr)
-      const dayPlan  = plan ? planNetMinutes(plan.heure_debut, plan.heure_fin) : 0
+      const dayPlan  = plan
+        ? planNetMinutes(plan.heure_debut, plan.heure_fin)
+        : (OPEN_DAYS.has(jourSem) ? DEFAULT_DAY_MIN : 0)
       const dayWork  = pt?.duree_minutes || 0
 
-      plannedMin += dayPlan
+      if (dateStr <= TODAY) plannedMin += dayPlan
       workedMin  += dayWork
       if (dayPlan > 0 && dayWork === 0 && dateStr <= TODAY) absences++
     })

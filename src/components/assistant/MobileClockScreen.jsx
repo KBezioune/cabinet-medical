@@ -13,6 +13,8 @@ import './MobileClockScreen.css'
 const COUNTDOWN  = 5
 const CABINET    = { lat: 46.52627, lng: 6.58332 }
 const MAX_DIST_M = 200
+const OPEN_DAYS  = new Set([1, 2, 4, 5])
+const DEFAULT_DAY_MIN = 420
 const VAC_QUOTA = 20
 const THIS_YEAR = new Date().getFullYear()
 
@@ -78,12 +80,16 @@ export default function MobileClockScreen() {
         ])
         setPointage(pt)
         const days = eachDayOfInterval({ start: new Date(year, month-1, 1), end: new Date(year, month, 0) })
+        const todayStr = todayISO()
         let worked = 0, planned = 0
         days.forEach(d => {
-          const ds = format(d, 'yyyy-MM-dd')
-          const js = getDay(d) === 0 ? 7 : getDay(d)
+          const ds   = format(d, 'yyyy-MM-dd')
+          const js   = getDay(d) === 0 ? 7 : getDay(d)
           const plan = pl.find(p => p.jour_semaine === js)
-          if (plan) planned += planNetMinutes(plan.heure_debut, plan.heure_fin)
+          const dayPlan = plan
+            ? planNetMinutes(plan.heure_debut, plan.heure_fin)
+            : (OPEN_DAYS.has(js) ? DEFAULT_DAY_MIN : 0)
+          if (ds <= todayStr) planned += dayPlan
           const p = pts.find(x => x.date === ds)
           if (p) worked += p.duree_minutes || 0
         })

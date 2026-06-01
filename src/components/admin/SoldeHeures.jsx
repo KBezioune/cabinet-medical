@@ -22,6 +22,10 @@ const formatSolde = (min) => {
   return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
 }
 
+const TODAY       = format(new Date(), 'yyyy-MM-dd')
+const OPEN_DAYS   = new Set([1, 2, 4, 5]) // Lun Mar Jeu Ven — Mer/Sam/Dim fermés
+const DEFAULT_DAY_MIN = 420               // 7h par jour ouvré
+
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
   label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
@@ -104,10 +108,12 @@ export default function SoldeHeures() {
       const jourSem    = getDay(d) === 0 ? 7 : getDay(d)
       const plan       = userPlan.find(p => p.jour_semaine === jourSem)
       const pt         = userPts.find(p => p.date === dateStr)
-      const dayPlan    = plan ? planNetMinutes(plan.heure_debut, plan.heure_fin) : 0
+      const dayPlan    = plan
+        ? planNetMinutes(plan.heure_debut, plan.heure_fin)
+        : (OPEN_DAYS.has(jourSem) ? DEFAULT_DAY_MIN : 0)
       const dayWorked  = pt?.duree_minutes || 0
 
-      plannedMin += dayPlan
+      if (dateStr <= TODAY) plannedMin += dayPlan
       workedMin  += dayWorked
 
       if (dayPlan > 0 || dayWorked > 0) {

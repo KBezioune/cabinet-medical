@@ -125,7 +125,7 @@ const IC_MENU = (
 
 // ── Tous les onglets ───────────────────────────────────────────
 const ALL_TABS = [
-  { id: 'pointage',  label: 'Pointage',           roles: ['admin', 'manager'],  section: null },
+  { id: 'pointage',  label: 'Pointage',           roles: ['manager'],           section: null },
   { id: 'pointages', label: 'Pointages',           roles: ['admin'],             section: null },
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
   { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
