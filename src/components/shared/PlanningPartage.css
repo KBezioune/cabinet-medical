@@ -280,7 +280,7 @@
   padding: 0.4375rem !important;
   vertical-align: top;
   border-right: 1px solid var(--gray-100);
-  min-width: 96px;
+  min-width: 110px;
   transition: background 0.12s;
 }
 
@@ -351,10 +351,8 @@
 /* ── Chips créneaux (planning_shifts) ────────────────────────── */
 .pp-shift-chip {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem;
+  flex-direction: column;
+  gap: 0.125rem;
   padding: 0.3125rem 0.4375rem;
   border-radius: 0.4375rem;
   border-left: 3px solid var(--chip-border, var(--brand-300));
@@ -363,17 +361,6 @@
   margin-bottom: 0.25rem;
   position: relative;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  min-width: 0;
-}
-
-/* Ligne unique : [08:00–14:00] · Accueil patients */
-.pp-shift-chip-line {
-  display: flex;
-  align-items: center;
-  gap: 0.125rem;
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
 }
 
 .pp-shift-chip-time {
@@ -382,21 +369,14 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
-  flex-shrink: 0;
-}
-
-.pp-shift-chip-sep {
-  font-size: 0.625rem;
-  opacity: 0.5;
-  flex-shrink: 0;
 }
 
 .pp-shift-chip-task {
   font-size: 0.625rem;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.3;
   opacity: 0.9;
 }
 

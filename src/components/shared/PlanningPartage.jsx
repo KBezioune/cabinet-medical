@@ -363,14 +363,13 @@ export default function PlanningPartage() {
                                     className={`pp-shift-chip${editMode && !isWE ? ' pp-shift-chip-edit' : ''}`}
                                     style={{ '--chip-bg': clr.bg, '--chip-text': clr.text, '--chip-border': clr.border }}
                                     onClick={() => editMode && !isWE && openShiftEdit(u, dateStr, shift)}
-                                    title={editMode && !isWE ? 'Cliquer pour modifier' : (label || time)}
+                                    title={editMode && !isWE ? 'Cliquer pour modifier' : undefined}
                                     role={editMode && !isWE ? 'button' : undefined}
                                     tabIndex={editMode && !isWE ? 0 : undefined}
                                     onKeyDown={e => editMode && !isWE && e.key === 'Enter' && openShiftEdit(u, dateStr, shift)}
                                   >
-                                    <span className="pp-shift-chip-line">
-                                      {time}{label ? <span className="pp-shift-chip-sep"> · </span> : null}{label && <span className="pp-shift-chip-task">{label}</span>}
-                                    </span>
+                                    <span className="pp-shift-chip-time">{time}</span>
+                                    {label && <span className="pp-shift-chip-task">{label}</span>}
                                     {editMode && !isWE && <span className="pp-shift-chip-pen" aria-hidden="true">✏</span>}
                                   </div>
                                 )
