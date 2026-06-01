@@ -1,7 +1,6 @@
 import { Fragment, useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import AllPointages from './AllPointages'
-import PlanningTaches from './PlanningTaches'
 import MonthlyExport from './MonthlyExport'
 import GestionPins from './GestionPins'
 import JournauxAcces from './JournauxAcces'
@@ -131,7 +130,6 @@ const ALL_TABS = [
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
   { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
   { id: 'equipe',    label: 'Planning équipe',     roles: ['admin', 'manager'], section: 'Planning' },
-  { id: 'planning',  label: 'Planning tâches',     roles: ['admin', 'manager'], section: null },
   { id: 'soldes',    label: 'Soldes des heures',   roles: ['admin', 'manager'], section: 'RH' },
   { id: 'conges',    label: 'Congés',              roles: ['admin', 'manager'], section: null },
   { id: 'frais',     label: 'Notes de frais',      roles: ['admin', 'manager'], section: null },
@@ -240,7 +238,6 @@ export default function AdminDashboard() {
           {tab === 'annuaire'  && <Annuaire />}
           {tab === 'stats'     && <Statistiques />}
           {tab === 'equipe'    && <PlanningPartage />}
-          {tab === 'planning'  && <PlanningTaches />}
           {tab === 'soldes'    && <SoldeHeures />}
           {tab === 'conges'    && <GestionConges />}
           {tab === 'frais'     && <NotesDefrais />}
