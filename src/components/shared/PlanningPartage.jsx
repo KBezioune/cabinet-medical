@@ -3,7 +3,8 @@ import { getUsers } from '../../lib/localData'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   getPlanningForUsers, getAllConges,
-  getPlanningShifts, upsertPlanningShift, deletePlanningShift,
+  getPlanningShifts, upsertPlanningShift,
+  updatePlanningShiftById, deletePlanningShiftById,
   getPlanningTasks, insertPlanningTask, updatePlanningTask, deletePlanningTask,
 } from '../../lib/db'
 import { JOURS, getWeekDays } from '../../utils/dateUtils'
@@ -12,21 +13,27 @@ import { fr } from 'date-fns/locale'
 import Breadcrumb from './Breadcrumb'
 import './PlanningPartage.css'
 
-// Conservé pour les créneaux (type_poste)
-const TACHES_CFG = {
-  consultation:  { label: 'Consultation',  icon: '🩺', color: 'blue'   },
-  sterilisation: { label: 'Stérilisation', icon: '🧴', color: 'teal'   },
-  accueil:       { label: 'Accueil',       icon: '😊', color: 'green'  },
-  administratif: { label: 'Administratif', icon: '📋', color: 'orange' },
-  autre:         { label: 'Autre',         icon: '📌', color: 'gray'   },
-  conge:         { label: 'Congé',         icon: '🌴', color: 'conge'  },
-}
-
 const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante' }
 const DEFAULT_DEBUT = '08:00'
 const DEFAULT_FIN   = '17:00'
 const DEFAULT_MATIN = '08:00–12:00'
 const DEFAULT_APREM = '14:00–17:00'
+
+// Palette de couleurs pour les créneaux (assignée par hash du type)
+const SHIFT_PALETTE = [
+  { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' }, // bleu
+  { bg: '#dcfce7', text: '#166534', border: '#86efac' }, // vert
+  { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' }, // violet
+  { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' }, // ambre
+  { bg: '#fce7f3', text: '#9d174d', border: '#f9a8d4' }, // rose
+  { bg: '#ccfbf1', text: '#0f766e', border: '#5eead4' }, // teal
+]
+
+const getShiftColor = (type) => {
+  if (!type) return SHIFT_PALETTE[0]
+  const hash = type.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  return SHIFT_PALETTE[hash % SHIFT_PALETTE.length]
+}
 
 function isMissingTable(err) {
   return err?.message?.includes('does not exist') || err?.code === '42P01'
@@ -38,12 +45,11 @@ const SQL_SHIFTS = `CREATE TABLE planning_shifts (
   date DATE NOT NULL,
   heure_debut TIME,
   heure_fin TIME,
-  type_poste TEXT DEFAULT 'consultation',
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, date)
+  type_poste TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE planning_shifts ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "allow_all" ON planning_shifts FOR ALL USING (true);`
+ALTER TABLE planning_shifts DISABLE ROW LEVEL SECURITY;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.planning_shifts TO anon, authenticated;`
 
 export default function PlanningPartage() {
   const { user }  = useAuth()
@@ -55,26 +61,26 @@ export default function PlanningPartage() {
   const [monthRef,  setMonthRef]  = useState(new Date())
 
   // ── Données ──────────────────────────────────────────────────
-  const [planning,      setPlanning]      = useState([])
-  const [tasks,         setTasks]         = useState([])  // planning_tasks (texte libre)
-  const [conges,        setConges]        = useState([])
-  const [shifts,        setShifts]        = useState([])
-  const [loading,       setLoading]       = useState(true)
-  const [noShiftTable,  setNoShiftTable]  = useState(false)
-  const [reloadKey,     setReloadKey]     = useState(0)
+  const [planning,     setPlanning]     = useState([])
+  const [tasks,        setTasks]        = useState([])
+  const [conges,       setConges]       = useState([])
+  const [shifts,       setShifts]       = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [noShiftTable, setNoShiftTable] = useState(false)
+  const [reloadKey,    setReloadKey]    = useState(0)
 
   // ── Mode édition créneaux ─────────────────────────────────────
   const [editMode,  setEditMode]  = useState(false)
   const [sqlCopied, setSqlCopied] = useState(false)
 
   // ── Modal tâche libre (planning_tasks) ───────────────────────
-  const [taskModal, setTaskModal] = useState(null) // { userId, userName, dateStr, existing }
+  const [taskModal, setTaskModal] = useState(null)
   const [fTexte,    setFTexte]    = useState('')
   const [saving,    setSaving]    = useState(false)
   const [err,       setErr]       = useState('')
 
-  // ── Modal créneau shift (planning_shifts) ───────────────────
-  const [shiftModal, setShiftModal] = useState(null)
+  // ── Modal créneau (planning_shifts) ─────────────────────────
+  const [shiftModal, setShiftModal] = useState(null) // { userId, userName, dateStr, existing }
   const [sfType,  setSfType]  = useState('')
   const [sfDebut, setSfDebut] = useState(DEFAULT_DEBUT)
   const [sfFin,   setSfFin]   = useState(DEFAULT_FIN)
@@ -88,19 +94,17 @@ export default function PlanningPartage() {
   const monthEnd   = endOfMonth(monthRef)
   const monthDays  = eachDayOfInterval({ start: monthStart, end: monthEnd })
 
-  // ── Chargement données ───────────────────────────────────────
+  // ── Chargement ───────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       const ids  = users.map(u => u.id)
-      let from, to
-      if (viewMode === 'semaine') {
-        from = format(weekDays[0], 'yyyy-MM-dd')
-        to   = format(weekDays[6], 'yyyy-MM-dd')
-      } else {
-        from = format(monthStart, 'yyyy-MM-dd')
-        to   = format(monthEnd,   'yyyy-MM-dd')
-      }
+      const from = viewMode === 'semaine'
+        ? format(weekDays[0], 'yyyy-MM-dd')
+        : format(monthStart, 'yyyy-MM-dd')
+      const to = viewMode === 'semaine'
+        ? format(weekDays[6], 'yyyy-MM-dd')
+        : format(monthEnd, 'yyyy-MM-dd')
       try {
         const [pl, tsk, cg] = await Promise.all([
           getPlanningForUsers(ids),
@@ -122,20 +126,14 @@ export default function PlanningPartage() {
     load()
   }, [weekRef, monthRef, viewMode, reloadKey])
 
-  // ── Helpers données ──────────────────────────────────────────
-  const getDayShift = (userId, dateStr) =>
-    shifts.find(s => s.user_id === userId && s.date === dateStr) || null
+  // ── Helpers ──────────────────────────────────────────────────
+  // Tous les créneaux pour un user/jour (triés par heure)
+  const getDayShifts = (userId, dateStr) =>
+    shifts.filter(s => s.user_id === userId && s.date === dateStr)
+      .sort((a, b) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
 
+  // Planning récurrent hebdo ou fallback cabinet (affiché si aucun créneau)
   const getDayPlan = (userId, day) => {
-    const dateStr = format(day, 'yyyy-MM-dd')
-    const shift = getDayShift(userId, dateStr)
-    if (shift) return {
-      heure_debut: shift.heure_debut?.slice(0, 5),
-      heure_fin:   shift.heure_fin?.slice(0, 5),
-      type_poste:  shift.type_poste,
-      isShift:     true,
-      shiftObj:    shift,
-    }
     const jourSem = getDay(day) === 0 ? 7 : getDay(day)
     const found   = planning.find(p => p.user_id === userId && p.jour_semaine === jourSem && p.actif)
     if (found) return found
@@ -186,28 +184,36 @@ export default function PlanningPartage() {
     finally { setSaving(false) }
   }
 
-  // ── Handlers créneaux shifts ─────────────────────────────────
+  // ── Handlers créneaux ────────────────────────────────────────
   const openShiftNew = (u, dateStr) => {
     setShiftModal({ userId: u.id, userName: u.name, dateStr, existing: null })
     setSfType(''); setSfDebut(DEFAULT_DEBUT); setSfFin(DEFAULT_FIN); setSfErr('')
   }
-  const openShiftEdit = (u, dateStr, plan) => {
-    setShiftModal({ userId: u.id, userName: u.name, dateStr, existing: plan?.shiftObj || null })
-    setSfType(plan?.type_poste || '')
-    setSfDebut(plan?.heure_debut?.slice(0, 5) || DEFAULT_DEBUT)
-    setSfFin(plan?.heure_fin?.slice(0, 5)     || DEFAULT_FIN)
+  const openShiftEdit = (u, dateStr, shift) => {
+    // shift = ligne planning_shifts directe
+    setShiftModal({ userId: u.id, userName: u.name, dateStr, existing: shift })
+    setSfType(shift?.type_poste || '')
+    setSfDebut(shift?.heure_debut?.slice(0, 5) || DEFAULT_DEBUT)
+    setSfFin(shift?.heure_fin?.slice(0, 5)     || DEFAULT_FIN)
     setSfErr('')
   }
   const handleShiftSave = async () => {
     setSfSaving(true); setSfErr('')
     try {
-      await upsertPlanningShift({
-        user_id:     shiftModal.userId,
-        date:        shiftModal.dateStr,
+      const payload = {
         heure_debut: sfDebut || null,
         heure_fin:   sfFin   || null,
-        type_poste:  sfType,
-      })
+        type_poste:  sfType  || null,
+      }
+      if (shiftModal.existing) {
+        await updatePlanningShiftById(shiftModal.existing.id, payload)
+      } else {
+        await upsertPlanningShift({
+          user_id: shiftModal.userId,
+          date:    shiftModal.dateStr,
+          ...payload,
+        })
+      }
       setShiftModal(null); setReloadKey(k => k + 1)
     } catch (e) {
       if (isMissingTable(e)) setNoShiftTable(true)
@@ -218,7 +224,7 @@ export default function PlanningPartage() {
     if (!shiftModal.existing) { setShiftModal(null); return }
     setSfSaving(true); setSfErr('')
     try {
-      await deletePlanningShift(shiftModal.userId, shiftModal.dateStr)
+      await deletePlanningShiftById(shiftModal.existing.id)
       setShiftModal(null); setReloadKey(k => k + 1)
     } catch (e) { setSfErr(e.message || 'Erreur') }
     finally { setSfSaving(false) }
@@ -239,7 +245,7 @@ export default function PlanningPartage() {
 
       <div className="card pp-card">
 
-        {/* ── Bannière mode édition créneaux ─────────────────── */}
+        {/* ── Bannière mode édition ─────────────────────────── */}
         {editMode && (
           <div className="pp-edit-banner">
             <span className="pp-edit-banner-label">
@@ -247,7 +253,7 @@ export default function PlanningPartage() {
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
-              Mode édition créneaux — cliquez sur un créneau pour le modifier
+              Mode édition — cliquez sur un créneau pour le modifier, <strong>+</strong> pour en ajouter
             </span>
             <div className="pp-edit-banner-btns">
               <button className="btn btn-outline pp-banner-btn" onClick={() => { setEditMode(false); setShiftModal(null) }}>
@@ -263,13 +269,13 @@ export default function PlanningPartage() {
           </div>
         )}
 
-        {/* ── En-tête ──────────────────────────────────────────── */}
+        {/* ── En-tête ───────────────────────────────────────── */}
         <div className="pp-header">
           <div>
             <h2 className="pp-title">Planning de l'équipe</h2>
             <p className="pp-subtitle">
               {viewMode === 'mois'  ? 'Vue mensuelle · lecture seule'
-                : editMode         ? '✏️ Créneaux cliquables — modifications en temps réel'
+                : editMode         ? '✏️ Cliquez sur un créneau ou + pour modifier'
                 : isAdmin          ? '📌 Cliquez sur + Tâche pour assigner des tâches'
                 : 'Vue semaine · lecture seule'}
             </p>
@@ -279,7 +285,6 @@ export default function PlanningPartage() {
               <button className={`pp-view-btn${viewMode === 'semaine' ? ' active' : ''}`} onClick={() => { setViewMode('semaine'); setEditMode(false) }}>Semaine</button>
               <button className={`pp-view-btn${viewMode === 'mois'    ? ' active' : ''}`} onClick={() => { setViewMode('mois');    setEditMode(false) }}>Mois</button>
             </div>
-
             {isAdmin && viewMode === 'semaine' && !editMode && (
               <button className="btn btn-outline pp-edit-btn" onClick={() => setEditMode(true)}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -289,7 +294,6 @@ export default function PlanningPartage() {
                 Modifier créneaux
               </button>
             )}
-
             {viewMode === 'semaine' ? (
               <div className="pp-nav">
                 <button className="btn btn-outline pp-btn-nav" onClick={() => setWeekRef(d => subWeeks(d, 1))}>← Préc.</button>
@@ -306,7 +310,7 @@ export default function PlanningPartage() {
           </div>
         </div>
 
-        {/* ── Avertissement table planning_shifts manquante ───── */}
+        {/* ── Avertissement table manquante ─────────────────── */}
         {noShiftTable && editMode && (
           <div className="pp-no-table-warn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
@@ -349,24 +353,27 @@ export default function PlanningPartage() {
                       </div>
                     </td>
                     {monthDays.map((day, i) => {
-                      const ds        = format(day, 'yyyy-MM-dd')
-                      const isToday   = ds === today
-                      const isWE      = getDay(day) === 0 || getDay(day) === 6
-                      const conge     = getDayConge(u.id, ds)
-                      const plan      = getDayPlan(u.id, day)
-                      const dayTasks  = getDayTasks(u.id, ds)
+                      const ds       = format(day, 'yyyy-MM-dd')
+                      const isToday  = ds === today
+                      const isWE     = getDay(day) === 0 || getDay(day) === 6
+                      const conge    = getDayConge(u.id, ds)
+                      const plan     = getDayPlan(u.id, day)
+                      const dayShifts = getDayShifts(u.id, ds)
+                      const dayTasks = getDayTasks(u.id, ds)
                       let cellClass = 'pp-month-cell', content = null
                       if (conge) {
                         cellClass += conge.statut === 'approuve' ? ' pp-mc-conge' : ' pp-mc-wait'
                         content = <span title={conge.statut === 'approuve' ? 'Congé approuvé' : 'En attente'}>🌴</span>
                       } else if (isWE) {
                         cellClass += ' pp-mc-we'
+                      } else if (dayShifts.length > 0) {
+                        const clr = getShiftColor(dayShifts[0].type_poste)
+                        cellClass += ' pp-mc-task'
+                        const title = dayShifts.map(s => s.type_poste || `${s.heure_debut?.slice(0,5)}–${s.heure_fin?.slice(0,5)}`).join(', ')
+                        content = <span title={title} style={{ fontSize: '0.7rem' }}>🕐</span>
                       } else if (dayTasks.length > 0) {
                         cellClass += ' pp-mc-task pp-mc-task-blue'
                         content = <span title={dayTasks.map(t => t.texte).join(', ')}>📌</span>
-                      } else if (plan?.isShift) {
-                        cellClass += ' pp-mc-task pp-mc-task-blue'
-                        content = <span title={plan.type_poste || 'Créneau'}>🕐</span>
                       } else if (plan && !plan.fallback) {
                         cellClass += ' pp-mc-planned'; content = <span className="pp-mc-dot" />
                       } else if (plan?.fallback) {
@@ -420,11 +427,11 @@ export default function PlanningPartage() {
                       const dateStr  = format(day, 'yyyy-MM-dd')
                       const isToday  = dateStr === today
                       const isWE     = i >= 5
-                      const plan     = getDayPlan(u.id, day)
+                      const dayShifts = getDayShifts(u.id, dateStr)
+                      // Fallback plan shown only when no explicit shifts
+                      const plan     = dayShifts.length > 0 ? null : getDayPlan(u.id, day)
                       const dayTasks = getDayTasks(u.id, dateStr)
                       const conge    = getDayConge(u.id, dateStr)
-                      const hasShift = plan?.isShift
-                      const hasPlan  = !!plan
 
                       return (
                         <td
@@ -438,16 +445,34 @@ export default function PlanningPartage() {
                             </div>
                           ) : (
                             <>
-                              {/* ── Bloc horaire (créneau) ── */}
+                              {/* ── Créneaux (planning_shifts) ── */}
+                              {dayShifts.map(shift => {
+                                const clr = getShiftColor(shift.type_poste)
+                                return (
+                                  <div
+                                    key={shift.id}
+                                    className={`pp-shift-chip${editMode && !isWE ? ' pp-shift-chip-edit' : ''}`}
+                                    style={{ '--chip-bg': clr.bg, '--chip-text': clr.text, '--chip-border': clr.border }}
+                                    onClick={() => editMode && !isWE && openShiftEdit(u, dateStr, shift)}
+                                    title={editMode && !isWE ? 'Cliquer pour modifier' : shift.type_poste}
+                                    role={editMode && !isWE ? 'button' : undefined}
+                                    tabIndex={editMode && !isWE ? 0 : undefined}
+                                    onKeyDown={e => editMode && !isWE && e.key === 'Enter' && openShiftEdit(u, dateStr, shift)}
+                                  >
+                                    <span className="pp-shift-chip-time">
+                                      {shift.heure_debut?.slice(0,5)}–{shift.heure_fin?.slice(0,5)}
+                                    </span>
+                                    {shift.type_poste && (
+                                      <span className="pp-shift-chip-type">{shift.type_poste}</span>
+                                    )}
+                                    {editMode && !isWE && <span className="pp-shift-chip-pen" aria-hidden="true">✏</span>}
+                                  </div>
+                                )
+                              })}
+
+                              {/* ── Fallback plan (horaires récurrents/défaut) ── */}
                               {plan && (
-                                <div
-                                  className={`pp-hours${plan.fallback ? ' pp-hours-fallback' : ''}${hasShift ? ' pp-hours-shift' : ''}${editMode && !isWE ? ' pp-hours-editable' : ''}`}
-                                  onClick={() => editMode && !isWE && openShiftEdit(u, dateStr, plan)}
-                                  title={editMode && !isWE ? 'Cliquer pour modifier le créneau' : undefined}
-                                  role={editMode && !isWE ? 'button' : undefined}
-                                  tabIndex={editMode && !isWE ? 0 : undefined}
-                                  onKeyDown={e => editMode && !isWE && e.key === 'Enter' && openShiftEdit(u, dateStr, plan)}
-                                >
+                                <div className={`pp-hours${plan.fallback ? ' pp-hours-fallback' : ''}`}>
                                   {plan.fallback ? (
                                     <>
                                       <span className="pp-hours-line">{DEFAULT_MATIN}</span>
@@ -455,16 +480,8 @@ export default function PlanningPartage() {
                                     </>
                                   ) : (
                                     <span className="pp-hours-line">
-                                      {plan.heure_debut?.slice(0, 5)}–{plan.heure_fin?.slice(0, 5)}
+                                      {plan.heure_debut?.slice(0,5)}–{plan.heure_fin?.slice(0,5)}
                                     </span>
-                                  )}
-                                  {hasShift && plan.type_poste && (
-                                    <span className="pp-shift-badge pp-tache-blue">
-                                      {plan.type_poste}
-                                    </span>
-                                  )}
-                                  {editMode && !isWE && (
-                                    <span className="pp-hours-pen" aria-hidden="true">✏</span>
                                   )}
                                 </div>
                               )}
@@ -482,19 +499,19 @@ export default function PlanningPartage() {
                                 </div>
                               ))}
 
-                              {/* ── Boutons + Créneau / + Tâche ── */}
-                              {editMode && !isWE && !hasPlan && (
-                                <button className="pp-add-btn pp-add-shift" onClick={() => openShiftNew(u, dateStr)} title="Ajouter un créneau">
+                              {/* ── Boutons + ── */}
+                              {editMode && !isWE && (
+                                <button className="pp-add-btn pp-add-shift" onClick={() => openShiftNew(u, dateStr)}>
                                   + Créneau
                                 </button>
                               )}
                               {isAdmin && !isWE && (
-                                <button className="pp-add-btn pp-add-task" onClick={() => openTaskNew(u.id, u.name, dateStr)} title="Ajouter une tâche">
+                                <button className="pp-add-btn pp-add-task" onClick={() => openTaskNew(u.id, u.name, dateStr)}>
                                   + Tâche
                                 </button>
                               )}
 
-                              {!isAdmin && !plan && dayTasks.length === 0 && (
+                              {!isAdmin && !plan && dayShifts.length === 0 && dayTasks.length === 0 && (
                                 <span className="pp-empty">{isWE ? '—' : ''}</span>
                               )}
                             </>
@@ -510,7 +527,7 @@ export default function PlanningPartage() {
         )}
       </div>
 
-      {/* ══ Modal créneau shift ═══════════════════════════════════ */}
+      {/* ══ Modal créneau ════════════════════════════════════════ */}
       {shiftModal && isAdmin && (
         <div className="modal-overlay" onClick={() => !sfSaving && setShiftModal(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -559,7 +576,7 @@ export default function PlanningPartage() {
         </div>
       )}
 
-      {/* ══ Modal tâche libre (planning_tasks) ═══════════════════ */}
+      {/* ══ Modal tâche libre ════════════════════════════════════ */}
       {taskModal && isAdmin && (
         <div className="modal-overlay" onClick={() => !saving && setTaskModal(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>

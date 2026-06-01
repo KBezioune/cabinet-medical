@@ -366,6 +366,18 @@ export const deletePlanningShift = async (userId, date) => {
   if (error) { log('deletePlanningShift', error); throw error }
 }
 
+export const updatePlanningShiftById = async (id, data) => {
+  const { data: rec, error } = await supabase.from('planning_shifts')
+    .update(data).eq('id', id).select().single()
+  if (error) { log('updatePlanningShiftById', error); throw error }
+  return rec
+}
+
+export const deletePlanningShiftById = async (id) => {
+  const { error } = await supabase.from('planning_shifts').delete().eq('id', id)
+  if (error) { log('deletePlanningShiftById', error); throw error }
+}
+
 // ── CONTRATS ──────────────────────────────────────────────────
 
 export const getUserContract = async (userId) => {
