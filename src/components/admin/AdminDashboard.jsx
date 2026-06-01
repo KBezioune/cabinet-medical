@@ -126,7 +126,7 @@ const IC_MENU = (
 
 // ── Tous les onglets ───────────────────────────────────────────
 const ALL_TABS = [
-  { id: 'pointage',  label: 'Pointage',           roles: ['manager'],           section: null },
+  { id: 'pointage',  label: 'Pointage',           roles: ['admin', 'manager'],  section: null },
   { id: 'pointages', label: 'Pointages',           roles: ['admin'],             section: null },
   { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
   { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
@@ -143,8 +143,9 @@ const ALL_TABS = [
   { id: 'aide',      label: 'Aide & Support',      roles: ['admin', 'manager'], section: null },
 ]
 
-// IDs épinglés dans la bottom nav mobile (4 + Menu)
-const PINNED_IDS = ['pointages', 'pointage', 'equipe', 'soldes', 'messages']
+// IDs épinglés dans la bottom nav mobile (4 + Menu) — différenciés par rôle
+const PINNED_ADMIN   = ['pointages', 'equipe', 'soldes', 'messages']
+const PINNED_MANAGER = ['pointage',  'equipe', 'soldes', 'messages']
 
 export default function AdminDashboard() {
   const { user } = useAuth()
@@ -159,6 +160,8 @@ export default function AdminDashboard() {
   const pageSub   = isAdmin
     ? (user.badge ? `Bienvenue, ${user.name}` : 'Bienvenue, Dr. Bezioune')
     : 'Responsable — Assistante médicale'
+
+  const PINNED_IDS = isAdmin ? PINNED_ADMIN : PINNED_MANAGER
 
   // 4 onglets épinglés (filtrés selon le rôle, max 4)
   const pinnedTabs  = tabs.filter(t => PINNED_IDS.includes(t.id))

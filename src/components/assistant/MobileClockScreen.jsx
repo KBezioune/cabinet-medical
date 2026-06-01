@@ -10,8 +10,9 @@ import CircularGauge from '../shared/CircularGauge'
 import '../shared/CircularGauge.css'
 import './MobileClockScreen.css'
 
-const COUNTDOWN = 5
-const CABINET   = { lat: 46.52627, lng: 6.58332 }
+const COUNTDOWN  = 5
+const CABINET    = { lat: 46.52627, lng: 6.58332 }
+const MAX_DIST_M = 200
 const VAC_QUOTA = 20
 const THIS_YEAR = new Date().getFullYear()
 
@@ -108,11 +109,14 @@ export default function MobileClockScreen() {
   }
 
   const checkGPS = async () => {
-    if (user.role === 'admin') return true
+    if (user.role === 'admin' || user.badge === 'Manager · Admin') return true
     setGpsLoading(true); setError(null)
     try {
       const dist = await verifierPosition()
-      if (dist > 300) { setError(`📍 Trop loin du cabinet (${dist} m).`); return false }
+      if (dist > MAX_DIST_M) {
+        setError(`📍 Vous êtes à ${dist} m du cabinet. Le pointage est autorisé dans un rayon de ${MAX_DIST_M} m.`)
+        return false
+      }
       return true
     } catch (e) { setError(`📍 ${e.message}`); return false }
     finally { setGpsLoading(false) }

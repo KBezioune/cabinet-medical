@@ -112,6 +112,17 @@
   font-weight: 500;
 }
 
+.geo-telework {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* ── Écran de confirmation ──────────────── */
 .confirm-banner {
   display: flex;

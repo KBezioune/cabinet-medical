@@ -4,19 +4,17 @@ import { todayISO, formatDateLong, formatDateTime, minutesToHHMM } from '../../u
 import { getPointageByUserAndDate, insertPointage, updatePointage } from '../../lib/db'
 import './ClockInOut.css'
 
-const COUNTDOWN = 5
-
-// Coordonnées du cabinet
-const CABINET = { lat: 46.52627, lng: 6.58332 }
-const MAX_DISTANCE_M = 300
+const COUNTDOWN      = 5
+const CABINET        = { lat: 46.52627, lng: 6.58332 }
+const MAX_DISTANCE_M = 200
 
 // Formule de Haversine — distance en mètres entre deux coordonnées GPS
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
-  const R = 6371000
+  const R    = 6371000
   const toRad = d => d * Math.PI / 180
   const dLat = toRad(lat2 - lat1)
   const dLon = toRad(lon2 - lon1)
-  const a = Math.sin(dLat / 2) ** 2
+  const a    = Math.sin(dLat / 2) ** 2
     + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
@@ -49,6 +47,8 @@ const verifierPosition = () => new Promise((resolve, reject) => {
 
 export default function ClockInOut() {
   const { user, logout } = useAuth()
+  // Dessa bénéficie du télétravail : pointage autorisé sans restriction GPS
+  const isTelework = user.badge === 'Manager · Admin'
   const [pointage, setPointage]    = useState(null)
   const [loading, setLoading]      = useState(true)
   const [actionLoading, setAction] = useState(false)
@@ -91,15 +91,15 @@ export default function ClockInOut() {
     }, 1000)
   }
 
-  // Vérifie la position GPS si l'utilisateur n'est pas admin
+  // Vérifie la position GPS — bypass pour les admins et le télétravail Dessa
   const checkGPS = async () => {
-    if (user.role === 'admin') return true
+    if (user.role === 'admin' || isTelework) return true
     setGpsLoading(true)
     setError(null)
     try {
       const dist = await verifierPosition()
       if (dist > MAX_DISTANCE_M) {
-        setError(`📍 Pointage uniquement possible au cabinet (vous êtes à ${dist} m du cabinet).`)
+        setError(`📍 Vous êtes à ${dist} m du cabinet. Le pointage est autorisé dans un rayon de ${MAX_DISTANCE_M} m.`)
         return false
       }
       return true
@@ -227,13 +227,18 @@ export default function ClockInOut() {
               </div>
             )}
 
-            {user.role !== 'admin' && (
+            {isTelework && (
+              <div className="geo-info geo-telework">
+                🏠 Télétravail autorisé — pointage depuis n'importe où
+              </div>
+            )}
+            {!isTelework && user.role !== 'admin' && (
               <div className="geo-info">
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
                   <circle cx="12" cy="10" r="3"/>
                 </svg>
-                Le pointage est vérifié par GPS (rayon 300 m)
+                Le pointage est vérifié par GPS (rayon {MAX_DISTANCE_M} m)
               </div>
             )}
 
