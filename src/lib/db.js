@@ -355,7 +355,7 @@ export const getPlanningShifts = async (userIds, from, to) => {
 
 export const upsertPlanningShift = async (shift) => {
   const { data, error } = await supabase.from('planning_shifts')
-    .upsert(shift, { onConflict: 'user_id,date' }).select().single()
+    .insert(shift).select().single()
   if (error) { log('upsertPlanningShift', error); throw error }
   return data
 }
