@@ -1,7 +1,6 @@
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
 import Layout from './components/Layout'
-import AssistantDashboard from './components/assistant/AssistantDashboard'
 import AdminDashboard from './components/admin/AdminDashboard'
 import DbStatus from './components/DbStatus'
 
@@ -20,11 +19,7 @@ function AppContent() {
 
   return (
     <Layout>
-      {/* admin et manager → dashboard admin (avec onglets filtrés selon rôle) */}
-      {(user.role === 'admin' || user.role === 'manager')
-        ? <AdminDashboard />
-        : <AssistantDashboard />
-      }
+      <AdminDashboard />
     </Layout>
   )
 }

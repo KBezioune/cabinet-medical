@@ -11,12 +11,16 @@ import Annuaire from './Annuaire'
 import DossiersRH from './DossiersRH'
 import Statistiques from './Statistiques'
 import ClockInOut from '../assistant/ClockInOut'
+import MobileClockScreen from '../assistant/MobileClockScreen'
+import MonPlanningTaches from '../assistant/MonPlanningTaches'
+import MyHistory from '../assistant/MyHistory'
+import DemandeConge from '../assistant/DemandeConge'
+import MonSolde from '../assistant/MonSolde'
 import PlanningPartage from '../shared/PlanningPartage'
 import NotesDefrais from '../shared/NotesDefrais'
 import Aide from '../shared/Aide'
 import Messages from '../shared/Messages'
 import { getUnreadMessageCount } from '../../lib/db'
-
 import './AdminDashboard.css'
 
 // ── Icônes SVG ────────────────────────────────────────────────
@@ -25,6 +29,36 @@ const IC = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
       <polyline points="7 18 10 21 17 14"/>
+    </svg>
+  ),
+  clock: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+  ),
+  monplanning: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  ),
+  monsolde: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+      <polyline points="17 6 23 6 23 12"/>
+    </svg>
+  ),
+  myhistory: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+      <line x1="8" y1="18" x2="21" y2="18"/>
+      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
+      <line x1="3" y1="18" x2="3.01" y2="18"/>
+    </svg>
+  ),
+  monconge: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 12a11.05 11.05 0 0 0-22 0zm-5 7a3 3 0 0 1-6 0v-7"/>
     </svg>
   ),
   pointage: (
@@ -140,47 +174,69 @@ const DESSA_NAMES = ['Dessa', 'dessa', 'DESSA']
 const isDessa = u => DESSA_NAMES.includes(u?.name)
 
 // ── Tous les onglets ───────────────────────────────────────────
-// condition(user) optionnel — filtre supplémentaire au-delà du rôle
 const ALL_TABS = [
-  { id: 'monpointage', label: 'Mon pointage',       roles: ['admin'],             section: null,     condition: isDessa },
-  { id: 'pointage',    label: 'Pointage',           roles: ['manager'],           section: null },
-  { id: 'pointages',   label: 'Pointages',          roles: ['admin'],             section: null },
-  { id: 'dashboard', label: 'Dashboard RH',        roles: ['admin'],             section: 'Équipe' },
-  { id: 'annuaire',  label: 'Annuaire',            roles: ['admin', 'manager'], section: null },
-  { id: 'equipe',    label: 'Planning équipe',     roles: ['admin', 'manager'], section: 'Planning' },
-  { id: 'soldes',    label: 'Soldes des heures',   roles: ['admin', 'manager'], section: 'RH' },
-  { id: 'conges',    label: 'Congés',              roles: ['admin', 'manager'], section: null },
-  { id: 'frais',     label: 'Notes de frais',      roles: ['admin', 'manager'], section: null },
-  { id: 'messages',  label: 'Messages',            roles: ['admin', 'manager'], section: null },
-  { id: 'dossiers',  label: 'Dossiers RH',         roles: ['admin'],             section: 'Admin' },
-  { id: 'export',    label: 'Export comptabilité', roles: ['admin'],             section: null },
-  { id: 'stats',     label: 'Statistiques',        roles: ['admin'],             section: null },
-  { id: 'pins',      label: 'Mots de passe',       roles: ['admin'],             section: null },
-  { id: 'logs',      label: "Journaux d'accès",    roles: ['admin'],             section: null },
-  { id: 'aide',      label: 'Aide & Support',      roles: ['admin', 'manager'], section: null },
+  // Pointage personnel
+  { id: 'monpointage', label: 'Mon pointage',        roles: ['admin'],                          section: null,        condition: isDessa },
+  { id: 'pointage',    label: 'Pointage',            roles: ['manager'],                        section: null },
+  { id: 'clock',       label: 'Pointage',            roles: ['assistant'],                      section: null },
+  // Équipe (admin)
+  { id: 'pointages',   label: 'Pointages',           roles: ['admin'],                          section: null },
+  { id: 'dashboard',   label: 'Dashboard RH',        roles: ['admin'],                          section: 'Équipe' },
+  { id: 'annuaire',    label: 'Annuaire',            roles: ['admin', 'manager'],               section: null },
+  // Planning
+  { id: 'equipe',      label: 'Planning équipe',     roles: ['admin', 'manager', 'assistant'],  section: 'Planning' },
+  { id: 'monplanning', label: 'Mon Planning',        roles: ['assistant'],                      section: null },
+  // RH admin/manager
+  { id: 'soldes',      label: 'Soldes des heures',   roles: ['admin', 'manager'],               section: 'RH' },
+  { id: 'conges',      label: 'Congés',              roles: ['admin', 'manager'],               section: null },
+  // Mon espace assistant
+  { id: 'monsolde',    label: 'Mon Solde',           roles: ['assistant'],                      section: 'Mon espace' },
+  { id: 'myhistory',   label: 'Mes Pointages',       roles: ['assistant'],                      section: null },
+  { id: 'monconge',    label: 'Congés',              roles: ['assistant'],                      section: null },
+  // Commun
+  { id: 'frais',       label: 'Notes de frais',      roles: ['admin', 'manager', 'assistant'],  section: null },
+  { id: 'messages',    label: 'Messages',            roles: ['admin', 'manager', 'assistant'],  section: null },
+  // Admin
+  { id: 'dossiers',    label: 'Dossiers RH',         roles: ['admin'],                          section: 'Admin' },
+  { id: 'export',      label: 'Export comptabilité', roles: ['admin'],                          section: null },
+  { id: 'stats',       label: 'Statistiques',        roles: ['admin'],                          section: null },
+  { id: 'pins',        label: 'Mots de passe',       roles: ['admin'],                          section: null },
+  { id: 'logs',        label: "Journaux d'accès",    roles: ['admin'],                          section: null },
+  { id: 'aide',        label: 'Aide & Support',      roles: ['admin', 'manager', 'assistant'],  section: null },
 ]
 
-// IDs épinglés dans la bottom nav mobile (4 + Menu) — différenciés par profil
-const PINNED_ADMIN   = ['pointages',    'equipe', 'soldes', 'messages']
-const PINNED_DESSA   = ['monpointage',  'pointages', 'equipe', 'messages']
-const PINNED_MANAGER = ['pointage',     'equipe', 'soldes', 'messages']
+// IDs épinglés dans la bottom nav mobile (4 + Menu)
+const PINNED_ADMIN     = ['pointages',   'equipe', 'soldes',   'messages']
+const PINNED_DESSA     = ['monpointage', 'pointages', 'equipe','messages']
+const PINNED_MANAGER   = ['pointage',    'equipe', 'soldes',   'messages']
+const PINNED_ASSISTANT = ['clock',       'equipe', 'monsolde', 'messages']
 
 export default function AdminDashboard() {
   const { user } = useAuth()
 
   const tabs       = ALL_TABS.filter(t => t.roles.includes(user.role) && (!t.condition || t.condition(user)))
-  const [tab, setTab]           = useState(tabs[0]?.id || 'pointages')
+  const [tab, setTab]           = useState(tabs[0]?.id || 'clock')
   const [unreadMsg, setUnreadMsg] = useState(0)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [isMobile,  setIsMobile]  = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
 
   const isAdmin   = user.role === 'admin'
+  const isAssistant = user.role === 'assistant'
   const pageTitle = isAdmin ? 'Centre Médical Horizons' : `Bonjour, ${user.name}`
   const pageSub   = isAdmin
-    ? (user.badge ? `Bienvenue, ${user.name}` : `Bienvenue, ${user.name}`)
-    : 'Responsable — Assistante médicale'
+    ? `Bienvenue, ${user.name}`
+    : isAssistant ? 'Assistante médicale'
+    : 'Responsable médicale'
 
   const PINNED_IDS = DESSA_NAMES.includes(user?.name) ? PINNED_DESSA
-    : isAdmin ? PINNED_ADMIN
+    : isAdmin     ? PINNED_ADMIN
+    : isAssistant ? PINNED_ASSISTANT
     : PINNED_MANAGER
 
   // 4 onglets épinglés (filtrés selon le rôle, max 4)
@@ -238,7 +294,7 @@ export default function AdminDashboard() {
           <div className="admin-sidebar-user-info">
             <span className="admin-sidebar-user-name">{user.name}</span>
             <span className="admin-sidebar-user-role">
-              {user.badge ?? (isAdmin ? 'Médecin · Admin' : 'Manager')}
+              {user.badge ?? (isAdmin ? 'Médecin · Admin' : isAssistant ? 'Assistante' : 'Manager')}
             </span>
           </div>
         </div>
@@ -254,6 +310,11 @@ export default function AdminDashboard() {
         <div className="tab-content">
           {tab === 'monpointage' && <ClockInOut />}
           {tab === 'pointage'  && <ClockInOut />}
+          {tab === 'clock'     && (isMobile ? <MobileClockScreen /> : <ClockInOut />)}
+          {tab === 'monplanning' && <MonPlanningTaches />}
+          {tab === 'monsolde'  && <MonSolde />}
+          {tab === 'myhistory' && <MyHistory />}
+          {tab === 'monconge'  && <DemandeConge />}
           {tab === 'pointages' && <AllPointages />}
           {tab === 'dashboard' && <DashboardRH />}
           {tab === 'annuaire'  && <Annuaire />}
@@ -290,11 +351,13 @@ export default function AdminDashboard() {
               )}
             </span>
             <span className="admin-bottom-label">{
-              t.id === 'monpointage'                       ? 'Mon pointage'
-              : t.id === 'pointages' || t.id === 'pointage' ? 'Pointage'
-              : t.id === 'equipe'   ? 'Planning'
-              : t.id === 'soldes'   ? 'Soldes'
-              : t.id === 'messages' ? 'Messages'
+              t.id === 'monpointage'                                          ? 'Pointage'
+              : t.id === 'pointages' || t.id === 'pointage' || t.id === 'clock' ? 'Pointage'
+              : t.id === 'equipe'      ? 'Planning'
+              : t.id === 'soldes'      ? 'Soldes'
+              : t.id === 'monsolde'    ? 'Solde'
+              : t.id === 'messages'    ? 'Messages'
+              : t.id === 'monplanning' ? 'Planning'
               : t.label
             }</span>
             {tab === t.id && <span className="admin-bottom-dot" aria-hidden="true" />}
@@ -378,7 +441,7 @@ export default function AdminDashboard() {
               <div className="admin-sidebar-avatar">{user.name[0]}</div>
               <div className="admin-sidebar-user-info">
                 <span className="admin-sidebar-user-name">{user.name}</span>
-                <span className="admin-sidebar-user-role">{user.badge ?? (isAdmin ? 'Médecin · Admin' : 'Manager')}</span>
+                <span className="admin-sidebar-user-role">{user.badge ?? (isAdmin ? 'Médecin · Admin' : isAssistant ? 'Assistante' : 'Manager')}</span>
               </div>
             </div>
           </div>
