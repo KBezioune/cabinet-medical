@@ -75,7 +75,7 @@ export default function PlanningPartage() {
 
   // ── Modal créneau shift (planning_shifts) ───────────────────
   const [shiftModal, setShiftModal] = useState(null)
-  const [sfType,  setSfType]  = useState('consultation')
+  const [sfType,  setSfType]  = useState('')
   const [sfDebut, setSfDebut] = useState(DEFAULT_DEBUT)
   const [sfFin,   setSfFin]   = useState(DEFAULT_FIN)
   const [sfSaving,setSfSaving] = useState(false)
@@ -189,11 +189,11 @@ export default function PlanningPartage() {
   // ── Handlers créneaux shifts ─────────────────────────────────
   const openShiftNew = (u, dateStr) => {
     setShiftModal({ userId: u.id, userName: u.name, dateStr, existing: null })
-    setSfType('consultation'); setSfDebut(DEFAULT_DEBUT); setSfFin(DEFAULT_FIN); setSfErr('')
+    setSfType(''); setSfDebut(DEFAULT_DEBUT); setSfFin(DEFAULT_FIN); setSfErr('')
   }
   const openShiftEdit = (u, dateStr, plan) => {
     setShiftModal({ userId: u.id, userName: u.name, dateStr, existing: plan?.shiftObj || null })
-    setSfType(plan?.type_poste || 'consultation')
+    setSfType(plan?.type_poste || '')
     setSfDebut(plan?.heure_debut?.slice(0, 5) || DEFAULT_DEBUT)
     setSfFin(plan?.heure_fin?.slice(0, 5)     || DEFAULT_FIN)
     setSfErr('')
@@ -365,9 +365,8 @@ export default function PlanningPartage() {
                         cellClass += ' pp-mc-task pp-mc-task-blue'
                         content = <span title={dayTasks.map(t => t.texte).join(', ')}>📌</span>
                       } else if (plan?.isShift) {
-                        const cfg = TACHES_CFG[plan.type_poste] || TACHES_CFG.consultation
-                        cellClass += ` pp-mc-task pp-mc-task-${cfg.color}`
-                        content = <span title={cfg.label}>{cfg.icon}</span>
+                        cellClass += ' pp-mc-task pp-mc-task-blue'
+                        content = <span title={plan.type_poste || 'Créneau'}>🕐</span>
                       } else if (plan && !plan.fallback) {
                         cellClass += ' pp-mc-planned'; content = <span className="pp-mc-dot" />
                       } else if (plan?.fallback) {
@@ -460,8 +459,8 @@ export default function PlanningPartage() {
                                     </span>
                                   )}
                                   {hasShift && plan.type_poste && (
-                                    <span className={`pp-shift-badge pp-tache-${TACHES_CFG[plan.type_poste]?.color || 'gray'}`}>
-                                      {TACHES_CFG[plan.type_poste]?.icon}
+                                    <span className="pp-shift-badge pp-tache-blue">
+                                      {plan.type_poste}
                                     </span>
                                   )}
                                   {editMode && !isWE && (
@@ -527,18 +526,14 @@ export default function PlanningPartage() {
             <div className="modal-body">
               {sfErr && <div className="error-msg">{sfErr}</div>}
               <div className="form-group">
-                <label>Type de poste</label>
-                <div className="pp-type-grid">
-                  {Object.entries(TACHES_CFG).map(([k, v]) => (
-                    <button key={k} type="button"
-                      className={`pp-type-btn pp-type-${v.color}${sfType === k ? ' active' : ''}`}
-                      onClick={() => setSfType(k)}
-                    >
-                      <span className="pp-type-icon">{v.icon}</span>
-                      <span>{v.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <label>Type de poste (optionnel)</label>
+                <input
+                  type="text"
+                  value={sfType}
+                  onChange={e => setSfType(e.target.value)}
+                  placeholder="Ex : Consultation, Stérilisation, Accueil…"
+                  disabled={sfSaving}
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div className="form-group">
