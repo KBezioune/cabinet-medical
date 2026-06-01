@@ -6,13 +6,6 @@ import { format, addWeeks, subWeeks } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import './MonPlanningTaches.css'
 
-const TACHES = {
-  consultation:  { label: 'Consultation',  icon: '🩺', color: 'blue'   },
-  sterilisation: { label: 'Stérilisation', icon: '🧴', color: 'teal'   },
-  accueil:       { label: 'Accueil',       icon: '😊', color: 'green'  },
-  administratif: { label: 'Administratif', icon: '📋', color: 'orange' },
-  autre:         { label: 'Autre',         icon: '📌', color: 'gray'   },
-}
 
 export default function MonPlanningTaches() {
   const { user } = useAuth()
@@ -85,20 +78,17 @@ export default function MonPlanningTaches() {
                   {dayTaches.length === 0 ? (
                     <span className="mpt-empty">{isWeekend ? '😴 Repos' : 'Aucune tâche planifiée'}</span>
                   ) : (
-                    dayTaches.map(t => {
-                      const cfg = TACHES[t.tache] || TACHES.autre
-                      return (
-                        <div key={t.id} className={`mpt-tache mpt-tache-${cfg.color}`}>
-                          <div className="mpt-tache-top">
-                            <span className="mpt-tache-type">{cfg.icon} {cfg.label}</span>
-                            <span className="mpt-tache-hours">
-                              {t.heure_debut?.slice(0, 5)} – {t.heure_fin?.slice(0, 5)}
-                            </span>
-                          </div>
-                          {t.note && <div className="mpt-tache-note">{t.note}</div>}
+                    dayTaches.map(t => (
+                      <div key={t.id} className="mpt-tache mpt-tache-free">
+                        <div className="mpt-tache-top">
+                          <span className="mpt-tache-type">{t.tache}</span>
+                          <span className="mpt-tache-hours">
+                            {t.heure_debut?.slice(0, 5)} – {t.heure_fin?.slice(0, 5)}
+                          </span>
                         </div>
-                      )
-                    })
+                        {t.note && <div className="mpt-tache-note">{t.note}</div>}
+                      </div>
+                    ))
                   )}
                 </div>
               </div>

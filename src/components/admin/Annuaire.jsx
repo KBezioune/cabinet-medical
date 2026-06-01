@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getUsers } from '../../lib/localData'
-import { getPlanningByUser, getCongesByUser, getUserContract, updateUserContract } from '../../lib/db'
+import { getUsers, addLocalUser, patchLocalUser, removeLocalUser, pickColor } from '../../lib/localData'
+import { getPlanningByUser, getCongesByUser, getUserContract, updateUserContract,
+         insertUserInDb, updateUserInDb, deleteUserInDb } from '../../lib/db'
 import { format, differenceInYears } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
 import './Annuaire.css'
 
-const ROLE_LABEL = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante médicale' }
+const ROLE_LABEL = { admin: 'Admin', manager: 'Manager', assistant: 'Assistante médicale' }
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 
 const CONGE_STATUT = {
@@ -169,7 +170,7 @@ function formatFieldValue(key, val, anciennete) {
   }
 }
 
-function PanelContent({ user: emp, canEditContracts }) {
+function PanelContent({ user: emp, canEditContracts, isAdmin, currentUserId, onEdit, onDelete }) {
   const [tab,      setTab]      = useState('info')
   const [planning, setPlanning] = useState([])
   const [conges,   setConges]   = useState([])
@@ -188,6 +189,8 @@ function PanelContent({ user: emp, canEditContracts }) {
     ? differenceInYears(new Date(), new Date(emp.date_entree))
     : null
 
+  const canDelete = isAdmin && emp.role !== 'admin' && emp.id !== currentUserId
+
   return (
     <div className="ann-panel-inner">
       <div className="ann-panel-hero">
@@ -197,7 +200,7 @@ function PanelContent({ user: emp, canEditContracts }) {
         <div>
           <h2 className="ann-panel-name">{emp.name}</h2>
           <p className="ann-panel-poste">{emp.poste || ROLE_LABEL[emp.role]}</p>
-          <span className={`ann-role-badge ann-role-${emp.role}`}>{ROLE_LABEL[emp.role]}</span>
+          <span className={`ann-role-badge ann-role-${emp.role}`}>{emp.badge || ROLE_LABEL[emp.role]}</span>
         </div>
       </div>
 
@@ -211,33 +214,56 @@ function PanelContent({ user: emp, canEditContracts }) {
 
       <div className="ann-panel-body">
         {tab === 'info' && (
-          <dl className="ann-info-list">
-            <div className="ann-info-row">
-              <dt>Téléphone</dt>
-              <dd><a href={`tel:${emp.phone}`}>{emp.phone || '—'}</a></dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>E-mail</dt>
-              <dd><a href={`mailto:${emp.email}`}>{emp.email || '—'}</a></dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>Date d'entrée</dt>
-              <dd>
-                {emp.date_entree
-                  ? format(new Date(emp.date_entree), 'dd MMMM yyyy', { locale: fr })
-                  : '—'}
-                {anciennete !== null && <span className="ann-anciennete">&nbsp;({anciennete} an{anciennete !== 1 ? 's' : ''})</span>}
-              </dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>Taux d'activité</dt>
-              <dd>{emp.taux_activite != null ? `${emp.taux_activite} %` : '—'}</dd>
-            </div>
-            <div className="ann-info-row">
-              <dt>Rôle</dt>
-              <dd>{ROLE_LABEL[emp.role]}</dd>
-            </div>
-          </dl>
+          <>
+            <dl className="ann-info-list">
+              <div className="ann-info-row">
+                <dt>Téléphone</dt>
+                <dd><a href={`tel:${emp.phone}`}>{emp.phone || '—'}</a></dd>
+              </div>
+              <div className="ann-info-row">
+                <dt>E-mail</dt>
+                <dd><a href={`mailto:${emp.email}`}>{emp.email || '—'}</a></dd>
+              </div>
+              <div className="ann-info-row">
+                <dt>Date d'entrée</dt>
+                <dd>
+                  {emp.date_entree
+                    ? format(new Date(emp.date_entree), 'dd MMMM yyyy', { locale: fr })
+                    : '—'}
+                  {anciennete !== null && <span className="ann-anciennete">&nbsp;({anciennete} an{anciennete !== 1 ? 's' : ''})</span>}
+                </dd>
+              </div>
+              <div className="ann-info-row">
+                <dt>Taux d'activité</dt>
+                <dd>{emp.taux_activite != null ? `${emp.taux_activite} %` : '—'}</dd>
+              </div>
+              <div className="ann-info-row">
+                <dt>Rôle</dt>
+                <dd>{emp.badge || ROLE_LABEL[emp.role]}</dd>
+              </div>
+            </dl>
+
+            {isAdmin && (
+              <div className="ann-admin-actions">
+                <button className="btn btn-secondary ann-edit-btn" onClick={onEdit}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Modifier les infos
+                </button>
+                {canDelete && (
+                  <button className="btn btn-danger ann-del-btn" onClick={onDelete}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                      <path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                    Supprimer
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         {tab === 'contrat' && (
@@ -304,13 +330,153 @@ function PanelContent({ user: emp, canEditContracts }) {
   )
 }
 
+// ── Modal ajout / modification employée ──────────────────────────
+
+function EmployeeModal({ target, userCount, onSave, onClose }) {
+  const [name,   setName]   = useState(target?.name  || '')
+  const [poste,  setPoste]  = useState(target?.poste || '')
+  const [email,  setEmail]  = useState(target?.email || '')
+  const [pin,    setPin]    = useState('')
+  const [role,   setRole]   = useState(target?.role !== 'admin' ? (target?.role || 'assistant') : 'assistant')
+  const [saving, setSaving] = useState(false)
+  const [err,    setErr]    = useState('')
+
+  const isEdit = target !== null
+
+  const handleSave = async () => {
+    if (!name.trim())           { setErr('Le nom est requis.'); return }
+    if (!isEdit && !pin.trim()) { setErr('Le mot de passe initial est requis.'); return }
+    setSaving(true); setErr('')
+    try {
+      const finalRole = isEdit && target?.role === 'admin' ? 'admin' : role
+      await onSave({ name: name.trim(), poste: poste.trim(), email: email.trim(), pin: pin.trim() || undefined, role: finalRole })
+    } catch (e) {
+      setErr(e?.message || 'Erreur lors de l\'enregistrement')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{isEdit ? 'Modifier l\'employée' : 'Ajouter une employée'}</h2>
+          <button className="btn btn-ghost" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {err && <div className="error-msg">{err}</div>}
+          <div className="form-group">
+            <label>Nom complet *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Ex: Marie Dupont"
+              autoFocus
+            />
+          </div>
+          <div className="form-group">
+            <label>Poste</label>
+            <input
+              type="text"
+              value={poste}
+              onChange={e => setPoste(e.target.value)}
+              placeholder="Ex: Assistante médicale"
+            />
+          </div>
+          <div className="form-group">
+            <label>E-mail</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="exemple@cabinet.ch"
+            />
+          </div>
+          <div className="form-group">
+            <label>{isEdit ? 'Nouveau mot de passe (vide = inchangé)' : 'Mot de passe initial *'}</label>
+            <input
+              type="password"
+              value={pin}
+              onChange={e => setPin(e.target.value)}
+              placeholder={isEdit ? 'Laisser vide pour ne pas changer' : 'Code PIN ou mot de passe'}
+            />
+          </div>
+          {(!isEdit || target?.role !== 'admin') && (
+            <div className="form-group">
+              <label>Rôle</label>
+              <select value={role} onChange={e => setRole(e.target.value)}>
+                <option value="assistant">Assistante médicale</option>
+                <option value="manager">Manager / Responsable</option>
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-outline" onClick={onClose} disabled={saving}>Annuler</button>
+          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+            {saving ? 'Enregistrement...' : isEdit ? 'Modifier' : 'Ajouter'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal confirmation suppression ───────────────────────────────
+
+function DeleteConfirm({ target, onConfirm, onClose }) {
+  const [saving, setSaving] = useState(false)
+  const [err,    setErr]    = useState('')
+
+  const handleConfirm = async () => {
+    setSaving(true)
+    try { await onConfirm() }
+    catch (e) { setErr(e?.message || 'Erreur lors de la suppression'); setSaving(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Supprimer l'employée</h2>
+          <button className="btn btn-ghost" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {err && <div className="error-msg">{err}</div>}
+          <p style={{ fontSize: '0.9375rem', color: 'var(--gray-700)' }}>
+            Êtes-vous sûr de vouloir supprimer <strong>{target.name}</strong> ?<br/>
+            <span style={{ color: 'var(--gray-400)', fontSize: '0.8125rem' }}>Cette action est irréversible.</span>
+          </p>
+        </div>
+        <div className="modal-footer">
+          <button className="btn btn-outline" onClick={onClose} disabled={saving}>Annuler</button>
+          <button className="btn btn-danger" onClick={handleConfirm} disabled={saving}>
+            {saving ? 'Suppression...' : 'Supprimer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Composant principal ───────────────────────────────────────────
+
 export default function Annuaire() {
   const { user }   = useAuth()
-  const users      = getUsers()
-  const [selected, setSelected] = useState(null)
+  const [empList,   setEmpList]   = useState(() => getUsers())
+  const [selected,  setSelected]  = useState(null)
+  const [empModal,  setEmpModal]  = useState(null)   // null | 'add' | user_object (edit)
+  const [delTarget, setDelTarget] = useState(null)
 
-  const isAdmin    = user.role === 'admin'
-  const handleKey  = e => { if (e.key === 'Escape') setSelected(null) }
+  const isAdmin   = user.role === 'admin'
+  const handleKey = e => { if (e.key === 'Escape') { setSelected(null); setEmpModal(null); setDelTarget(null) } }
+
+  const refreshList = () => {
+    const updated = getUsers()
+    setEmpList(updated)
+    return updated
+  }
 
   const contractSummary = (emp) => {
     const parts = []
@@ -320,17 +486,55 @@ export default function Annuaire() {
     return parts.join(' · ')
   }
 
+  const handleSaveEmployee = async (data) => {
+    if (empModal === 'add') {
+      const id    = crypto.randomUUID()
+      const color = pickColor(empList.length)
+      addLocalUser({ id, color, name: data.name, poste: data.poste, email: data.email, pin: data.pin, role: data.role })
+      await insertUserInDb({ id, name: data.name, pin: data.pin, role: data.role }).catch(() => {})
+    } else {
+      const patch = { name: data.name, poste: data.poste, email: data.email, role: data.role }
+      if (data.pin) patch.pin = data.pin
+      patchLocalUser(empModal.id, patch)
+      await updateUserInDb(empModal.id, { name: data.name, role: data.role, ...(data.pin ? { pin: data.pin } : {}) }).catch(() => {})
+    }
+    const updated = refreshList()
+    if (empModal !== 'add') {
+      const fresh = updated.find(u => u.id === empModal.id)
+      if (fresh) setSelected(fresh)
+    }
+    setEmpModal(null)
+  }
+
+  const handleDeleteEmployee = async () => {
+    removeLocalUser(delTarget.id)
+    await deleteUserInDb(delTarget.id).catch(() => {})
+    if (selected?.id === delTarget.id) setSelected(null)
+    refreshList()
+    setDelTarget(null)
+  }
+
   return (
     <div className="ann-wrap" onKeyDown={handleKey}>
       <Breadcrumb items={['Cabinet Médical', 'Annuaire']} />
 
       <div className="card ann-header-card">
-        <h2 className="section-title">Annuaire de l'équipe</h2>
-        <p className="ann-count">{users.length} collaborateur{users.length > 1 ? 's' : ''}</p>
+        <div>
+          <h2 className="section-title">Annuaire de l'équipe</h2>
+          <p className="ann-count">{empList.length} collaborateur{empList.length > 1 ? 's' : ''}</p>
+        </div>
+        {isAdmin && (
+          <button className="btn btn-primary ann-add-btn" onClick={() => setEmpModal('add')}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Ajouter une employée
+          </button>
+        )}
       </div>
 
       <div className="ann-grid">
-        {users.map(emp => {
+        {empList.map(emp => {
           const summary = contractSummary(emp)
           return (
             <button
@@ -370,9 +574,33 @@ export default function Annuaire() {
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
-            <PanelContent user={selected} canEditContracts={isAdmin} />
+            <PanelContent
+              user={selected}
+              canEditContracts={isAdmin}
+              isAdmin={isAdmin}
+              currentUserId={user.id}
+              onEdit={() => setEmpModal(selected)}
+              onDelete={() => setDelTarget(selected)}
+            />
           </aside>
         </>
+      )}
+
+      {empModal !== null && (
+        <EmployeeModal
+          target={empModal === 'add' ? null : empModal}
+          userCount={empList.length}
+          onSave={handleSaveEmployee}
+          onClose={() => setEmpModal(null)}
+        />
+      )}
+
+      {delTarget && (
+        <DeleteConfirm
+          target={delTarget}
+          onConfirm={handleDeleteEmployee}
+          onClose={() => setDelTarget(null)}
+        />
       )}
     </div>
   )

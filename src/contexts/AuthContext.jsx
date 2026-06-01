@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { getUsers } from '../lib/localData'
 import { syncPinsFromDb, logAccess } from '../lib/db'
 
+
 const AuthContext   = createContext(null)
 const TIMEOUT_MS    = 20 * 60 * 1000 // 20 minutes
 const ACTIVITY_EVT  = ['click', 'keydown', 'scroll', 'touchstart']
@@ -12,11 +13,17 @@ export function AuthProvider({ children }) {
   const [sessionExpired, setSessionExpired] = useState(false)
   const timerRef = useRef(null)
 
-  // Restauration de session au démarrage
+  // Restauration de session au démarrage — relit les données à jour depuis localData
   useEffect(() => {
     const stored = sessionStorage.getItem('cabinet_user')
     if (stored) {
-      try { setUser(JSON.parse(stored)) } catch {}
+      try {
+        const parsed  = JSON.parse(stored)
+        const current = getUsers().find(u => u.id === parsed.id)
+        const resolved = current ?? parsed
+        sessionStorage.setItem('cabinet_user', JSON.stringify(resolved))
+        setUser(resolved)
+      } catch {}
     }
     setLoading(false)
     syncPinsFromDb().catch(() => {})

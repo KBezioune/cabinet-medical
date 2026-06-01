@@ -1,4 +1,3 @@
-// PINs par défaut — peuvent être modifiés par l'admin via localStorage
 const DEFAULT_USERS = [
   {
     id: '00000000-0000-0000-0000-000000000001',
@@ -10,7 +9,8 @@ const DEFAULT_USERS = [
   },
   {
     id: '00000000-0000-0000-0000-000000000002',
-    name: 'Dessa', pin: '2002', role: 'manager',
+    name: 'Dessa', pin: '2002', role: 'admin',
+    badge: 'Manager · Admin',
     poste: 'Coordinatrice médicale', phone: '+41 79 100 00 02',
     email: 'dessa@cabinet-bezioune.ch', date_entree: '2020-09-01',
     taux_activite: 80, heures_hebdo: 19.2, type_contrat: 'CDI',
@@ -27,6 +27,7 @@ const DEFAULT_USERS = [
   {
     id: '00000000-0000-0000-0000-000000000004',
     name: 'Dr. Bezioune', pin: '1234', role: 'admin',
+    badge: 'Médecin · Admin',
     poste: 'Médecin généraliste', phone: '+41 79 100 00 04',
     email: 'dr.bezioune@cabinet-bezioune.ch', date_entree: '2018-01-15',
     taux_activite: 100, heures_hebdo: 50, type_contrat: 'Indépendant',
@@ -34,27 +35,63 @@ const DEFAULT_USERS = [
   },
 ]
 
-const getCustomPins = () => {
-  try { return JSON.parse(localStorage.getItem('cabinet_pins') || '{}') }
-  catch { return {} }
-}
+const PALETTE = ['#4f8ef7','#8b5cf6','#0891b2','#059669','#f59e0b','#ef4444','#ec4899','#10b981','#f97316','#06b6d4']
 
-export const getUsers      = () => {
-  const custom = getCustomPins()
-  return DEFAULT_USERS.map(u => ({ ...u, pin: custom[u.id] ?? u.pin }))
+const rd = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key) || fallback) } catch { return JSON.parse(fallback) } }
+const wr = (key, val) => localStorage.setItem(key, JSON.stringify(val))
+
+const getCustomPins  = () => rd('cabinet_pins',         '{}')
+const getUserPatches = () => rd('cabinet_user_patches', '{}')
+const getDeletedIds  = () => rd('cabinet_deleted_ids',  '[]')
+const getExtraUsers  = () => rd('cabinet_extra_users',  '[]')
+
+export const getUsers = () => {
+  const pins    = getCustomPins()
+  const patches = getUserPatches()
+  const deleted = getDeletedIds()
+  const extras  = getExtraUsers()
+
+  const apply = u => ({ ...u, ...(patches[u.id] || {}), pin: pins[u.id] ?? u.pin })
+
+  return [
+    ...DEFAULT_USERS.filter(u => !deleted.includes(u.id)).map(apply),
+    ...extras.filter(u => !deleted.includes(u.id)).map(apply),
+  ]
 }
 
 export const updateUserPin = (userId, newPin) => {
   const pins = getCustomPins()
   pins[userId] = newPin
-  localStorage.setItem('cabinet_pins', JSON.stringify(pins))
+  wr('cabinet_pins', pins)
 }
+
+export const addLocalUser = (user) => {
+  const extras = getExtraUsers()
+  extras.push(user)
+  wr('cabinet_extra_users', extras)
+}
+
+export const patchLocalUser = (id, data) => {
+  const { pin, ...rest } = data
+  if (pin !== undefined && pin !== '') updateUserPin(id, pin)
+  const patches = getUserPatches()
+  patches[id] = { ...(patches[id] || {}), ...rest }
+  wr('cabinet_user_patches', patches)
+}
+
+export const removeLocalUser = (id) => {
+  const deleted = getDeletedIds()
+  if (!deleted.includes(id)) deleted.push(id)
+  wr('cabinet_deleted_ids', deleted)
+  wr('cabinet_extra_users', getExtraUsers().filter(u => u.id !== id))
+}
+
+export const pickColor = (idx) => PALETTE[idx % PALETTE.length]
 
 export const getAssistants = () => getUsers().filter(u => u.role === 'assistant')
 export const getManagers   = () => getUsers().filter(u => u.role === 'manager')
 export const getUserById   = (id) => getUsers().find(u => u.id === id)
 
-// Helpers rôles
 export const isAdmin   = (user) => user?.role === 'admin'
 export const isManager = (user) => user?.role === 'manager' || user?.role === 'admin'
 export const canManage = (user) => user?.role === 'manager' || user?.role === 'admin'

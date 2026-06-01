@@ -156,7 +156,9 @@ export default function AdminDashboard() {
 
   const isAdmin   = user.role === 'admin'
   const pageTitle = isAdmin ? 'Cabinet Médical Dr Bezioune' : `Bonjour, ${user.name}`
-  const pageSub   = isAdmin ? 'Bienvenue, Dr. Bezioune' : 'Responsable — Assistante médicale'
+  const pageSub   = isAdmin
+    ? (user.badge ? `Bienvenue, ${user.name}` : 'Bienvenue, Dr. Bezioune')
+    : 'Responsable — Assistante médicale'
 
   // 4 onglets épinglés (filtrés selon le rôle, max 4)
   const pinnedTabs  = tabs.filter(t => PINNED_IDS.includes(t.id))
@@ -215,7 +217,7 @@ export default function AdminDashboard() {
           <div className="admin-sidebar-user-info">
             <span className="admin-sidebar-user-name">{user.name}</span>
             <span className="admin-sidebar-user-role">
-              {isAdmin ? 'Médecin · Admin' : 'Manager'}
+              {user.badge ?? (isAdmin ? 'Médecin · Admin' : 'Manager')}
             </span>
           </div>
         </div>
@@ -353,7 +355,7 @@ export default function AdminDashboard() {
               <div className="admin-sidebar-avatar">{user.name[0]}</div>
               <div className="admin-sidebar-user-info">
                 <span className="admin-sidebar-user-name">{user.name}</span>
-                <span className="admin-sidebar-user-role">{isAdmin ? 'Médecin · Admin' : 'Manager'}</span>
+                <span className="admin-sidebar-user-role">{user.badge ?? (isAdmin ? 'Médecin · Admin' : 'Manager')}</span>
               </div>
             </div>
           </div>

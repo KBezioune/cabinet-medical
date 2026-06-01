@@ -59,6 +59,7 @@
 .pt-chip {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.2rem;
   width: 100%;
   padding: 0.25rem 0.3125rem;
@@ -74,14 +75,10 @@
 }
 .pt-chip:hover { filter: brightness(0.93); transform: scale(0.98); }
 
-.pt-chip-icon  { font-size: 0.75rem; flex-shrink: 0; }
-.pt-chip-hours { white-space: nowrap; }
+.pt-chip-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-chip-hours { white-space: nowrap; flex-shrink: 0; opacity: 0.8; }
 
-.pt-chip-blue   { background: var(--brand-100); color: var(--brand-700); }
-.pt-chip-teal   { background: #ccfbf1;          color: var(--teal-600);  }
-.pt-chip-green  { background: var(--green-100); color: var(--green-700); }
-.pt-chip-orange { background: var(--orange-100);color: var(--orange-600);}
-.pt-chip-gray   { background: var(--gray-100);  color: var(--gray-600);  }
+.pt-chip-free { background: var(--brand-100); color: var(--brand-700); }
 
 /* ── Bouton + ────────────────────────────────────────────── */
 .pt-add-btn {

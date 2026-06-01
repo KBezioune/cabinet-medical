@@ -38,7 +38,13 @@ export default function Layout({ children }) {
                 <div className="dropdown">
                   <div className="dropdown-info">
                     <p className="dropdown-name">{user.name}</p>
-                    <p className="dropdown-role">{user.role === 'admin' ? 'Médecin — Administrateur' : 'Assistante médicale'}</p>
+                    <p className="dropdown-role">{
+                      user.role === 'admin'
+                        ? (user.badge === 'Manager · Admin' ? 'Manager — Administratrice' : 'Médecin — Administrateur')
+                        : user.role === 'manager'
+                        ? 'Responsable médicale'
+                        : 'Assistante médicale'
+                    }</p>
                   </div>
                   <button className="dropdown-item" onClick={logout}>
                     <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

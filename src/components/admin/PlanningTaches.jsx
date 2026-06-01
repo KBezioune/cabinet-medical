@@ -8,14 +8,6 @@ import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
 import './PlanningTaches.css'
 
-const TACHES = {
-  consultation:  { label: 'Consultation',  icon: '🩺', color: 'blue'   },
-  sterilisation: { label: 'Stérilisation', icon: '🧴', color: 'teal'   },
-  accueil:       { label: 'Accueil',       icon: '😊', color: 'green'  },
-  administratif: { label: 'Administratif', icon: '📋', color: 'orange' },
-  autre:         { label: 'Autre',         icon: '📌', color: 'gray'   },
-}
-
 export default function PlanningTaches() {
   const { user } = useAuth()
   const assistants = getUsers().filter(u => u.role !== 'admin')
@@ -25,7 +17,7 @@ export default function PlanningTaches() {
   const [loading, setLoading] = useState(true)
   const [modal,   setModal]   = useState(null) // { userId, date, tache? }
 
-  const [fTache, setFTache] = useState('consultation')
+  const [fTache, setFTache] = useState('')
   const [fDebut, setFDebut] = useState('08:00')
   const [fFin,   setFFin]   = useState('17:00')
   const [fNote,  setFNote]  = useState('')
@@ -54,7 +46,7 @@ export default function PlanningTaches() {
 
   const openNew = (userId, dateStr) => {
     setModal({ userId, date: dateStr, tache: null })
-    setFTache('consultation')
+    setFTache('')
     setFDebut('08:00')
     setFFin('17:00')
     setFNote('')
@@ -71,12 +63,13 @@ export default function PlanningTaches() {
   }
 
   const handleSave = async () => {
+    if (!fTache.trim()) { setErr('Le nom de la tâche est requis.'); return }
     setSaving(true); setErr('')
     try {
       const payload = {
         user_id:     modal.userId,
         date:        modal.date,
-        tache:       fTache,
+        tache:       fTache.trim(),
         heure_debut: fDebut,
         heure_fin:   fFin,
         note:        fNote || null,
@@ -107,7 +100,6 @@ export default function PlanningTaches() {
     <div className="pt-wrap">
       <Breadcrumb items={['Cabinet Médical', 'Planning', 'Tâches assignées']} />
       <div className="card">
-        {/* Navigation semaine */}
         <div className="schedule-header" style={{ marginBottom: '1rem' }}>
           <h2 className="section-title">Planning des tâches</h2>
           <div className="week-nav">
@@ -121,15 +113,6 @@ export default function PlanningTaches() {
               Semaine suiv. →
             </button>
           </div>
-        </div>
-
-        {/* Légende */}
-        <div className="pt-legend">
-          {Object.entries(TACHES).map(([k, v]) => (
-            <span key={k} className={`pt-legend-item pt-dot-${v.color}`}>
-              {v.icon} {v.label}
-            </span>
-          ))}
         </div>
 
         {loading ? (
@@ -188,7 +171,6 @@ export default function PlanningTaches() {
         </p>
       </div>
 
-      {/* Modal ajout / édition */}
       {modal && (
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -207,19 +189,14 @@ export default function PlanningTaches() {
               {err && <div className="error-msg">{err}</div>}
 
               <div className="form-group">
-                <label>Type de tâche</label>
-                <div className="pt-tache-grid">
-                  {Object.entries(TACHES).map(([k, v]) => (
-                    <button
-                      key={k}
-                      className={`pt-tache-btn pt-tache-${v.color}${fTache === k ? ' active' : ''}`}
-                      onClick={() => setFTache(k)}
-                    >
-                      <span className="pt-tache-icon">{v.icon}</span>
-                      <span>{v.label}</span>
-                    </button>
-                  ))}
-                </div>
+                <label>Tâche *</label>
+                <input
+                  type="text"
+                  value={fTache}
+                  onChange={e => setFTache(e.target.value)}
+                  placeholder="Ex: Stérilisation, Accueil patients, Administratif…"
+                  autoFocus
+                />
               </div>
 
               <div className="pt-time-row">
@@ -265,14 +242,13 @@ export default function PlanningTaches() {
 }
 
 function TacheChip({ tache, onClick }) {
-  const cfg = TACHES[tache.tache] || TACHES.autre
   return (
     <button
-      className={`pt-chip pt-chip-${cfg.color}`}
+      className="pt-chip pt-chip-free"
       onClick={onClick}
-      title={`${cfg.label} — cliquer pour modifier`}
+      title={`${tache.tache} — cliquer pour modifier`}
     >
-      <span className="pt-chip-icon">{cfg.icon}</span>
+      <span className="pt-chip-label">{tache.tache}</span>
       <span className="pt-chip-hours">
         {tache.heure_debut?.slice(0, 5)}–{tache.heure_fin?.slice(0, 5)}
       </span>

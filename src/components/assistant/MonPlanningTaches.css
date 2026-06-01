@@ -123,9 +123,5 @@
   margin-top: 0.1875rem;
 }
 
-/* Couleurs par type */
-.mpt-tache-blue   { background: var(--brand-100); color: var(--brand-700); }
-.mpt-tache-teal   { background: #ccfbf1;          color: var(--teal-600);  }
-.mpt-tache-green  { background: var(--green-100); color: var(--green-700); }
-.mpt-tache-orange { background: var(--orange-100);color: var(--orange-600);}
-.mpt-tache-gray   { background: var(--gray-100);  color: var(--gray-600);  }
+/* Couleur tâche libre */
+.mpt-tache-free { background: var(--brand-100); color: var(--brand-700); }

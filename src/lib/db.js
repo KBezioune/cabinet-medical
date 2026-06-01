@@ -438,3 +438,20 @@ export const getUnreadMessageCount = async (userId, isAdmin) => {
   if (error) { return 0 }
   return count || 0
 }
+
+// ── GESTION EMPLOYÉES ─────────────────────────────────────────
+
+export const insertUserInDb = async ({ id, name, pin, role }) => {
+  const { error } = await supabase.from('users').upsert({ id, name, pin, role }, { onConflict: 'id' })
+  if (error) { log('insertUserInDb', error); throw error }
+}
+
+export const updateUserInDb = async (id, data) => {
+  const { error } = await supabase.from('users').update(data).eq('id', id)
+  if (error) { log('updateUserInDb', error); throw error }
+}
+
+export const deleteUserInDb = async (id) => {
+  const { error } = await supabase.from('users').delete().eq('id', id)
+  if (error) { log('deleteUserInDb', error); throw error }
+}
