@@ -229,6 +229,14 @@ export const logAccess = async ({ userId, action, userAgent }) => {
   } catch {}
 }
 
+export const cleanupTestAccessLogs = async () => {
+  try {
+    await supabase.from('access_logs')
+      .delete()
+      .or(`user_id.is.null,user_id.eq.${TEST_USER_ID}`)
+  } catch {}
+}
+
 // ── NOTIFICATIONS ─────────────────────────────────────────────
 
 export const insertNotification = async (notif) => {

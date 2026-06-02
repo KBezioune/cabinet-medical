@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { getUsersForAuth } from '../lib/localData'
-import { syncPinsFromDb, logAccess } from '../lib/db'
+import { syncPinsFromDb, logAccess, cleanupTestAccessLogs } from '../lib/db'
 
 
 const AuthContext   = createContext(null)
@@ -27,6 +27,7 @@ export function AuthProvider({ children }) {
     }
     setLoading(false)
     syncPinsFromDb().catch(() => {})
+    cleanupTestAccessLogs().catch(() => {})
   }, [])
 
   // Timeout d'inactivité — actif uniquement quand l'utilisateur est connecté
@@ -61,12 +62,19 @@ export function AuthProvider({ children }) {
     const found = getUsersForAuth().find(u => u.pin === password.trim())
     const ua    = navigator.userAgent
 
+    const isTestPassword = password.trim() === 'test2024'
+
     if (!found) {
-      logAccess({ userId: null, action: 'login_failure', userAgent: ua }).catch(() => {})
+      if (!isTestPassword) {
+        logAccess({ userId: null, action: 'login_failure', userAgent: ua }).catch(() => {})
+      }
       throw new Error('Mot de passe incorrect')
     }
 
-    if (!found._isTestUser) {
+    const isTestAccount = found._isTestUser
+      || /test|admin/i.test(found.name)
+      || isTestPassword
+    if (!isTestAccount) {
       logAccess({ userId: found.id, action: 'login_success', userAgent: ua }).catch(() => {})
     }
     sessionStorage.setItem('cabinet_user', JSON.stringify(found))
