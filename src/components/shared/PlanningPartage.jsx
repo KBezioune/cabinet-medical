@@ -1,16 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { getUsers } from '../../lib/localData'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   getPlanningForUsers, getAllConges,
   getPlanningShifts, upsertPlanningShift,
   updatePlanningShiftById, deletePlanningShiftById,
+  getPointagesByDateRange,
 } from '../../lib/db'
-import { JOURS, getWeekDays } from '../../utils/dateUtils'
+import { JOURS, getWeekDays, calcDuree } from '../../utils/dateUtils'
 import { format, addWeeks, subWeeks, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from './Breadcrumb'
 import './PlanningPartage.css'
+
+const AUTO_REFRESH_MS = 5 * 60 * 1000
+
+const calcDuration = (pt) => {
+  if (!pt || !pt.heure_arrivee) return null
+  if (!pt.heure_depart) return { inProgress: true, minutes: 0 }
+  const min = calcDuree(pt.heure_arrivee, pt.heure_depart)
+  return { inProgress: false, minutes: Math.max(0, min ?? 0) }
+}
+
+const fmtDur = (dur, short = false) => {
+  if (!dur) return null
+  if (dur.inProgress) return short ? '…' : 'En cours'
+  if (dur.minutes === 0) return null
+  const h = Math.floor(dur.minutes / 60)
+  const m = dur.minutes % 60
+  if (short) return m > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${h}h`
+  return m > 0 ? `${h}h ${m}min` : `${h}h`
+}
 
 const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante' }
 const DEFAULT_DEBUT = '08:00'
@@ -55,8 +75,10 @@ export default function PlanningPartage() {
   const [noShiftTable, setNoShiftTable] = useState(false)
   const [reloadKey,    setReloadKey]    = useState(0)
 
-  const [editMode,  setEditMode]  = useState(false)
-  const [sqlCopied, setSqlCopied] = useState(false)
+  const [editMode,   setEditMode]   = useState(false)
+  const [sqlCopied,  setSqlCopied]  = useState(false)
+  const [pointages,  setPointages]  = useState([])
+  const intervalRef = useRef(null)
 
   // Modal créneau
   const [shiftModal, setShiftModal] = useState(null)
@@ -69,6 +91,12 @@ export default function PlanningPartage() {
   const users      = getUsers()
   const weekDays   = getWeekDays(weekRef)
   const today      = format(new Date(), 'yyyy-MM-dd')
+  const isCurrentWeek = viewMode === 'semaine' && weekDays.some(d => format(d, 'yyyy-MM-dd') === today)
+  const workDays      = weekDays.slice(0, 6)
+  const getPointage   = (userId, day) => {
+    const dateStr = format(day, 'yyyy-MM-dd')
+    return pointages.find(p => p.user_id === userId && p.date === dateStr)
+  }
   const monthStart = startOfMonth(monthRef)
   const monthEnd   = endOfMonth(monthRef)
   const monthDays  = eachDayOfInterval({ start: monthStart, end: monthEnd })
@@ -90,10 +118,24 @@ export default function PlanningPartage() {
         if (isMissingTable(e)) setNoShiftTable(true)
         else console.error(e)
       }
+      if (viewMode === 'semaine') {
+        try {
+          const pts = await getPointagesByDateRange(ids, from, to)
+          setPointages(pts)
+        } catch { /* silencieux */ }
+      }
       setLoading(false)
     }
     load()
   }, [weekRef, monthRef, viewMode, reloadKey])
+
+  // Auto-refresh toutes les 5 min (semaine uniquement)
+  useEffect(() => {
+    if (viewMode !== 'semaine') { clearInterval(intervalRef.current); return }
+    clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(() => setReloadKey(k => k + 1), AUTO_REFRESH_MS)
+    return () => clearInterval(intervalRef.current)
+  }, [viewMode, weekRef])
 
   const getDayShifts = (userId, dateStr) =>
     shifts.filter(s => s.user_id === userId && s.date === dateStr)
@@ -320,8 +362,12 @@ export default function PlanningPartage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map(u => (
-                  <tr key={u.id} className={`pp-row pp-row-${u.role}`}>
+                {users.map(u => {
+                  const todayPt  = isCurrentWeek ? getPointage(u.id, new Date()) : null
+                  const todayDur = calcDuration(todayPt)
+                  return (
+                  <Fragment key={u.id}>
+                  <tr className={`pp-row pp-row-${u.role}`}>
                     <td className="pp-td-user">
                       <div className="pp-user">
                         <div className={`pp-avatar pp-avatar-${u.role}`}>{u.name[0]}</div>
@@ -407,12 +453,100 @@ export default function PlanningPartage() {
                       )
                     })}
                   </tr>
-                ))}
+                  {isCurrentWeek && todayDur && (
+                    <tr className="pp-daily-row">
+                      <td colSpan={weekDays.length + 1}>
+                        <span className="pp-daily-text">
+                          ⏱{' '}
+                          {todayDur.inProgress
+                            ? <span className="pp-daily-progress">En cours ▶ — pointage en cours</span>
+                            : <><strong className="pp-daily-hours">{fmtDur(todayDur)}</strong> travaillées aujourd'hui</>
+                          }
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* ── Récapitulatif heures semaine ──────────────────────────── */}
+      {!loading && viewMode === 'semaine' && (
+        <div className="card pp-recap-card">
+          <div className="pp-recap-header">
+            <h2 className="pp-title">Récapitulatif heures semaine</h2>
+            <span className="pp-recap-sub">Mise à jour auto. toutes les 5 min</span>
+          </div>
+          <div className="pp-table-wrap">
+            <table className="pp-table pp-recap-table">
+              <thead>
+                <tr>
+                  <th className="pp-th-user">Collaborateur</th>
+                  {workDays.map((day, i) => {
+                    const ds = format(day, 'yyyy-MM-dd')
+                    return (
+                      <th key={i} className={`pp-th-day${ds === today ? ' pp-th-today' : ''}${i >= 5 ? ' pp-th-we' : ''}`}>
+                        <span className="pp-th-jour">{JOURS[i].slice(0, 3)}</span>
+                        <span className="pp-th-date">{format(day, 'dd/MM', { locale: fr })}</span>
+                      </th>
+                    )
+                  })}
+                  <th className="pp-th-total">Total sem.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => {
+                  let totalMin = 0, hasInProgress = false
+                  const cells = workDays.map(day => {
+                    const pt  = getPointage(u.id, day)
+                    const dur = calcDuration(pt)
+                    if (dur?.inProgress) hasInProgress = true
+                    if (dur && !dur.inProgress) totalMin += dur.minutes
+                    return { dur, dateStr: format(day, 'yyyy-MM-dd') }
+                  })
+                  const h = Math.floor(totalMin / 60), m = totalMin % 60
+                  const totalStr = totalMin > 0 ? (m > 0 ? `${h}h ${m}min` : `${h}h`) : null
+                  return (
+                    <tr key={u.id}>
+                      <td className="pp-td-user">
+                        <div className="pp-user">
+                          <div className={`pp-avatar pp-avatar-${u.role}`}>{u.name[0]}</div>
+                          <span className="pp-user-name">{u.name}</span>
+                        </div>
+                      </td>
+                      {cells.map(({ dur, dateStr }, i) => (
+                        <td key={i} className={`pp-td pp-recap-day${dateStr === today ? ' pp-td-today' : ''}${i >= 5 ? ' pp-td-we' : ''}`}>
+                          {dur
+                            ? dur.inProgress
+                              ? <span className="pp-recap-progress">En cours ▶</span>
+                              : <span className="pp-recap-dur">{fmtDur(dur, true)}</span>
+                            : <span className="pp-recap-none">—</span>
+                          }
+                        </td>
+                      ))}
+                      <td className="pp-td pp-recap-total-cell">
+                        {totalStr || hasInProgress ? (
+                          <strong className="pp-recap-total-val">
+                            {totalStr ?? '0h'}
+                            {hasInProgress && <span className="pp-recap-progress"> +…</span>}
+                          </strong>
+                        ) : (
+                          <span className="pp-recap-none">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* ══ Modal créneau (horaire + tâche) ══════════════════════ */}
       {shiftModal && isAdmin && (

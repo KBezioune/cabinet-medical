@@ -1,5 +1,46 @@
 .pp-wrap { display: flex; flex-direction: column; gap: 1rem; }
 
+/* ── Sous-ligne heures journalières ──────────────────────────── */
+.pp-daily-row td {
+  padding: 0.2rem 0.75rem 0.375rem;
+  background: var(--gray-50);
+  border-bottom: 2px solid var(--gray-200);
+}
+.pp-daily-text {
+  font-size: 0.6875rem;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+.pp-daily-hours   { color: var(--green-700); }
+.pp-daily-progress { color: var(--brand-600); font-style: italic; }
+
+/* ── Récapitulatif heures semaine ────────────────────────────── */
+.pp-recap-card { padding: 1.25rem; }
+.pp-recap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.pp-recap-sub { font-size: 0.75rem; color: var(--gray-400); }
+.pp-th-total {
+  background: var(--gray-100);
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 80px;
+}
+.pp-recap-day { text-align: center; vertical-align: middle; }
+.pp-recap-dur  { font-weight: 600; color: var(--green-700); font-size: 0.75rem; }
+.pp-recap-progress { color: var(--brand-600); font-size: 0.6875rem; font-style: italic; white-space: nowrap; }
+.pp-recap-none { color: var(--gray-300); }
+.pp-recap-total-cell { text-align: center; vertical-align: middle; background: var(--gray-50); }
+.pp-recap-total-val  { font-weight: 700; color: var(--gray-800); font-size: 0.8125rem; }
+
 .pp-card {
   padding: 1.25rem;
   overflow: hidden;
