@@ -66,7 +66,9 @@ export function AuthProvider({ children }) {
       throw new Error('Mot de passe incorrect')
     }
 
-    logAccess({ userId: found.id, action: 'login_success', userAgent: ua }).catch(() => {})
+    if (!found._isTestUser) {
+      logAccess({ userId: found.id, action: 'login_success', userAgent: ua }).catch(() => {})
+    }
     sessionStorage.setItem('cabinet_user', JSON.stringify(found))
     setSessionExpired(false)
     setUser(found)
