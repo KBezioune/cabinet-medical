@@ -1,21 +1,44 @@
-import { useState, useEffect } from 'react'
-import { JOURS, getWeekDays } from '../../utils/dateUtils'
+import { useState, useEffect, useRef, Fragment } from 'react'
+import { JOURS, getWeekDays, calcDuree } from '../../utils/dateUtils'
 import { getAssistants } from '../../lib/localData'
 import { getPlanningForUsers, getPointagesByDateRange, upsertPlanning } from '../../lib/db'
 import { format, addWeeks, subWeeks } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import './WeeklyPlanning.css'
 
+const AUTO_REFRESH_MS = 5 * 60 * 1000
+
+// { inProgress, minutes } ou null
+const calcDuration = (pt) => {
+  if (!pt || !pt.heure_arrivee) return null
+  if (!pt.heure_depart) return { inProgress: true, minutes: 0 }
+  const min = calcDuree(pt.heure_arrivee, pt.heure_depart)
+  return { inProgress: false, minutes: Math.max(0, min ?? 0) }
+}
+
+// Format lisible — short = compact pour tableaux
+const fmtDur = (dur, short = false) => {
+  if (!dur) return null
+  if (dur.inProgress) return short ? '…' : 'En cours'
+  if (dur.minutes === 0) return null
+  const h = Math.floor(dur.minutes / 60)
+  const m = dur.minutes % 60
+  if (short) return m > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${h}h`
+  return m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
 export default function WeeklyPlanning() {
-  const [planning,  setPlanning]  = useState([])
-  const [pointages, setPointages] = useState([])
-  const [weekRef,   setWeekRef]   = useState(new Date())
-  const [loading,   setLoading]   = useState(true)
+  const [planning,    setPlanning]    = useState([])
+  const [pointages,   setPointages]   = useState([])
+  const [weekRef,     setWeekRef]     = useState(new Date())
+  const [loading,     setLoading]     = useState(true)
   const [editingPlan, setEditingPlan] = useState(null)
-  const [msg, setMsg] = useState(null)
+  const [msg,         setMsg]         = useState(null)
+  const intervalRef = useRef(null)
 
   const assistants = getAssistants()
   const weekDays   = getWeekDays(weekRef)
+  const workDays   = weekDays.slice(0, 6) // Lun–Sam
 
   const refresh = async () => {
     setLoading(true)
@@ -33,9 +56,14 @@ export default function WeeklyPlanning() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { refresh() }, [weekRef])
+  useEffect(() => {
+    refresh()
+    clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(refresh, AUTO_REFRESH_MS)
+    return () => clearInterval(intervalRef.current)
+  }, [weekRef])
 
-  const getPlan    = (userId, i) => planning.find(p => p.user_id === userId && p.jour_semaine === i + 1)
+  const getPlan     = (userId, i)   => planning.find(p => p.user_id === userId && p.jour_semaine === i + 1)
   const getPointage = (userId, day) => {
     const dateStr = format(day, 'yyyy-MM-dd')
     return pointages.find(p => p.user_id === userId && p.date === dateStr)
@@ -53,11 +81,14 @@ export default function WeeklyPlanning() {
     }
   }
 
-  const today = format(new Date(), 'yyyy-MM-dd')
+  const today         = format(new Date(), 'yyyy-MM-dd')
+  const isCurrentWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === today)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {msg && <div className={msg.type === 'error' ? 'error-msg' : 'success-msg'}>{msg.text}</div>}
+
+      {/* ── PLANNING PRINCIPAL ─────────────────────────────────── */}
       <div className="card">
         <div className="schedule-header" style={{ marginBottom: '1.5rem' }}>
           <h2 className="section-title">Planning hebdomadaire</h2>
@@ -80,7 +111,7 @@ export default function WeeklyPlanning() {
                     const dateStr = format(day, 'yyyy-MM-dd')
                     return (
                       <th key={i} className={dateStr === today ? 'today-col' : ''}>
-                        <div>{JOURS[i].slice(0,3)}</div>
+                        <div>{JOURS[i].slice(0, 3)}</div>
                         <div style={{ fontWeight: 400, fontSize: '0.75rem', color: 'var(--gray-500)' }}>
                           {format(day, 'dd/MM', { locale: fr })}
                         </div>
@@ -90,44 +121,66 @@ export default function WeeklyPlanning() {
                 </tr>
               </thead>
               <tbody>
-                {assistants.map(u => (
-                  <tr key={u.id}>
-                    <td className="user-cell"><strong>{u.name}</strong></td>
-                    {weekDays.map((day, i) => {
-                      const plan      = getPlan(u.id, i)
-                      const pt        = getPointage(u.id, day)
-                      const dateStr   = format(day, 'yyyy-MM-dd')
-                      const isWeekend = i >= 5
-                      return (
-                        <td key={i} className={`day-cell ${dateStr === today ? 'today-cell' : ''} ${isWeekend ? 'weekend-cell' : ''}`}>
-                          {editingPlan?.userId === u.id && editingPlan?.dayIndex === i ? (
-                            <PlanEditor
-                              plan={plan}
-                              onSave={(d, f) => savePlan(u.id, i, d, f)}
-                              onCancel={() => setEditingPlan(null)}
-                            />
-                          ) : (
-                            <div className="plan-cell-content" onClick={() => setEditingPlan({ userId: u.id, dayIndex: i })} title="Cliquer pour modifier">
-                              {plan?.actif ? (
-                                <div className="plan-info">
-                                  <span className="plan-hours">{plan.heure_debut?.slice(0,5)}–{plan.heure_fin?.slice(0,5)}</span>
-                                  {pt && (
-                                    <span className="pt-badge">
-                                      {pt.heure_arrivee ? format(new Date(pt.heure_arrivee), 'HH:mm') : '?'}
-                                      {pt.heure_depart ? '→' + format(new Date(pt.heure_depart), 'HH:mm') : ' ▶'}
-                                    </span>
+                {assistants.map(u => {
+                  const todayPt  = isCurrentWeek ? getPointage(u.id, new Date()) : null
+                  const todayDur = calcDuration(todayPt)
+
+                  return (
+                    <Fragment key={u.id}>
+                      <tr>
+                        <td className="user-cell"><strong>{u.name}</strong></td>
+                        {weekDays.map((day, i) => {
+                          const plan      = getPlan(u.id, i)
+                          const pt        = getPointage(u.id, day)
+                          const dateStr   = format(day, 'yyyy-MM-dd')
+                          const isWeekend = i >= 5
+                          return (
+                            <td key={i} className={`day-cell ${dateStr === today ? 'today-cell' : ''} ${isWeekend ? 'weekend-cell' : ''}`}>
+                              {editingPlan?.userId === u.id && editingPlan?.dayIndex === i ? (
+                                <PlanEditor
+                                  plan={plan}
+                                  onSave={(d, f) => savePlan(u.id, i, d, f)}
+                                  onCancel={() => setEditingPlan(null)}
+                                />
+                              ) : (
+                                <div className="plan-cell-content" onClick={() => setEditingPlan({ userId: u.id, dayIndex: i })} title="Cliquer pour modifier">
+                                  {plan?.actif ? (
+                                    <div className="plan-info">
+                                      <span className="plan-hours">{plan.heure_debut?.slice(0, 5)}–{plan.heure_fin?.slice(0, 5)}</span>
+                                      {pt && (
+                                        <span className="pt-badge">
+                                          {pt.heure_arrivee ? format(new Date(pt.heure_arrivee), 'HH:mm') : '?'}
+                                          {pt.heure_depart ? '→' + format(new Date(pt.heure_depart), 'HH:mm') : ' ▶'}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="no-plan">{isWeekend ? 'Repos' : '+'}</span>
                                   )}
                                 </div>
-                              ) : (
-                                <span className="no-plan">{isWeekend ? 'Repos' : '+'}</span>
                               )}
-                            </div>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
+                            </td>
+                          )
+                        })}
+                      </tr>
+
+                      {/* Sous-ligne : heures travaillées aujourd'hui (semaine courante seulement) */}
+                      {isCurrentWeek && todayDur && (
+                        <tr className="daily-summary-row">
+                          <td colSpan={weekDays.length + 1}>
+                            <span className="daily-summary-text">
+                              ⏱{' '}
+                              {todayDur.inProgress
+                                ? <span className="daily-in-progress">En cours ▶ — pointage en cours</span>
+                                : <><strong className="daily-hours">{fmtDur(todayDur)}</strong> travaillées aujourd'hui</>
+                              }
+                            </span>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -136,13 +189,92 @@ export default function WeeklyPlanning() {
           Cliquez sur une cellule pour modifier le planning.
         </p>
       </div>
+
+      {/* ── RÉCAPITULATIF SEMAINE ──────────────────────────────── */}
+      {!loading && (
+        <div className="card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h2 className="section-title">Récapitulatif semaine</h2>
+            <span style={{ fontSize: '0.75rem', color: 'var(--gray-400)' }}>
+              Mise à jour auto. toutes les 5 min
+            </span>
+          </div>
+          <div className="planning-table-wrapper">
+            <table className="planning-table weekly-recap-table">
+              <thead>
+                <tr>
+                  <th className="user-col">Assistante</th>
+                  {workDays.map((day, i) => {
+                    const dateStr = format(day, 'yyyy-MM-dd')
+                    return (
+                      <th key={i} className={dateStr === today ? 'today-col' : ''}>
+                        <div>{JOURS[i].slice(0, 3)}</div>
+                        <div style={{ fontWeight: 400, fontSize: '0.6875rem', color: 'var(--gray-500)' }}>
+                          {format(day, 'dd/MM', { locale: fr })}
+                        </div>
+                      </th>
+                    )
+                  })}
+                  <th className="recap-total-col">Total sem.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assistants.map(u => {
+                  let totalMin      = 0
+                  let hasInProgress = false
+
+                  const cells = workDays.map(day => {
+                    const pt  = getPointage(u.id, day)
+                    const dur = calcDuration(pt)
+                    if (dur?.inProgress) hasInProgress = true
+                    if (dur && !dur.inProgress) totalMin += dur.minutes
+                    return { dur, dateStr: format(day, 'yyyy-MM-dd') }
+                  })
+
+                  const h = Math.floor(totalMin / 60)
+                  const m = totalMin % 60
+                  const totalStr = totalMin > 0
+                    ? (m > 0 ? `${h}h ${m}min` : `${h}h`)
+                    : null
+
+                  return (
+                    <tr key={u.id}>
+                      <td className="user-cell"><strong>{u.name}</strong></td>
+                      {cells.map(({ dur, dateStr }, i) => (
+                        <td key={i} className={`recap-day-cell ${dateStr === today ? 'today-cell' : ''}`}>
+                          {dur
+                            ? dur.inProgress
+                              ? <span className="recap-in-progress">En cours ▶</span>
+                              : <span className="recap-duration">{fmtDur(dur, true)}</span>
+                            : <span className="recap-none">—</span>
+                          }
+                        </td>
+                      ))}
+                      <td className="recap-total-cell">
+                        {totalStr || hasInProgress ? (
+                          <span className="recap-total-value">
+                            {totalStr ?? '0h'}
+                            {hasInProgress && <span className="recap-in-progress-dot"> +…</span>}
+                          </span>
+                        ) : (
+                          <span className="recap-none">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 function PlanEditor({ plan, onSave, onCancel }) {
-  const [debut, setDebut] = useState(plan?.heure_debut?.slice(0,5) || '08:30')
-  const [fin,   setFin]   = useState(plan?.heure_fin?.slice(0,5)   || '16:30')
+  const [debut, setDebut] = useState(plan?.heure_debut?.slice(0, 5) || '08:30')
+  const [fin,   setFin]   = useState(plan?.heure_fin?.slice(0, 5)   || '16:30')
   return (
     <div className="plan-editor">
       <input type="time" value={debut} onChange={e => setDebut(e.target.value)} className="time-input"/>

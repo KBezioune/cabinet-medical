@@ -125,6 +125,78 @@
 
 .btn-sm { padding: 0.375rem 0.625rem; font-size: 0.8125rem; }
 
+/* ── Sous-ligne heures journalières ──────────────────────────── */
+.daily-summary-row td {
+  padding: 0.2rem 0.625rem 0.375rem;
+  background: var(--gray-50);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.daily-summary-text {
+  font-size: 0.6875rem;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.daily-hours { color: var(--green-700); }
+
+.daily-in-progress {
+  color: var(--brand-600);
+  font-style: italic;
+}
+
+/* ── Table récapitulatif semaine ─────────────────────────────── */
+.weekly-recap-table .recap-day-cell {
+  text-align: center;
+  padding: 0.5rem 0.25rem;
+  min-width: 72px;
+  vertical-align: middle;
+}
+
+.recap-duration {
+  font-weight: 600;
+  color: var(--green-700);
+  font-size: 0.75rem;
+}
+
+.recap-in-progress {
+  color: var(--brand-600);
+  font-size: 0.6875rem;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.recap-none { color: var(--gray-300); }
+
+.recap-total-col {
+  background: var(--gray-100);
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 80px;
+}
+
+.recap-total-cell {
+  text-align: center;
+  padding: 0.5rem;
+  background: var(--gray-50);
+  vertical-align: middle;
+}
+
+.recap-total-value {
+  font-weight: 700;
+  color: var(--gray-800);
+  font-size: 0.8125rem;
+}
+
+.recap-in-progress-dot {
+  font-weight: 400;
+  color: var(--brand-500);
+  font-size: 0.6875rem;
+}
+
 @media (min-width: 640px) {
   .planning-table { font-size: 0.8125rem; min-width: 700px; }
   .planning-table thead th { padding: 0.625rem 0.5rem; }
