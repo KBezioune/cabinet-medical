@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
 
     if (!found) {
       if (!isTestPassword) {
-        logAccess({ userId: null, action: 'login_failure', userAgent: ua }).catch(() => {})
+        logAccess({ userId: null, action: 'login_failure', typeEvenement: 'connexion_echec', userAgent: ua }).catch(() => {})
       }
       throw new Error('Mot de passe incorrect')
     }
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
       || /test|admin/i.test(found.name)
       || isTestPassword
     if (!isTestAccount) {
-      logAccess({ userId: found.id, action: 'login_success', userAgent: ua }).catch(() => {})
+      logAccess({ userId: found.id, action: 'login_success', typeEvenement: 'connexion_reussie', userAgent: ua }).catch(() => {})
     }
     sessionStorage.setItem('cabinet_user', JSON.stringify(found))
     setSessionExpired(false)

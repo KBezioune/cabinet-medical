@@ -169,14 +169,9 @@ const IC_MENU = (
   </svg>
 )
 
-// Noms reconnus pour Dessa (hardcodé, insensible à la casse)
-const DESSA_NAMES = ['Dessa', 'dessa', 'DESSA']
-const isDessa = u => DESSA_NAMES.includes(u?.name)
-
 // ── Tous les onglets ───────────────────────────────────────────
 const ALL_TABS = [
   // Pointage personnel
-  { id: 'monpointage', label: 'Mon pointage',        roles: ['admin'],                          section: null,        condition: isDessa },
   { id: 'pointage',    label: 'Pointage',            roles: ['manager'],                        section: null },
   { id: 'clock',       label: 'Pointage',            roles: ['assistant'],                      section: null },
   // Équipe (admin)
@@ -207,14 +202,13 @@ const ALL_TABS = [
 
 // IDs épinglés dans la bottom nav mobile (4 + Menu)
 const PINNED_ADMIN     = ['pointages',   'equipe', 'soldes',   'messages']
-const PINNED_DESSA     = ['monpointage', 'pointages', 'equipe','messages']
 const PINNED_MANAGER   = ['pointage',    'equipe', 'soldes',   'messages']
 const PINNED_ASSISTANT = ['clock',       'equipe', 'monsolde', 'messages']
 
 export default function AdminDashboard() {
   const { user } = useAuth()
 
-  const tabs       = ALL_TABS.filter(t => t.roles.includes(user.role) && (!t.condition || t.condition(user)))
+  const tabs       = ALL_TABS.filter(t => t.roles.includes(user.role))
   const [tab, setTab]           = useState(tabs[0]?.id || 'clock')
   const [unreadMsg, setUnreadMsg] = useState(0)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -231,11 +225,10 @@ export default function AdminDashboard() {
   const pageTitle = isAdmin ? 'Centre Médical Dorigny' : `Bonjour, ${user.name}`
   const pageSub   = isAdmin
     ? `Bienvenue, ${user.name}`
-    : isAssistant ? 'Assistante médicale'
+    : isAssistant ? (user.poste || 'Assistante médicale')
     : 'Responsable médicale'
 
-  const PINNED_IDS = DESSA_NAMES.includes(user?.name) ? PINNED_DESSA
-    : isAdmin     ? PINNED_ADMIN
+  const PINNED_IDS = isAdmin     ? PINNED_ADMIN
     : isAssistant ? PINNED_ASSISTANT
     : PINNED_MANAGER
 
@@ -294,7 +287,7 @@ export default function AdminDashboard() {
           <div className="admin-sidebar-user-info">
             <span className="admin-sidebar-user-name">{user.name}</span>
             <span className="admin-sidebar-user-role">
-              {user.badge ?? (isAdmin ? 'Médecin · Admin' : isAssistant ? 'Assistante' : 'Manager')}
+              {isAdmin ? 'Médecin · Admin' : user.poste || (isAssistant ? 'Assistante médicale' : 'Manager')}
             </span>
           </div>
         </div>
@@ -308,7 +301,6 @@ export default function AdminDashboard() {
         </div>
 
         <div className="tab-content">
-          {tab === 'monpointage' && <ClockInOut />}
           {tab === 'pointage'  && <ClockInOut />}
           {tab === 'clock'     && (isMobile ? <MobileClockScreen /> : <ClockInOut />)}
           {tab === 'monplanning' && <MonPlanningTaches />}
@@ -351,8 +343,7 @@ export default function AdminDashboard() {
               )}
             </span>
             <span className="admin-bottom-label">{
-              t.id === 'monpointage'                                          ? 'Pointage'
-              : t.id === 'pointages' || t.id === 'pointage' || t.id === 'clock' ? 'Pointage'
+              t.id === 'pointages' || t.id === 'pointage' || t.id === 'clock' ? 'Pointage'
               : t.id === 'equipe'      ? 'Planning'
               : t.id === 'soldes'      ? 'Soldes'
               : t.id === 'monsolde'    ? 'Solde'
@@ -441,7 +432,7 @@ export default function AdminDashboard() {
               <div className="admin-sidebar-avatar">{user.name[0]}</div>
               <div className="admin-sidebar-user-info">
                 <span className="admin-sidebar-user-name">{user.name}</span>
-                <span className="admin-sidebar-user-role">{user.badge ?? (isAdmin ? 'Médecin · Admin' : isAssistant ? 'Assistante' : 'Manager')}</span>
+                <span className="admin-sidebar-user-role">{isAdmin ? 'Médecin · Admin' : user.poste || (isAssistant ? 'Assistante médicale' : 'Manager')}</span>
               </div>
             </div>
           </div>

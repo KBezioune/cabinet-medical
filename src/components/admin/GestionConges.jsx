@@ -155,7 +155,7 @@ export default function GestionConges() {
                       <div className="gc-emp-name">{emp?.name || 'Inconnu'}</div>
                       <div className="gc-emp-role">{
                         emp?.role === 'admin' ? 'Médecin' :
-                        emp?.role === 'manager' ? 'Responsable' : 'Assistante médicale'
+                        emp?.role === 'manager' ? 'Responsable' : emp?.poste || 'Assistante médicale'
                       }</div>
                     </div>
                   </div>

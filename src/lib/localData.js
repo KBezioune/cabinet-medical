@@ -1,17 +1,16 @@
 const DEFAULT_USERS = [
   {
     id: '00000000-0000-0000-0000-000000000001',
-    name: 'Imene', pin: '0503', role: 'manager',
-    poste: 'Responsable médicale', phone: '+41 79 100 00 01',
+    name: 'Imene', pin: '0503', role: 'assistant',
+    poste: 'Apprentie', phone: '+41 79 100 00 01',
     email: 'imene@horizons-medical.ch', date_entree: '2021-03-15',
     taux_activite: 100, heures_hebdo: 24, type_contrat: 'CDI',
     color: '#4f8ef7',
   },
   {
     id: '00000000-0000-0000-0000-000000000002',
-    name: 'Dessa', pin: '2002', role: 'admin',
-    badge: 'Manager · Admin',
-    poste: 'Coordinatrice médicale', phone: '+41 79 100 00 02',
+    name: 'Dessa', pin: '2002', role: 'assistant',
+    poste: 'Assistante médicale', phone: '+41 79 100 00 02',
     email: 'dessa@horizons-medical.ch', date_entree: '2020-09-01',
     taux_activite: 80, heures_hebdo: 19.2, type_contrat: 'CDI',
     color: '#8b5cf6',

@@ -373,7 +373,7 @@ export default function PlanningPartage() {
                         <div className={`pp-avatar pp-avatar-${u.role}`}>{u.name[0]}</div>
                         <div className="pp-user-info">
                           <span className="pp-user-name">{u.name}</span>
-                          <span className="pp-user-role">{ROLE_LABEL[u.role]}</span>
+                          <span className="pp-user-role">{u.poste || ROLE_LABEL[u.role]}</span>
                         </div>
                       </div>
                     </td>

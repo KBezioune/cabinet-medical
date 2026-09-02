@@ -125,7 +125,7 @@ export default function MonthlyExport() {
         const ecart   = (r.duree_minutes || 0) - dayPlan
         rows.push([
           u.name,
-          u.role === 'manager' ? 'Manager' : 'Assistante',
+          u.role === 'manager' ? 'Manager' : u.poste || 'Assistante',
           r.date,
           format(parseISO(r.date), 'EEEE', { locale: fr }),
           r.heure_arrivee ? format(new Date(r.heure_arrivee), 'HH:mm') : '',
@@ -186,7 +186,7 @@ export default function MonthlyExport() {
           <div class="user-avatar">${u.name[0]}</div>
           <div>
             <div class="user-name">${u.name}</div>
-            <div class="user-role">${u.role === 'manager' ? 'Manager' : 'Assistante médicale'}</div>
+            <div class="user-role">${u.role === 'manager' ? 'Manager' : (u.poste || 'Assistante médicale')}</div>
           </div>
           <div class="user-totals">
             <span class="chip">${jours} jours</span>
@@ -305,7 +305,7 @@ export default function MonthlyExport() {
                     <div className="user-avatar">{u.name[0]}</div>
                     <div>
                       <div className="user-summary-name">{u.name}</div>
-                      <div className="user-summary-role">{u.role === 'manager' ? 'Manager' : 'Assistante médicale'}</div>
+                      <div className="user-summary-role">{u.role === 'manager' ? 'Manager' : u.poste || 'Assistante médicale'}</div>
                     </div>
                   </div>
                   <div className="user-summary-stats">
@@ -457,7 +457,7 @@ export default function MonthlyExport() {
                           </td>
                           <td>
                             <span className="badge badge-gray">
-                              {u.role === 'manager' ? 'Manager' : 'Assistante'}
+                              {u.role === 'manager' ? 'Manager' : u.poste || 'Assistante'}
                             </span>
                           </td>
                           <td>{jours}</td>

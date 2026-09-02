@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { insertConge, getCongesByUser, deleteConge, insertNotification } from '../../lib/db'
+import { insertConge, getCongesByUser, deleteConge, insertNotification, logAccess } from '../../lib/db'
 import { getUsers } from '../../lib/localData'
 import Breadcrumb from '../shared/Breadcrumb'
 import './DemandeConge.css'
@@ -74,6 +74,11 @@ export default function DemandeConge() {
       })
       // Notifier tous les managers et admins
       const typeLabel = TYPE_LABELS[form.type]?.label ?? form.type
+      logAccess({
+        userId: user.id, action: 'conge_soumis', typeEvenement: 'conge_soumis',
+        detail: `${typeLabel} du ${form.date_debut} au ${form.date_fin}`,
+        userAgent: navigator.userAgent,
+      })
       const recipients = getUsers().filter(u => u.role === 'admin' || u.role === 'manager')
       await Promise.allSettled(recipients.map(r =>
         insertNotification({

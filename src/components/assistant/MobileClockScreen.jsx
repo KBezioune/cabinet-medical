@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { todayISO, formatDateTime, minutesToHHMM, planNetMinutes } from '../../utils/dateUtils'
 import {
   getPointageByUserAndDate, insertPointage, updatePointage,
-  getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser,
+  getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser, logAccess,
 } from '../../lib/db'
 import { format, eachDayOfInterval, getDay } from 'date-fns'
 import CircularGauge from '../shared/CircularGauge'
@@ -115,7 +115,7 @@ export default function MobileClockScreen() {
   }
 
   const checkGPS = async () => {
-    if (user.role === 'admin' || user.name === 'Dessa' || user.badge === 'Manager · Admin') return true
+    if (user.role === 'admin') return true
     setGpsLoading(true); setError(null)
     try {
       const dist = await verifierPosition()
@@ -133,7 +133,13 @@ export default function MobileClockScreen() {
     setActionBusy(true); setError(null)
     try {
       const r = await insertPointage({ user_id: user.id, date: todayISO(), heure_arrivee: new Date().toISOString(), heure_depart: null })
-      setPointage(r); startCountdown('Arrivée enregistrée', true)
+      setPointage(r)
+      logAccess({
+        userId: user.id, action: 'pointage_arrivee', typeEvenement: 'pointage_arrivee',
+        detail: `Arrivée à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
+      startCountdown('Arrivée enregistrée', true)
     } catch (e) { setError(e.message) }
     finally { setActionBusy(false) }
   }
@@ -143,7 +149,13 @@ export default function MobileClockScreen() {
     setActionBusy(true); setError(null)
     try {
       const r = await updatePointage(pointage.id, { heure_arrivee: pointage.heure_arrivee, heure_depart: new Date().toISOString() })
-      setPointage(r); startCountdown('Départ enregistré', false)
+      setPointage(r)
+      logAccess({
+        userId: user.id, action: 'pointage_depart', typeEvenement: 'pointage_depart',
+        detail: `Départ à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
+      startCountdown('Départ enregistré', false)
     } catch (e) { setError(e.message) }
     finally { setActionBusy(false) }
   }

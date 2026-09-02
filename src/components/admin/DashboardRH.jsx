@@ -152,7 +152,7 @@ export default function DashboardRH() {
       if (r.tauxActivite !== null && r.tauxActivite < 80) alerts.push('Taux faible')
       return [
         r.user.name,
-        r.user.role === 'manager' ? 'Manager' : 'Assistante',
+        r.user.role === 'manager' ? 'Manager' : r.user.poste || 'Assistante',
         minutesToHHMM(r.plannedMin),
         minutesToHHMM(r.workedMin),
         formatSolde(r.balance),
@@ -272,7 +272,7 @@ export default function DashboardRH() {
                           <div>
                             <div className="drh-collab-name">{r.user.name}</div>
                             <div className="drh-collab-role">
-                              {r.user.role === 'manager' ? 'Manager' : 'Assistante'}
+                              {r.user.role === 'manager' ? 'Manager' : r.user.poste || 'Assistante'}
                             </div>
                           </div>
                         </div>

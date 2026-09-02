@@ -85,7 +85,7 @@ export default function GestionPins() {
 
               <div className="pin-row-info">
                 <div className="pin-row-name">{u.name}</div>
-                <div className="pin-row-role">{u.role === 'manager' ? 'Manager' : 'Assistante médicale'}</div>
+                <div className="pin-row-role">{u.role === 'manager' ? 'Manager' : u.poste || 'Assistante médicale'}</div>
               </div>
 
               {editing === u.id ? (

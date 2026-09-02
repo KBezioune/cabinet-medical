@@ -200,7 +200,7 @@ function PanelContent({ user: emp, canEditContracts, isAdmin, currentUserId, onE
         <div>
           <h2 className="ann-panel-name">{emp.name}</h2>
           <p className="ann-panel-poste">{emp.poste || ROLE_LABEL[emp.role]}</p>
-          <span className={`ann-role-badge ann-role-${emp.role}`}>{emp.badge || ROLE_LABEL[emp.role]}</span>
+          <span className={`ann-role-badge ann-role-${emp.role}`}>{emp.poste || emp.badge || ROLE_LABEL[emp.role]}</span>
         </div>
       </div>
 
@@ -239,7 +239,7 @@ function PanelContent({ user: emp, canEditContracts, isAdmin, currentUserId, onE
               </div>
               <div className="ann-info-row">
                 <dt>Rôle</dt>
-                <dd>{emp.badge || ROLE_LABEL[emp.role]}</dd>
+                <dd>{emp.poste || emp.badge || ROLE_LABEL[emp.role]}</dd>
               </div>
             </dl>
 

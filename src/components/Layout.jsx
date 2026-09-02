@@ -46,10 +46,9 @@ export default function Layout({ children }) {
                     <p className="dropdown-name">{user.name}</p>
                     <p className="dropdown-role">{
                       isTestMode ? 'Session de test — aucune donnée enregistrée'
-                      : (user.name === 'Dessa' || user.badge === 'Manager · Admin') ? 'Manager — Administratrice'
                       : user.role === 'admin'   ? 'Médecin — Administrateur'
                       : user.role === 'manager' ? 'Responsable médicale'
-                      : 'Assistante médicale'
+                      : user.poste || 'Assistante médicale'
                     }</p>
                   </div>
                   <button className="dropdown-item" onClick={logout}>

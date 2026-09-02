@@ -220,11 +220,12 @@ export const getAccessLogs = async (limit = 50) => {
   return data || []
 }
 
-export const logAccess = async ({ userId, action, userAgent }) => {
+export const logAccess = async ({ userId, action, typeEvenement, detail, userAgent }) => {
   if (isTestMode()) return
   try {
     await supabase.from('access_logs').insert({
-      user_id: userId ?? null, action, ip: null, user_agent: userAgent ?? null,
+      user_id: userId ?? null, action, type_evenement: typeEvenement ?? action,
+      detail: detail ?? null, ip: null, user_agent: userAgent ?? null,
     })
   } catch {}
 }

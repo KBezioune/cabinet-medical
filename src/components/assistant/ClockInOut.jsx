@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { todayISO, formatDateLong, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
-import { getPointageByUserAndDate, insertPointage, updatePointage } from '../../lib/db'
+import { getPointageByUserAndDate, insertPointage, updatePointage, logAccess } from '../../lib/db'
 import './ClockInOut.css'
 
 const COUNTDOWN      = 5
@@ -47,8 +47,6 @@ const verifierPosition = () => new Promise((resolve, reject) => {
 
 export default function ClockInOut() {
   const { user, logout } = useAuth()
-  // Dessa bénéficie du télétravail : pointage autorisé sans restriction GPS
-  const isTelework = user.name === 'Dessa' || user.badge === 'Manager · Admin'
   const [pointage, setPointage]    = useState(null)
   const [loading, setLoading]      = useState(true)
   const [actionLoading, setAction] = useState(false)
@@ -93,7 +91,7 @@ export default function ClockInOut() {
 
   // Vérifie la position GPS — bypass pour les admins et le télétravail Dessa
   const checkGPS = async () => {
-    if (user.role === 'admin' || isTelework) return true
+    if (user.role === 'admin') return true
     setGpsLoading(true)
     setError(null)
     try {
@@ -123,6 +121,11 @@ export default function ClockInOut() {
         heure_depart: null,
       })
       setPointage(record)
+      logAccess({
+        userId: user.id, action: 'pointage_arrivee', typeEvenement: 'pointage_arrivee',
+        detail: `Arrivée à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
       startCountdown('Arrivée enregistrée', true)
     } catch (e) {
       setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
@@ -141,6 +144,11 @@ export default function ClockInOut() {
         heure_depart: new Date().toISOString(),
       })
       setPointage(updated)
+      logAccess({
+        userId: user.id, action: 'pointage_depart', typeEvenement: 'pointage_depart',
+        detail: `Départ à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
       startCountdown('Départ enregistré', false)
     } catch (e) {
       setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
@@ -227,12 +235,7 @@ export default function ClockInOut() {
               </div>
             )}
 
-            {isTelework && (
-              <div className="geo-info geo-telework">
-                🏠 Télétravail autorisé — pointage depuis n'importe où
-              </div>
-            )}
-            {!isTelework && user.role !== 'admin' && (
+            {user.role !== 'admin' && (
               <div className="geo-info">
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
