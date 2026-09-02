@@ -89,7 +89,7 @@ export default function ClockInOut() {
     }, 1000)
   }
 
-  // Vérifie la position GPS — bypass pour les admins et le télétravail Dessa
+  // Vérifie la position GPS — bypass pour les admins uniquement
   const checkGPS = async () => {
     if (user.role === 'admin') return true
     setGpsLoading(true)

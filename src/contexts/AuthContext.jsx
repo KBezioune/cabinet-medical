@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { getUsersForAuth } from '../lib/localData'
-import { syncPinsFromDb, logAccess, cleanupTestAccessLogs } from '../lib/db'
+import { syncUsersFromDb, logAccess, cleanupTestAccessLogs } from '../lib/db'
 
 
 const AuthContext   = createContext(null)
@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
       } catch {}
     }
     setLoading(false)
-    syncPinsFromDb().catch(() => {})
+    syncUsersFromDb().catch(() => {})
     cleanupTestAccessLogs().catch(() => {})
   }, [])
 

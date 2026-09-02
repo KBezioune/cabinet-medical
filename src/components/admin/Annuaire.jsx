@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getUsers, addLocalUser, patchLocalUser, removeLocalUser, pickColor } from '../../lib/localData'
+import { getUsers, addLocalUser, patchLocalUser, removeLocalUser, pickColor, setSyncedRole } from '../../lib/localData'
 import { getPlanningByUser, getCongesByUser, getUserContract, updateUserContract,
          insertUserInDb, updateUserInDb, deleteUserInDb } from '../../lib/db'
 import { format, differenceInYears } from 'date-fns'
@@ -491,11 +491,13 @@ export default function Annuaire() {
       const id    = crypto.randomUUID()
       const color = pickColor(empList.length)
       addLocalUser({ id, color, name: data.name, poste: data.poste, email: data.email, pin: data.pin, role: data.role })
+      setSyncedRole(id, data.role)
       await insertUserInDb({ id, name: data.name, pin: data.pin, role: data.role }).catch(() => {})
     } else {
-      const patch = { name: data.name, poste: data.poste, email: data.email, role: data.role }
+      const patch = { name: data.name, poste: data.poste, email: data.email }
       if (data.pin) patch.pin = data.pin
       patchLocalUser(empModal.id, patch)
+      setSyncedRole(empModal.id, data.role)
       await updateUserInDb(empModal.id, { name: data.name, role: data.role, ...(data.pin ? { pin: data.pin } : {}) }).catch(() => {})
     }
     const updated = refreshList()

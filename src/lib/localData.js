@@ -51,14 +51,28 @@ const getCustomPins  = () => rd('cabinet_pins',         '{}')
 const getUserPatches = () => rd('cabinet_user_patches', '{}')
 const getDeletedIds  = () => rd('cabinet_deleted_ids',  '[]')
 const getExtraUsers  = () => rd('cabinet_extra_users',  '[]')
+const getSyncedRoles = () => rd('cabinet_roles',        '{}')
+
+// Le rôle n'est jamais stocké dans un patch local : il vient uniquement de
+// Supabase (via syncUsersFromDb, voir lib/db.js), avec le rôle par défaut
+// ci-dessus comme simple filet avant la première synchronisation.
+export const setSyncedRole = (userId, role) => {
+  const roles = getSyncedRoles()
+  roles[userId] = role
+  wr('cabinet_roles', roles)
+}
 
 export const getUsers = () => {
   const pins    = getCustomPins()
   const patches = getUserPatches()
   const deleted = getDeletedIds()
   const extras  = getExtraUsers()
+  const roles   = getSyncedRoles()
 
-  const apply = u => ({ ...u, ...(patches[u.id] || {}), pin: pins[u.id] ?? u.pin })
+  const apply = u => {
+    const { role: _ignoredPatchRole, ...patch } = patches[u.id] || {}
+    return { ...u, ...patch, role: roles[u.id] ?? u.role, pin: pins[u.id] ?? u.pin }
+  }
 
   return [
     ...DEFAULT_USERS.filter(u => !deleted.includes(u.id)).map(apply),
@@ -79,7 +93,7 @@ export const addLocalUser = (user) => {
 }
 
 export const patchLocalUser = (id, data) => {
-  const { pin, ...rest } = data
+  const { pin, role, ...rest } = data
   if (pin !== undefined && pin !== '') updateUserPin(id, pin)
   const patches = getUserPatches()
   patches[id] = { ...(patches[id] || {}), ...rest }

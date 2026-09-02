@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { getUserById } from './localData'
+import { getUserById, setSyncedRole } from './localData'
 
 const log = (fn, err) => console.error(`[db.${fn}]`, err?.code, err?.message, err)
 
@@ -99,11 +99,16 @@ export const deletePointageReal = async (id) => {
 
 // ── USERS / PINS ─────────────────────────────────────────────
 
-export const syncPinsFromDb = async () => {
-  const { data, error } = await supabase.from('users').select('id, pin')
-  if (error) { log('syncPinsFromDb', error); return }
+// Synchronise pins ET rôles depuis Supabase — source de vérité unique pour le rôle
+// (un rôle n'est jamais déduit d'un nom ou d'un champ local, uniquement de la table users).
+export const syncUsersFromDb = async () => {
+  const { data, error } = await supabase.from('users').select('id, pin, role')
+  if (error) { log('syncUsersFromDb', error); return }
   const pins = {}
-  ;(data || []).forEach(r => { pins[r.id] = r.pin })
+  ;(data || []).forEach(r => {
+    pins[r.id] = r.pin
+    setSyncedRole(r.id, r.role)
+  })
   localStorage.setItem('cabinet_pins', JSON.stringify(pins))
 }
 
