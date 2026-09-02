@@ -8,8 +8,8 @@ export default function KBLogo({ size = 80, variant = 'hex', className = '' }) {
         aria-hidden="true"
         style={{
           width: size, height: size, borderRadius: r, flexShrink: 0,
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0891b2 100%)',
-          boxShadow: '0 3px 12px rgba(29,78,216,0.55), inset 0 1px 0 rgba(255,255,255,0.18)',
+          background: 'linear-gradient(135deg, #1B281E 0%, #3D5A44 55%, #C4A882 100%)',
+          boxShadow: '0 3px 12px rgba(61,90,68,0.55), inset 0 1px 0 rgba(255,255,255,0.18)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontWeight: 900, fontStyle: 'italic',
           fontSize: Math.round(size * 0.34), letterSpacing: '-0.04em',
@@ -24,16 +24,16 @@ export default function KBLogo({ size = 80, variant = 'hex', className = '' }) {
     <svg width={size} height={size} viewBox="0 0 80 80" className={className} aria-hidden="true">
       <defs>
         <linearGradient id="kbg1" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%"   stopColor="#1e3a8a"/>
-          <stop offset="52%"  stopColor="#2563eb"/>
-          <stop offset="100%" stopColor="#0891b2"/>
+          <stop offset="0%"   stopColor="#1B281E"/>
+          <stop offset="52%"  stopColor="#3D5A44"/>
+          <stop offset="100%" stopColor="#C4A882"/>
         </linearGradient>
         <linearGradient id="kbg2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor="rgba(255,255,255,0.22)"/>
           <stop offset="100%" stopColor="rgba(255,255,255,0)"/>
         </linearGradient>
         <filter id="kbshadow">
-          <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="rgba(29,78,216,0.4)"/>
+          <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="rgba(61,90,68,0.4)"/>
         </filter>
       </defs>
 

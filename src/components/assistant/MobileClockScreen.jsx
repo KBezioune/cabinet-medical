@@ -167,7 +167,7 @@ export default function MobileClockScreen() {
         <svg width="78" height="78" viewBox="0 0 72 72">
           <circle cx="36" cy="36" r={R} fill="none" stroke="#e5e7eb" strokeWidth="5"/>
           <circle cx="36" cy="36" r={R} fill="none"
-            stroke={confirmed.isArrivee ? '#16a34a' : '#2563eb'}
+            stroke={confirmed.isArrivee ? '#16a34a' : '#C4A882'}
             strokeWidth="5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
             transform="rotate(-90 36 36)" style={{ transition: 'stroke-dashoffset 0.9s linear' }}
           />
@@ -266,7 +266,7 @@ export default function MobileClockScreen() {
             <CircularGauge
               value={vacRestant}
               max={VAC_QUOTA}
-              color="#2563eb"
+              color="#C4A882"
               label="Jours vacances"
               unit="j"
               size={120}

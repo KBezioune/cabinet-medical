@@ -57,7 +57,7 @@ export default function AllPointages() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <Breadcrumb items={['Cabinet Médical', 'Présences & Pointages']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Présences & Pointages']} />
       <div className="stats-row">
         <div className="stat-card">
           <div className="stat-number green">{presentCount}</div>

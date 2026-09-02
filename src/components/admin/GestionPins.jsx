@@ -65,7 +65,7 @@ export default function GestionPins() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <Breadcrumb items={['Cabinet Médical', 'Admin', 'Mots de passe']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Admin', 'Mots de passe']} />
       {msg && <div className={msg.type === 'error' ? 'error-msg' : 'success-msg'}>{msg.text}</div>}
 
       <div className="card">

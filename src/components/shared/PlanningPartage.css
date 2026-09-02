@@ -120,7 +120,7 @@
 .pp-mc-planned  { background: var(--brand-50); }
 .pp-mc-fallback { background: var(--gray-50); }
 .pp-mc-task     { }
-.pp-mc-task-blue   { background: #dbeafe; }
+.pp-mc-task-blue   { background: #F1E9DC; }
 .pp-mc-task-teal   { background: #ccfbf1; }
 .pp-mc-task-green  { background: #dcfce7; }
 .pp-mc-task-orange { background: #ffedd5; }
@@ -337,7 +337,7 @@
 
 .pp-row:hover .pp-td { background: var(--gray-50); }
 
-.pp-td-today { background: #eff6ff !important; }
+.pp-td-today { background: #F1F4F2 !important; }
 .pp-td-today.pp-row:hover .pp-td-today { background: var(--brand-100) !important; }
 
 .pp-td-we { background: var(--gray-50); }
@@ -365,7 +365,7 @@
 
 /* Shift override (planning_shifts) */
 .pp-hours-shift {
-  background: var(--brand-100, #dbeafe);
+  background: var(--brand-100, #F1E9DC);
   border-left: 2.5px solid var(--brand-500);
 }
 
@@ -493,7 +493,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #1B281E 0%, #2D4433 100%);
   color: #fff;
   padding: 0.625rem 1rem;
   border-radius: var(--radius);
@@ -583,12 +583,12 @@
   white-space: nowrap;
 }
 .pp-edit-active {
-  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  background: linear-gradient(135deg, #1B281E, #3D5A44);
   color: white;
   border: none;
-  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 3px 10px rgba(61, 90, 68, 0.3);
 }
-.pp-edit-active:hover { background: linear-gradient(135deg, #162d4a, #1d4ed8); }
+.pp-edit-active:hover { background: linear-gradient(135deg, #162018, #2D4433); }
 
 /* Cellule éditable */
 .pp-td-editable { cursor: default; }

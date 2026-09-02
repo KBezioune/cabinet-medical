@@ -1,5 +1,5 @@
 -- ============================================================
--- MIGRATION COMPLÈTE — Cabinet Médical Dr Bezioune
+-- MIGRATION COMPLÈTE — Centre Médical Dorigny
 -- Exécuter intégralement dans Supabase SQL Editor
 -- Toutes les instructions sont idempotentes (IF NOT EXISTS / IF EXISTS)
 -- ============================================================

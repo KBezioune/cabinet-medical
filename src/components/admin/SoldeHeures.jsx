@@ -128,7 +128,7 @@ export default function SoldeHeures() {
 
   return (
     <div className="sh-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'RH', 'Soldes des heures']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'RH', 'Soldes des heures']} />
       {/* Sélecteurs */}
       <div className="card sh-controls">
         <h2 className="section-title">Soldes des heures</h2>

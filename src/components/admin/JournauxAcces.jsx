@@ -39,7 +39,7 @@ export default function JournauxAcces() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <Breadcrumb items={["Cabinet Médical", "Admin", "Journaux d'accès"]} />
+      <Breadcrumb items={["Centre Médical Dorigny", "Admin", "Journaux d'accès"]} />
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>

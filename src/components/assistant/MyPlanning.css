@@ -81,7 +81,7 @@
 .mp-day.mp-today {
   background: var(--brand-50);
   border-color: var(--brand-200);
-  box-shadow: 0 0 0 2px rgb(59 130 246 / 0.12), var(--shadow-xs);
+  box-shadow: 0 0 0 2px rgb(61 90 68 / 0.12), var(--shadow-xs);
 }
 
 .mp-day.mp-past {

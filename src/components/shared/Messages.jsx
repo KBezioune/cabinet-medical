@@ -128,7 +128,7 @@ export default function Messages({ onUnreadChange }) {
   if (noTable) {
     return (
       <div className="msg-wrap">
-        <Breadcrumb items={['Cabinet Médical', 'Messages']} />
+        <Breadcrumb items={['Centre Médical Dorigny', 'Messages']} />
         <div className="card msg-missing">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
@@ -151,7 +151,7 @@ export default function Messages({ onUnreadChange }) {
 
   return (
     <div className="msg-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Messages']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Messages']} />
 
       <div className="msg-container">
 

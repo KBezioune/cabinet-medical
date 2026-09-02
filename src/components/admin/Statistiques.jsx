@@ -128,7 +128,7 @@ export default function Statistiques() {
   if (loading) {
     return (
       <div className="stats-wrap">
-        <Breadcrumb items={['Cabinet Médical', 'Statistiques']} />
+        <Breadcrumb items={['Centre Médical Dorigny', 'Statistiques']} />
         <div className="loading-center" style={{ padding: '3rem' }}><div className="spinner" /></div>
       </div>
     )
@@ -142,7 +142,7 @@ export default function Statistiques() {
 
   return (
     <div className="stats-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Statistiques']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Statistiques']} />
 
       <div className="stats-kpi-row">
         <div className="card stats-kpi">

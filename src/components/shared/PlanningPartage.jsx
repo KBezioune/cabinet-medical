@@ -39,7 +39,7 @@ const DEFAULT_MATIN = '08:00–12:00'
 const DEFAULT_APREM = '14:00–17:00'
 
 const SHIFT_PALETTE = [
-  { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' },
+  { bg: '#F1E9DC', text: '#1e40af', border: '#93c5fd' },
   { bg: '#dcfce7', text: '#166534', border: '#86efac' },
   { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
   { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
@@ -204,7 +204,7 @@ export default function PlanningPartage() {
 
   return (
     <div className="pp-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Planning', 'Planning équipe']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Planning', 'Planning équipe']} />
 
       <div className="card pp-card">
 

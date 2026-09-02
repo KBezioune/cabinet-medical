@@ -176,7 +176,7 @@ export default function DashboardRH() {
 
   return (
     <div className="drh-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Équipe', 'Dashboard RH']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Équipe', 'Dashboard RH']} />
       {/* Barre de contrôle */}
       <div className="card drh-controls">
         <div>

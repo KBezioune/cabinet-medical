@@ -32,7 +32,7 @@ export default function Aide() {
 
   return (
     <div className="aide-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Aide & Support']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Aide & Support']} />
 
       <div className="aide-grid">
         {/* Contact médecin */}
@@ -71,7 +71,7 @@ export default function Aide() {
               </svg>
             </div>
             <div className="aide-cabinet-info">
-              <span className="aide-cabinet-name">Centre Médical Horizons</span>
+              <span className="aide-cabinet-name">Centre Médical Dorigny</span>
               <span className="aide-cabinet-addr">Lausanne, Vaud — Suisse</span>
               <a
                 className="aide-map-link"

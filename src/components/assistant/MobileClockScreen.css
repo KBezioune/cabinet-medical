@@ -12,7 +12,7 @@
 /* ── Section haut : dégradé + heure ─────────────────────── */
 .mob-header {
   width: 100%;
-  background: linear-gradient(160deg, #0f172a 0%, #1e3a8a 55%, #0369a1 100%);
+  background: linear-gradient(160deg, #0f172a 0%, #1B281E 55%, #202F24 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -88,7 +88,7 @@
 }
 .mob-status-absent  { background: #fee2e2; color: #991b1b; }
 .mob-status-present { background: #dcfce7; color: #166534; }
-.mob-status-done    { background: #dbeafe; color: #1e40af; }
+.mob-status-done    { background: #F1E9DC; color: #1e40af; }
 
 .mob-status-dot {
   width: 8px; height: 8px;
@@ -235,7 +235,7 @@
   max-width: 340px;
 }
 .mob-card-in  { background: #dcfce7; border: 2px solid #86efac; }
-.mob-card-out { background: #dbeafe; border: 2px solid #93c5fd; }
+.mob-card-out { background: #F1E9DC; border: 2px solid #93c5fd; }
 
 .mob-confirm-emoji  { font-size: 3rem; }
 .mob-confirm-title  { font-size: 1.1875rem; font-weight: 800; color: #1e293b; }

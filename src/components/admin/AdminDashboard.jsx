@@ -228,7 +228,7 @@ export default function AdminDashboard() {
 
   const isAdmin   = user.role === 'admin'
   const isAssistant = user.role === 'assistant'
-  const pageTitle = isAdmin ? 'Centre Médical Horizons' : `Bonjour, ${user.name}`
+  const pageTitle = isAdmin ? 'Centre Médical Dorigny' : `Bonjour, ${user.name}`
   const pageSub   = isAdmin
     ? `Bienvenue, ${user.name}`
     : isAssistant ? 'Assistante médicale'
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
           <div style={{ background: '#fff', borderRadius: 12, padding: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 6px rgba(0,0,0,0.1)' }}>
-            <img src="/logo.jpg" alt="Logo Centre Médical Horizons" style={{ height: 60, objectFit: 'contain', display: 'block' }} />
+            <img src="/logo-emblem.png" alt="Logo Centre Médical Dorigny" style={{ height: 60, objectFit: 'contain', display: 'block' }} />
           </div>
         </div>
 

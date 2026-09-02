@@ -111,7 +111,7 @@ export default function NotesDefrais() {
   if (noTable) {
     return (
       <div className="ndf-wrap">
-        <Breadcrumb items={['Cabinet Médical', 'Notes de frais']} />
+        <Breadcrumb items={['Centre Médical Dorigny', 'Notes de frais']} />
         <div className="card ndf-setup">
           <div className="ndf-setup-icon">🗄️</div>
           <h2>Table Supabase manquante</h2>
@@ -137,7 +137,7 @@ export default function NotesDefrais() {
 
   return (
     <div className="ndf-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Notes de frais']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Notes de frais']} />
 
       {/* KPIs */}
       <div className="ndf-kpis">

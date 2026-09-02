@@ -94,7 +94,7 @@
 .ann-taux {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--brand-600, #2563eb);
+  color: var(--brand-600, #3D5A44);
   background: var(--brand-50);
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
@@ -107,7 +107,7 @@
 }
 .ann-role-dot.ann-role-admin     { background: #059669; }
 .ann-role-dot.ann-role-manager   { background: #8b5cf6; }
-.ann-role-dot.ann-role-assistant { background: #0891b2; }
+.ann-role-dot.ann-role-assistant { background: #C4A882; }
 
 /* Contacts */
 .ann-card-contact {
@@ -243,9 +243,9 @@
   transition: color 0.15s, border-color 0.15s;
   white-space: nowrap;
 }
-.ann-panel-tab:hover { color: var(--brand-600, #2563eb); }
+.ann-panel-tab:hover { color: var(--brand-600, #3D5A44); }
 .ann-panel-tab.active {
-  color: var(--brand-600, #2563eb);
+  color: var(--brand-600, #3D5A44);
   border-bottom-color: var(--brand-500);
 }
 
@@ -285,7 +285,7 @@
 }
 
 .ann-info-row dd a {
-  color: var(--brand-600, #2563eb);
+  color: var(--brand-600, #3D5A44);
   text-decoration: none;
 }
 
@@ -376,7 +376,7 @@
 .ann-card-summary {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--brand-600, #2563eb);
+  color: var(--brand-600, #3D5A44);
   margin-top: 0.125rem;
 }
 

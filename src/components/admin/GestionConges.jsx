@@ -92,7 +92,7 @@ export default function GestionConges() {
 
   return (
     <div className="gc-page">
-      <Breadcrumb items={['Cabinet Médical', 'RH', 'Gestion des congés']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'RH', 'Gestion des congés']} />
 
       <div className="gc-header">
         <div>

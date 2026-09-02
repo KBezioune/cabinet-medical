@@ -94,7 +94,7 @@
 }
 .ndf-cat-btn span:first-child { font-size: 1.25rem; }
 .ndf-cat-btn:hover { border-color: var(--brand-300, #93c5fd); }
-.ndf-cat-btn.active { border-color: var(--brand-500); background: var(--brand-50); color: var(--brand-700, #1d4ed8); }
+.ndf-cat-btn.active { border-color: var(--brand-500); background: var(--brand-50); color: var(--brand-700, #2D4433); }
 
 .ndf-file { font-size: 0.8125rem; }
 .ndf-file-note { font-size: 0.6875rem; color: var(--gray-400); margin-top: 0.25rem; }
@@ -191,7 +191,7 @@
   gap: 0.125rem;
 }
 
-.ndf-item-emp  { font-size: 0.6875rem; font-weight: 700; color: var(--brand-600, #2563eb); text-transform: uppercase; letter-spacing: 0.04em; }
+.ndf-item-emp  { font-size: 0.6875rem; font-weight: 700; color: var(--brand-600, #3D5A44); text-transform: uppercase; letter-spacing: 0.04em; }
 .ndf-item-cat  { font-size: 0.875rem;  font-weight: 700; color: var(--gray-800); }
 .ndf-item-date { font-size: 0.75rem;   color: var(--gray-400); font-variant-numeric: tabular-nums; }
 .ndf-item-desc { font-size: 0.75rem;   color: var(--gray-500); font-style: italic; }

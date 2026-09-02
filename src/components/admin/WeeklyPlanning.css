@@ -48,7 +48,7 @@
 }
 
 .day-cell { min-width: 72px; }
-.today-cell { background: #eff6ff; }
+.today-cell { background: #F1F4F2; }
 .weekend-cell { background: var(--gray-50); }
 
 .plan-cell-content {

@@ -113,7 +113,7 @@ export default function DossiersRH() {
   // ── Vue : liste des employées ──────────────────────────────
   if (view === 'employees') return (
     <div className="drh-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Dossiers RH']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Dossiers RH']} />
       <div className="card drh-header-card">
         <h2 className="section-title">Dossiers RH</h2>
         <p className="drh-subtitle">Sélectionnez une employée pour accéder à son dossier.</p>
@@ -138,7 +138,7 @@ export default function DossiersRH() {
   // ── Vue : dossiers de l'employée ──────────────────────────
   if (view === 'dossiers') return (
     <div className="drh-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Dossiers RH', selEmp?.name]} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Dossiers RH', selEmp?.name]} />
       <div className="card drh-header-card">
         <button className="drh-back-btn" onClick={backToList}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -184,7 +184,7 @@ export default function DossiersRH() {
 
   return (
     <div className="drh-wrap">
-      <Breadcrumb items={['Cabinet Médical', 'Dossiers RH', selEmp?.name, `${selDoss} – ${dossierMeta?.label}`]} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Dossiers RH', selEmp?.name, `${selDoss} – ${dossierMeta?.label}`]} />
 
       <div className="card drh-header-card">
         <button className="drh-back-btn" onClick={backToDoss}>

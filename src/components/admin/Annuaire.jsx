@@ -516,7 +516,7 @@ export default function Annuaire() {
 
   return (
     <div className="ann-wrap" onKeyDown={handleKey}>
-      <Breadcrumb items={['Cabinet Médical', 'Annuaire']} />
+      <Breadcrumb items={['Centre Médical Dorigny', 'Annuaire']} />
 
       <div className="card ann-header-card">
         <div>
