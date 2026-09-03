@@ -33,10 +33,11 @@ const fmtDur = (dur, short = false) => {
 }
 
 const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante' }
-const DEFAULT_DEBUT = '08:00'
+const DEFAULT_DEBUT = '08:30'
 const DEFAULT_FIN   = '17:00'
-const DEFAULT_MATIN = '08:00–12:00'
+const DEFAULT_MATIN = '08:30–12:00'
 const DEFAULT_APREM = '14:00–17:00'
+const IMENE_ID      = '00000000-0000-0000-0000-000000000001'
 
 const SHIFT_PALETTE = [
   { bg: '#F1E9DC', text: '#1e40af', border: '#93c5fd' },
@@ -141,13 +142,20 @@ export default function PlanningPartage() {
     shifts.filter(s => s.user_id === userId && s.date === dateStr)
       .sort((a, b) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
 
+  // Planning par défaut (utilisé quand aucune ligne "planning" explicite n'existe) :
+  // Imene (apprentie) ne travaille que lundi/mardi (absente le reste, école).
+  // Les autres (assistantes médicales + Dr. Bezioune) travaillent lundi, mardi,
+  // jeudi, vendredi journée complète, et mercredi matin seulement.
   const getDayPlan = (userId, day) => {
     const jourSem = getDay(day) === 0 ? 7 : getDay(day)
     const found   = planning.find(p => p.user_id === userId && p.jour_semaine === jourSem && p.actif)
     if (found) return found
-    if (jourSem >= 1 && jourSem <= 5 && jourSem !== 3)
-      return { heure_debut: DEFAULT_DEBUT, heure_fin: DEFAULT_FIN, fallback: true }
-    return null
+
+    const isImene = userId === IMENE_ID
+    const matin = isImene ? (jourSem === 1 || jourSem === 2) : (jourSem >= 1 && jourSem <= 5)
+    const aprem = isImene ? (jourSem === 1 || jourSem === 2) : (jourSem >= 1 && jourSem <= 5 && jourSem !== 3)
+    if (!matin && !aprem) return null
+    return { heure_debut: DEFAULT_DEBUT, heure_fin: DEFAULT_FIN, fallback: true, matin, aprem }
   }
 
   const getDayConge = (userId, dateStr) =>
@@ -426,8 +434,8 @@ export default function PlanningPartage() {
                                 <div className={`pp-hours${plan.fallback ? ' pp-hours-fallback' : ''}`}>
                                   {plan.fallback ? (
                                     <>
-                                      <span className="pp-hours-line">{DEFAULT_MATIN}</span>
-                                      <span className="pp-hours-line">{DEFAULT_APREM}</span>
+                                      {plan.matin && <span className="pp-hours-line">{DEFAULT_MATIN}</span>}
+                                      {plan.aprem && <span className="pp-hours-line">{DEFAULT_APREM}</span>}
                                     </>
                                   ) : (
                                     <span className="pp-hours-line">
