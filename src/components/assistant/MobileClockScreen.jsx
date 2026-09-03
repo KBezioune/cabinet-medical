@@ -12,7 +12,7 @@ import './MobileClockScreen.css'
 
 const COUNTDOWN  = 5
 const CABINET    = { lat: 46.52627, lng: 6.58332 }
-const MAX_DIST_M = 200
+const MAX_DIST_M = 500
 const OPEN_DAYS  = new Set([1, 2, 4, 5])
 const DEFAULT_DAY_MIN = 420
 const VAC_QUOTA = 20

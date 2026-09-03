@@ -6,7 +6,7 @@ import './ClockInOut.css'
 
 const COUNTDOWN      = 5
 const CABINET        = { lat: 46.52627, lng: 6.58332 }
-const MAX_DISTANCE_M = 200
+const MAX_DISTANCE_M = 500
 
 // Formule de Haversine — distance en mètres entre deux coordonnées GPS
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
