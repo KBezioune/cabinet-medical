@@ -66,17 +66,6 @@
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.12) 50%, transparent);
 }
 
-.login-hero-logo {
-  position: relative;
-  filter: drop-shadow(0 6px 24px rgba(0,0,0,0.35));
-  animation: logoPulse 4s ease-in-out infinite;
-}
-
-@keyframes logoPulse {
-  0%,100% { filter: drop-shadow(0 6px 24px rgba(0,0,0,0.35)); }
-  50%      { filter: drop-shadow(0 8px 32px rgba(61,90,68,0.5)); }
-}
-
 .login-hero-texts {
   display: flex;
   flex-direction: column;

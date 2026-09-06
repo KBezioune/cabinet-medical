@@ -68,11 +68,8 @@ export default function Login() {
 
       <div className="login-card">
 
-        {/* ── Hero : logo + titre sur fond dégradé ──────────── */}
+        {/* ── Hero : titre sur fond dégradé ──────────────────── */}
         <div className="login-hero">
-          <div className="login-hero-logo">
-            <img src="/logo-emblem.png" alt="Logo Centre Médical Dorigny" style={{ height: 100, objectFit: 'contain', display: 'block', margin: '0 auto' }} />
-          </div>
           <div className="login-hero-texts">
             <h1 className="login-title">Centre Médical<br/>Dorigny</h1>
             <p className="login-tagline">Gestion RH &amp; Pointage</p>

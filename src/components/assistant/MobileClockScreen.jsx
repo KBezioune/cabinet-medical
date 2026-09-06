@@ -105,8 +105,15 @@ export default function MobileClockScreen() {
     load()
   }, [user.id])
 
-  const startCountdown = (text, isArrivee) => {
-    setConfirmed({ text, isArrivee }); setCountdown(COUNTDOWN)
+  const CONFIRM_CONFIG = {
+    arrivee:     { emoji: '✅', card: 'mob-card-in',  greeting: 'Bonne journée' },
+    pause_debut: { emoji: '☕', card: 'mob-card-out', greeting: 'Bonne pause' },
+    pause_fin:   { emoji: '✅', card: 'mob-card-in',  greeting: 'Bon retour' },
+    depart:      { emoji: '👋', card: 'mob-card-out', greeting: 'Bonne soirée' },
+  }
+
+  const startCountdown = (text, kind) => {
+    setConfirmed({ text, kind }); setCountdown(COUNTDOWN)
     let rem = COUNTDOWN
     timerRef.current = setInterval(() => {
       rem -= 1; setCountdown(rem)
@@ -139,7 +146,39 @@ export default function MobileClockScreen() {
         detail: `Arrivée à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
         userAgent: navigator.userAgent,
       })
-      startCountdown('Arrivée enregistrée', true)
+      startCountdown('Arrivée enregistrée', 'arrivee')
+    } catch (e) { setError(e.message) }
+    finally { setActionBusy(false) }
+  }
+
+  const pauseStart = async () => {
+    if (!await checkGPS()) return
+    setActionBusy(true); setError(null)
+    try {
+      const r = await updatePointage(pointage.id, { heure_pause_debut: new Date().toISOString() })
+      setPointage(prev => ({ ...prev, ...r }))
+      logAccess({
+        userId: user.id, action: 'pointage_pause_debut', typeEvenement: 'pointage_pause_debut',
+        detail: `Début de pause à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
+      startCountdown('Pause enregistrée', 'pause_debut')
+    } catch (e) { setError(e.message) }
+    finally { setActionBusy(false) }
+  }
+
+  const pauseEnd = async () => {
+    if (!await checkGPS()) return
+    setActionBusy(true); setError(null)
+    try {
+      const r = await updatePointage(pointage.id, { heure_pause_fin: new Date().toISOString() })
+      setPointage(prev => ({ ...prev, ...r }))
+      logAccess({
+        userId: user.id, action: 'pointage_pause_fin', typeEvenement: 'pointage_pause_fin',
+        detail: `Fin de pause à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
+      startCountdown('Retour de pause enregistré', 'pause_fin')
     } catch (e) { setError(e.message) }
     finally { setActionBusy(false) }
   }
@@ -148,14 +187,14 @@ export default function MobileClockScreen() {
     if (!await checkGPS()) return
     setActionBusy(true); setError(null)
     try {
-      const r = await updatePointage(pointage.id, { heure_arrivee: pointage.heure_arrivee, heure_depart: new Date().toISOString() })
-      setPointage(r)
+      const r = await updatePointage(pointage.id, { heure_depart: new Date().toISOString() })
+      setPointage(prev => ({ ...prev, ...r }))
       logAccess({
         userId: user.id, action: 'pointage_depart', typeEvenement: 'pointage_depart',
         detail: `Départ à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
         userAgent: navigator.userAgent,
       })
-      startCountdown('Départ enregistré', false)
+      startCountdown('Départ enregistré', 'depart')
     } catch (e) { setError(e.message) }
     finally { setActionBusy(false) }
   }
@@ -163,23 +202,28 @@ export default function MobileClockScreen() {
   const timeStr   = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   const secondStr = String(now.getSeconds()).padStart(2, '0')
   const dateStr   = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-  const status    = !pointage?.heure_arrivee ? 'absent' : !pointage?.heure_depart ? 'present' : 'done'
+  const status    = !pointage?.heure_arrivee ? 'absent'
+    : pointage?.heure_depart ? 'done'
+    : (pointage?.heure_pause_debut && !pointage?.heure_pause_fin) ? 'pause'
+    : 'present'
+  const pauseDeja = !!pointage?.heure_pause_fin
   const busy      = actionBusy || gpsLoading
 
   // ── Écran confirmation ─────────────────────────────────────
   if (confirmed) {
     const R = 30, circ = 2 * Math.PI * R, offset = circ * (1 - countdown / COUNTDOWN)
+    const cfg = CONFIRM_CONFIG[confirmed.kind]
     return (
       <div className="mob-screen mob-confirm-screen">
-        <div className={`mob-confirm-card ${confirmed.isArrivee ? 'mob-card-in' : 'mob-card-out'}`}>
-          <div className="mob-confirm-emoji">{confirmed.isArrivee ? '✅' : '👋'}</div>
+        <div className={`mob-confirm-card ${cfg.card}`}>
+          <div className="mob-confirm-emoji">{cfg.emoji}</div>
           <strong className="mob-confirm-title">{confirmed.text} !</strong>
-          <span className="mob-confirm-sub">Bonne {confirmed.isArrivee ? 'journée' : 'soirée'}, {user.name}</span>
+          <span className="mob-confirm-sub">{cfg.greeting}, {user.name}</span>
         </div>
         <svg width="78" height="78" viewBox="0 0 72 72">
           <circle cx="36" cy="36" r={R} fill="none" stroke="#e5e7eb" strokeWidth="5"/>
           <circle cx="36" cy="36" r={R} fill="none"
-            stroke={confirmed.isArrivee ? '#16a34a' : '#C4A882'}
+            stroke={cfg.card === 'mob-card-in' ? '#16a34a' : '#C4A882'}
             strokeWidth="5" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
             transform="rotate(-90 36 36)" style={{ transition: 'stroke-dashoffset 0.9s linear' }}
           />
@@ -207,6 +251,7 @@ export default function MobileClockScreen() {
       <div className={`mob-status mob-status-${status}`}>
         {status === 'absent'  && <><span className="mob-status-dot" />Non pointé aujourd'hui</>}
         {status === 'present' && <><span className="mob-status-dot mob-dot-green" />En service depuis {formatDateTime(pointage.heure_arrivee)}</>}
+        {status === 'pause'   && <><span className="mob-status-dot mob-dot-blue" />En pause depuis {formatDateTime(pointage.heure_pause_debut)}</>}
         {status === 'done'    && <><span className="mob-status-dot mob-dot-blue" />Journée terminée · {minutesToHHMM(pointage?.duree_minutes)}</>}
       </div>
 
@@ -233,19 +278,44 @@ export default function MobileClockScreen() {
         )}
 
         {status === 'present' && (
-          <button className="mob-action-btn mob-btn-depart" onClick={clockOut} disabled={busy}>
+          <>
+            {!pauseDeja && (
+              <button className="mob-action-btn mob-btn-pause" onClick={pauseStart} disabled={busy}>
+                {gpsLoading ? (
+                  <><span className="mob-action-spinner" />Vérification GPS…</>
+                ) : actionBusy ? (
+                  <><span className="mob-action-spinner" />Enregistrement…</>
+                ) : (
+                  <>☕ Débuter ma pause</>
+                )}
+              </button>
+            )}
+            <button className="mob-action-btn mob-btn-depart" onClick={clockOut} disabled={busy}>
+              {gpsLoading ? (
+                <><span className="mob-action-spinner" />Vérification GPS…</>
+              ) : actionBusy ? (
+                <><span className="mob-action-spinner" />Enregistrement…</>
+              ) : (
+                <>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
+                  Pointer mon départ
+                </>
+              )}
+            </button>
+          </>
+        )}
+
+        {status === 'pause' && (
+          <button className="mob-action-btn mob-btn-arrive" onClick={pauseEnd} disabled={busy}>
             {gpsLoading ? (
               <><span className="mob-action-spinner" />Vérification GPS…</>
             ) : actionBusy ? (
               <><span className="mob-action-spinner" />Enregistrement…</>
             ) : (
-              <>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                  <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                </svg>
-                Pointer mon départ
-              </>
+              <>☕ Terminer ma pause</>
             )}
           </button>
         )}

@@ -88,6 +88,7 @@
 }
 .mob-status-absent  { background: #fee2e2; color: #991b1b; }
 .mob-status-present { background: #dcfce7; color: #166534; }
+.mob-status-pause   { background: #fff7ed; color: #c2410c; }
 .mob-status-done    { background: #F1E9DC; color: #1e40af; }
 
 .mob-status-dot {
@@ -121,6 +122,9 @@
   width: 100%;
   padding: 0 1.25rem;
   max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .mob-action-btn {
@@ -171,6 +175,16 @@
 }
 .mob-btn-depart:hover:not(:disabled) {
   box-shadow: 0 10px 34px rgba(220,38,38,0.55);
+  transform: translateY(-1px);
+}
+
+.mob-btn-pause {
+  background: linear-gradient(135deg, #c2410c, #ea580c, #fb923c);
+  color: #fff;
+  box-shadow: 0 8px 28px rgba(234,88,12,0.4), 0 2px 8px rgba(234,88,12,0.25);
+}
+.mob-btn-pause:hover:not(:disabled) {
+  box-shadow: 0 10px 34px rgba(234,88,12,0.55);
   transform: translateY(-1px);
 }
 

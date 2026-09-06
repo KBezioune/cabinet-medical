@@ -259,9 +259,9 @@ export default function AdminDashboard() {
       {/* ── Sidebar desktop uniquement ──────────────────────── */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
-          <div style={{ background: '#fff', borderRadius: 12, padding: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 6px rgba(0,0,0,0.1)' }}>
-            <img src="/logo-emblem.png" alt="Logo Centre Médical Dorigny" style={{ height: 60, objectFit: 'contain', display: 'block' }} />
-          </div>
+          <span style={{ fontSize: '1.0625rem', fontWeight: 800, color: 'var(--gray-800)', letterSpacing: '-0.01em' }}>
+            Centre Médical Dorigny
+          </span>
         </div>
 
         <nav className="admin-sidebar-nav">

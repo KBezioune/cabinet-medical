@@ -20,7 +20,6 @@ export default function Layout({ children }) {
         <div className="header-inner">
 
           <div className="header-brand">
-            <img src="/logo-emblem.png" alt="Logo" className="header-logo-img" />
             <div className="header-texts">
               <span className="header-title">Centre Médical Dorigny</span>
               <span className="header-subtitle">Gestion RH &amp; Pointage</span>

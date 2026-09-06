@@ -51,8 +51,9 @@ export default function AllPointages() {
 
   const statusBadge = (r) => {
     if (!r.heure_arrivee) return <span className="badge badge-gray">—</span>
-    if (!r.heure_depart)  return <span className="badge badge-green">En service</span>
-    return <span className="badge badge-blue">Terminé</span>
+    if (r.heure_depart)   return <span className="badge badge-blue">Terminé</span>
+    if (r.heure_pause_debut && !r.heure_pause_fin) return <span className="badge badge-orange">En pause</span>
+    return <span className="badge badge-green">En service</span>
   }
 
   return (
@@ -122,7 +123,7 @@ export default function AllPointages() {
             <table>
               <thead>
                 <tr>
-                  <th>Assistante</th><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Statut</th><th>Note</th>
+                  <th>Assistante</th><th>Date</th><th>Arrivée</th><th>Pause</th><th>Départ</th><th>Durée</th><th>Statut</th><th>Note</th>
                   {isTestMode && <th>Réinit.</th>}
                 </tr>
               </thead>
@@ -132,6 +133,9 @@ export default function AllPointages() {
                     <td><strong>{r.users?.name || '—'}</strong></td>
                     <td>{formatDate(r.date)}</td>
                     <td><span style={{ color: 'var(--green-600)', fontWeight: 500 }}>{formatDateTime(r.heure_arrivee)}</span></td>
+                    <td style={{ color: 'var(--gray-500)', fontSize: '0.8125rem' }}>
+                      {r.heure_pause_debut ? `${formatDateTime(r.heure_pause_debut)} → ${formatDateTime(r.heure_pause_fin)}` : '—'}
+                    </td>
                     <td>
                       <span style={{ color: r.heure_depart ? 'var(--red-600)' : 'var(--orange-500)', fontWeight: 500 }}>
                         {r.heure_depart ? formatDateTime(r.heure_depart) : (r.heure_arrivee ? 'En cours' : '—')}

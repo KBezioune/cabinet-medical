@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { useAuth } from '../../contexts/AuthContext'
 import { getUsers, updateUserPin } from '../../lib/localData'
 import { updateUserPinInDb } from '../../lib/db'
 import Breadcrumb from '../shared/Breadcrumb'
 import './GestionPins.css'
 
-const getNonAdmins = () => getUsers().filter(u => u.role !== 'admin')
+const getAllStaff = () => getUsers()
 
 const validate = (pwd, userId) => {
   if (pwd.trim().length < 6)
@@ -18,7 +19,8 @@ const validate = (pwd, userId) => {
 }
 
 export default function GestionPins() {
-  const [staff,    setStaff]    = useState(getNonAdmins)
+  const { user } = useAuth()
+  const [staff,    setStaff]    = useState(getAllStaff)
   const [editing,  setEditing]  = useState(null)
   const [newPwd,   setNewPwd]   = useState('')
   const [showPwd,  setShowPwd]  = useState(false)
@@ -38,7 +40,7 @@ export default function GestionPins() {
     try {
       await updateUserPinInDb(userId, newPwd.trim())
       updateUserPin(userId, newPwd.trim())
-      setStaff(getNonAdmins())
+      setStaff(getAllStaff())
       setEditing(null)
       setNewPwd('')
       setMsg({ type: 'success', text: '✅ Mot de passe mis à jour sur tous les appareils.' })
@@ -74,7 +76,7 @@ export default function GestionPins() {
             Gestion des mots de passe
           </h2>
           <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>
-            Mots de passe alphanumériques (min. 6 caractères). Synchronisés via Supabase sur tous les appareils.
+            Mots de passe alphanumériques (min. 6 caractères), pour tous les comptes y compris le vôtre. Synchronisés via Supabase sur tous les appareils.
           </p>
         </div>
 
@@ -84,8 +86,10 @@ export default function GestionPins() {
               <div className="pin-row-avatar">{u.name[0]}</div>
 
               <div className="pin-row-info">
-                <div className="pin-row-name">{u.name}</div>
-                <div className="pin-row-role">{u.role === 'manager' ? 'Manager' : u.poste || 'Assistante médicale'}</div>
+                <div className="pin-row-name">{u.name}{u.id === user.id ? ' (vous)' : ''}</div>
+                <div className="pin-row-role">
+                  {u.role === 'admin' ? 'Médecin · Admin' : u.role === 'manager' ? 'Manager' : u.poste || 'Assistante médicale'}
+                </div>
               </div>
 
               {editing === u.id ? (

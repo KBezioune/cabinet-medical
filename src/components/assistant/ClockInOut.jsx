@@ -57,6 +57,13 @@ export default function ClockInOut() {
   const [countdown, setCountdown]  = useState(null)
   const timerRef = useRef(null)
 
+  const CONFIRM_CONFIG = {
+    arrivee:     { icon: '✅', tone: 'confirm-arrivee', greeting: 'Bonne journée' },
+    pause_debut: { icon: '☕', tone: 'confirm-depart',  greeting: 'Bonne pause' },
+    pause_fin:   { icon: '✅', tone: 'confirm-arrivee', greeting: 'Bon retour' },
+    depart:      { icon: '👋', tone: 'confirm-depart',  greeting: 'Bonne soirée' },
+  }
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
@@ -78,8 +85,8 @@ export default function ClockInOut() {
 
   useEffect(() => () => clearInterval(timerRef.current), [])
 
-  const startCountdown = (text, isArrivee) => {
-    setConfirmed({ text, isArrivee })
+  const startCountdown = (text, kind) => {
+    setConfirmed({ text, kind })
     setCountdown(COUNTDOWN)
     let remaining = COUNTDOWN
     timerRef.current = setInterval(() => {
@@ -126,7 +133,47 @@ export default function ClockInOut() {
         detail: `Arrivée à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
         userAgent: navigator.userAgent,
       })
-      startCountdown('Arrivée enregistrée', true)
+      startCountdown('Arrivée enregistrée', 'arrivee')
+    } catch (e) {
+      setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
+    } finally {
+      setAction(false)
+    }
+  }
+
+  const pauseStart = async () => {
+    const ok = await checkGPS()
+    if (!ok) return
+    setAction(true); setError(null)
+    try {
+      const updated = await updatePointage(pointage.id, { heure_pause_debut: new Date().toISOString() })
+      setPointage(prev => ({ ...prev, ...updated }))
+      logAccess({
+        userId: user.id, action: 'pointage_pause_debut', typeEvenement: 'pointage_pause_debut',
+        detail: `Début de pause à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
+      startCountdown('Pause enregistrée', 'pause_debut')
+    } catch (e) {
+      setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
+    } finally {
+      setAction(false)
+    }
+  }
+
+  const pauseEnd = async () => {
+    const ok = await checkGPS()
+    if (!ok) return
+    setAction(true); setError(null)
+    try {
+      const updated = await updatePointage(pointage.id, { heure_pause_fin: new Date().toISOString() })
+      setPointage(prev => ({ ...prev, ...updated }))
+      logAccess({
+        userId: user.id, action: 'pointage_pause_fin', typeEvenement: 'pointage_pause_fin',
+        detail: `Fin de pause à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userAgent: navigator.userAgent,
+      })
+      startCountdown('Retour de pause enregistré', 'pause_fin')
     } catch (e) {
       setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
     } finally {
@@ -139,17 +186,14 @@ export default function ClockInOut() {
     if (!ok) return
     setAction(true); setError(null)
     try {
-      const updated = await updatePointage(pointage.id, {
-        heure_arrivee: pointage.heure_arrivee,
-        heure_depart: new Date().toISOString(),
-      })
-      setPointage(updated)
+      const updated = await updatePointage(pointage.id, { heure_depart: new Date().toISOString() })
+      setPointage(prev => ({ ...prev, ...updated }))
       logAccess({
         userId: user.id, action: 'pointage_depart', typeEvenement: 'pointage_depart',
         detail: `Départ à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
         userAgent: navigator.userAgent,
       })
-      startCountdown('Départ enregistré', false)
+      startCountdown('Départ enregistré', 'depart')
     } catch (e) {
       setError(`Erreur pointage: ${e?.code || ''} ${e?.message || 'connexion impossible'}`)
     } finally {
@@ -160,8 +204,10 @@ export default function ClockInOut() {
   const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateStr = formatDateLong(now)
   const status  = !pointage?.heure_arrivee ? 'absent'
-    : !pointage?.heure_depart ? 'present'
-    : 'done'
+    : pointage?.heure_depart ? 'done'
+    : (pointage?.heure_pause_debut && !pointage?.heure_pause_fin) ? 'pause'
+    : 'present'
+  const pauseDeja = !!pointage?.heure_pause_fin
 
   const busy = actionLoading || gpsLoading
   const btnLabel = (label) => gpsLoading ? '📡 Vérification GPS...' : actionLoading ? 'Enregistrement...' : label
@@ -171,29 +217,34 @@ export default function ClockInOut() {
     const radius = 28
     const circ   = 2 * Math.PI * radius
     const offset = circ * (1 - countdown / COUNTDOWN)
+    const cfg    = CONFIRM_CONFIG[confirmed.kind]
     return (
       <div className="clock-page">
         <div className="card clock-card">
-          <div className={`confirm-banner ${confirmed.isArrivee ? 'confirm-arrivee' : 'confirm-depart'}`}>
-            <div className="confirm-icon">{confirmed.isArrivee ? '✅' : '👋'}</div>
+          <div className={`confirm-banner ${cfg.tone}`}>
+            <div className="confirm-icon">{cfg.icon}</div>
             <div className="confirm-text">
               <strong>{confirmed.text} !</strong>
-              <span>Bonne {confirmed.isArrivee ? 'journée' : 'soirée'}, {user.name}</span>
+              <span>{cfg.greeting}, {user.name}</span>
             </div>
           </div>
           {pointage && (
             <div className="confirm-recap">
-              {confirmed.isArrivee
-                ? <span>Arrivée à <strong>{formatDateTime(pointage.heure_arrivee)}</strong></span>
-                : <span>Journée : <strong>{formatDateTime(pointage.heure_arrivee)}</strong> → <strong>{formatDateTime(pointage.heure_depart)}</strong> · <strong>{minutesToHHMM(pointage.duree_minutes)}</strong></span>
-              }
+              {confirmed.kind === 'arrivee' &&
+                <span>Arrivée à <strong>{formatDateTime(pointage.heure_arrivee)}</strong></span>}
+              {confirmed.kind === 'pause_debut' &&
+                <span>Pause depuis <strong>{formatDateTime(pointage.heure_pause_debut)}</strong></span>}
+              {confirmed.kind === 'pause_fin' &&
+                <span>Retour de pause à <strong>{formatDateTime(pointage.heure_pause_fin)}</strong></span>}
+              {confirmed.kind === 'depart' &&
+                <span>Journée : <strong>{formatDateTime(pointage.heure_arrivee)}</strong> → <strong>{formatDateTime(pointage.heure_depart)}</strong> · <strong>{minutesToHHMM(pointage.duree_minutes)}</strong></span>}
             </div>
           )}
           <div className="countdown-wrapper">
             <svg className="countdown-ring" width="72" height="72" viewBox="0 0 72 72">
               <circle cx="36" cy="36" r={radius} fill="none" stroke="var(--gray-100)" strokeWidth="5"/>
               <circle cx="36" cy="36" r={radius} fill="none"
-                stroke={confirmed.isArrivee ? 'var(--green-500)' : 'var(--brand-500)'}
+                stroke={cfg.tone === 'confirm-arrivee' ? 'var(--green-500)' : 'var(--brand-500)'}
                 strokeWidth="5" strokeDasharray={circ} strokeDashoffset={offset}
                 strokeLinecap="round" transform="rotate(-90 36 36)"
                 style={{ transition: 'stroke-dashoffset 0.9s linear' }}
@@ -226,6 +277,7 @@ export default function ClockInOut() {
             <div className={`status-banner status-${status}`}>
               {status === 'absent'  && "🔴 Non pointé aujourd'hui"}
               {status === 'present' && '🟢 En service — arrivée à ' + formatDateTime(pointage.heure_arrivee)}
+              {status === 'pause'   && '☕ En pause depuis ' + formatDateTime(pointage.heure_pause_debut)}
               {status === 'done'    && '✅ Journée terminée'}
             </div>
 
@@ -255,11 +307,23 @@ export default function ClockInOut() {
                 </button>
               )}
               {status === 'present' && (
-                <button className="btn btn-danger clock-big-btn" onClick={clockOut} disabled={busy}>
-                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                  {btnLabel('Pointer mon départ')}
+                <>
+                  {!pauseDeja && (
+                    <button className="btn btn-outline clock-big-btn" onClick={pauseStart} disabled={busy}>
+                      ☕ {btnLabel('Débuter ma pause')}
+                    </button>
+                  )}
+                  <button className="btn btn-danger clock-big-btn" onClick={clockOut} disabled={busy}>
+                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {btnLabel('Pointer mon départ')}
+                  </button>
+                </>
+              )}
+              {status === 'pause' && (
+                <button className="btn btn-success clock-big-btn" onClick={pauseEnd} disabled={busy}>
+                  ☕ {btnLabel('Terminer ma pause')}
                 </button>
               )}
               {status === 'done' && <div className="done-info"><p>Bonne fin de journée !</p></div>}
@@ -280,6 +344,14 @@ export default function ClockInOut() {
               <span className="summary-label">Départ</span>
               <span className="summary-value red">{formatDateTime(pointage.heure_depart) || '—'}</span>
             </div>
+            {(pointage.heure_pause_debut || pointage.heure_pause_fin) && (
+              <div className="summary-item">
+                <span className="summary-label">Pause</span>
+                <span className="summary-value" style={{ color: 'var(--gray-600)' }}>
+                  {formatDateTime(pointage.heure_pause_debut)} → {formatDateTime(pointage.heure_pause_fin)}
+                </span>
+              </div>
+            )}
             <div className="summary-item">
               <span className="summary-label">Durée</span>
               <span className="summary-value blue">{minutesToHHMM(pointage.duree_minutes)}</span>

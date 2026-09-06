@@ -29,8 +29,10 @@ const resolveType = (l) => l.type_evenement || (
 const TYPE_CONFIG = {
   connexion_reussie: { label: 'Connexion réussie', emoji: '✓', badge: 'badge-green'  },
   connexion_echec:   { label: 'Échec de connexion', emoji: '✗', badge: 'badge-red'    },
-  pointage_arrivee:  { label: 'Pointage arrivée',   emoji: '🕐', badge: 'badge-blue'   },
-  pointage_depart:   { label: 'Pointage départ',    emoji: '🕐', badge: 'badge-blue'   },
+  pointage_arrivee:    { label: 'Pointage arrivée',    emoji: '🕐', badge: 'badge-blue'   },
+  pointage_pause_debut:{ label: 'Début de pause',      emoji: '☕', badge: 'badge-orange' },
+  pointage_pause_fin:  { label: 'Fin de pause',        emoji: '☕', badge: 'badge-blue'   },
+  pointage_depart:     { label: 'Pointage départ',     emoji: '🕐', badge: 'badge-blue'   },
   conge_soumis:      { label: 'Demande de congé',   emoji: '📋', badge: 'badge-orange' },
   autre:             { label: 'Autre',              emoji: '•', badge: 'badge-gray'   },
 }

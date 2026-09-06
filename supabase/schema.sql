@@ -16,11 +16,18 @@ CREATE TABLE IF NOT EXISTS pointages (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   date DATE NOT NULL,
   heure_arrivee TIMESTAMPTZ,
+  heure_pause_debut TIMESTAMPTZ,
+  heure_pause_fin TIMESTAMPTZ,
   heure_depart TIMESTAMPTZ,
   duree_minutes INTEGER GENERATED ALWAYS AS (
     CASE
-      WHEN heure_arrivee IS NOT NULL AND heure_depart IS NOT NULL
-      THEN EXTRACT(EPOCH FROM (heure_depart - heure_arrivee))::INTEGER / 60
+      WHEN heure_arrivee IS NOT NULL AND heure_depart IS NOT NULL THEN
+        EXTRACT(EPOCH FROM (heure_depart - heure_arrivee))::INTEGER / 60
+        - CASE
+            WHEN heure_pause_debut IS NOT NULL AND heure_pause_fin IS NOT NULL
+            THEN EXTRACT(EPOCH FROM (heure_pause_fin - heure_pause_debut))::INTEGER / 60
+            ELSE 0
+          END
       ELSE NULL
     END
   ) STORED,

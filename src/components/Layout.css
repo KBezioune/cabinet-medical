@@ -53,8 +53,6 @@
   min-width: 0; /* allow shrink */
 }
 
-.header-logo-img { height: 35px; width: auto; object-fit: contain; display: block; flex-shrink: 0; }
-
 .header-texts { min-width: 0; }
 
 .header-title {
@@ -168,7 +166,6 @@
 /* Tablette et plus */
 @media (min-width: 640px) {
   .header-inner { padding: 0 1.5rem; height: 4rem; /* 64px */ }
-  .header-logo-img { height: 38px; }
   .header-title { font-size: 0.9375rem; max-width: 260px; }
   .header-subtitle { display: block; }
   .header-btn { padding: 0.4375rem 0.875rem; font-size: 0.875rem; gap: 0.5rem; }
