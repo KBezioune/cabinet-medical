@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
 import { todayISO, formatDate, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
 import { getAssistants } from '../../lib/localData'
-import { getAllPointagesFiltered, deleteTestUserPointages, deletePointageReal } from '../../lib/db'
+import { getAllPointagesFiltered, deleteTestUserPointages, deletePointageEventsForDay } from '../../lib/db'
 import { useAuth } from '../../contexts/AuthContext'
 import Breadcrumb from '../shared/Breadcrumb'
 import './AllPointages.css'
+
+const EVENT_ICON  = { arrivee: '🕐', pause_debut: '☕', pause_fin: '☕', depart: '🏁' }
+const EVENT_LABEL = { arrivee: 'Arrivée', pause_debut: 'Début pause', pause_fin: 'Fin pause', depart: 'Départ' }
 
 export default function AllPointages() {
   const { isTestMode } = useAuth()
@@ -16,6 +19,7 @@ export default function AllPointages() {
   const [filterDate, setFilterDate] = useState(todayISO())
   const [deleting,     setDeleting]     = useState(false)
   const [resettingId,  setResettingId]  = useState(null)
+  const [expanded,     setExpanded]     = useState(null)
   const assistants = getAssistants()
 
   const refresh = useCallback(async () => {
@@ -40,8 +44,8 @@ export default function AllPointages() {
   // Temps réel Supabase
   useEffect(() => {
     const channel = supabase
-      .channel('pointages-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pointages' }, () => refresh())
+      .channel('pointage-events-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pointage_events' }, () => refresh())
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [refresh])
@@ -52,7 +56,7 @@ export default function AllPointages() {
   const statusBadge = (r) => {
     if (!r.heure_arrivee) return <span className="badge badge-gray">—</span>
     if (r.heure_depart)   return <span className="badge badge-blue">Terminé</span>
-    if (r.heure_pause_debut && !r.heure_pause_fin) return <span className="badge badge-orange">En pause</span>
+    if (r.en_pause)       return <span className="badge badge-orange">En pause</span>
     return <span className="badge badge-green">En service</span>
   }
 
@@ -123,49 +127,80 @@ export default function AllPointages() {
             <table>
               <thead>
                 <tr>
-                  <th>Assistante</th><th>Date</th><th>Arrivée</th><th>Pause</th><th>Départ</th><th>Durée</th><th>Statut</th><th>Note</th>
+                  <th></th><th>Assistante</th><th>Date</th><th>Arrivée</th><th>Pauses</th><th>Départ</th><th>Durée nette</th><th>Statut</th>
                   {isTestMode && <th>Réinit.</th>}
                 </tr>
               </thead>
               <tbody>
-                {records.map(r => (
-                  <tr key={r.id}>
-                    <td><strong>{r.users?.name || '—'}</strong></td>
-                    <td>{formatDate(r.date)}</td>
-                    <td><span style={{ color: 'var(--green-600)', fontWeight: 500 }}>{formatDateTime(r.heure_arrivee)}</span></td>
-                    <td style={{ color: 'var(--gray-500)', fontSize: '0.8125rem' }}>
-                      {r.heure_pause_debut ? `${formatDateTime(r.heure_pause_debut)} → ${formatDateTime(r.heure_pause_fin)}` : '—'}
-                    </td>
-                    <td>
-                      <span style={{ color: r.heure_depart ? 'var(--red-600)' : 'var(--orange-500)', fontWeight: 500 }}>
-                        {r.heure_depart ? formatDateTime(r.heure_depart) : (r.heure_arrivee ? 'En cours' : '—')}
-                      </span>
-                    </td>
-                    <td>{r.duree_minutes != null ? <span className="badge badge-blue">{minutesToHHMM(r.duree_minutes)}</span> : '—'}</td>
-                    <td>{statusBadge(r)}</td>
-                    <td style={{ color: 'var(--gray-500)', fontSize: '0.8125rem' }}>{r.note || '—'}</td>
-                    {isTestMode && (
-                      <td>
-                        <button
-                          className="btn btn-outline btn-sm"
-                          disabled={resettingId === r.id}
-                          title="Réinitialiser ce pointage"
-                          onClick={async () => {
-                            const name = r.users?.name || 'cette employée'
-                            const date = formatDate(r.date)
-                            if (!window.confirm(`Réinitialiser le pointage de ${name} du ${date} ?\nL'employée pourra repointer depuis zéro.`)) return
-                            setResettingId(r.id)
-                            try { await deletePointageReal(r.id); await refresh() }
-                            catch (e) { alert('Erreur : ' + e.message) }
-                            finally { setResettingId(null) }
-                          }}
-                        >
-                          {resettingId === r.id ? '…' : '🔄'}
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
+                {records.map(r => {
+                  const isOpen = expanded === r.id
+                  return (
+                    <Fragment key={r.id}>
+                      <tr>
+                        <td>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setExpanded(isOpen ? null : r.id)}
+                            title="Voir tous les événements du jour"
+                          >
+                            {isOpen ? '▾' : '▸'}
+                          </button>
+                        </td>
+                        <td><strong>{r.users?.name || '—'}</strong></td>
+                        <td>{formatDate(r.date)}</td>
+                        <td><span style={{ color: 'var(--green-600)', fontWeight: 500 }}>{formatDateTime(r.heure_arrivee)}</span></td>
+                        <td style={{ color: 'var(--gray-500)', fontSize: '0.8125rem' }}>
+                          {r.pauses.length > 0 || r.en_pause
+                            ? `${r.pauses.length + (r.en_pause ? 1 : 0)} · ${minutesToHHMM(r.pause_minutes)}`
+                            : '—'}
+                        </td>
+                        <td>
+                          <span style={{ color: r.heure_depart ? 'var(--red-600)' : 'var(--orange-500)', fontWeight: 500 }}>
+                            {r.heure_depart ? formatDateTime(r.heure_depart) : (r.heure_arrivee ? 'En cours' : '—')}
+                          </span>
+                        </td>
+                        <td>{r.duree_minutes != null ? <span className="badge badge-blue">{minutesToHHMM(r.duree_minutes)}</span> : '—'}</td>
+                        <td>{statusBadge(r)}</td>
+                        {isTestMode && (
+                          <td>
+                            <button
+                              className="btn btn-outline btn-sm"
+                              disabled={resettingId === r.id}
+                              title="Réinitialiser ce pointage"
+                              onClick={async () => {
+                                const name = r.users?.name || 'cette employée'
+                                const date = formatDate(r.date)
+                                if (!window.confirm(`Réinitialiser le pointage de ${name} du ${date} ?\nTous les événements de la journée seront supprimés.`)) return
+                                setResettingId(r.id)
+                                try { await deletePointageEventsForDay(r.user_id, r.date); await refresh() }
+                                catch (e) { alert('Erreur : ' + e.message) }
+                                finally { setResettingId(null) }
+                              }}
+                            >
+                              {resettingId === r.id ? '…' : '🔄'}
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                      {isOpen && (
+                        <tr className="pt-journal-row">
+                          <td colSpan={isTestMode ? 9 : 8}>
+                            <div className="pt-journal">
+                              {r.events.map(e => (
+                                <span key={e.id} className="pt-journal-item">
+                                  {EVENT_ICON[e.type]} {formatDateTime(e.heure)} — {EVENT_LABEL[e.type]}
+                                </span>
+                              ))}
+                              <span className="pt-journal-total">
+                                Total : <strong>{minutesToHHMM(r.duree_minutes)}</strong>
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           </div>

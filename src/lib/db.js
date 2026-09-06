@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { getUserById, setSyncedRole } from './localData'
+import { summarizePointageEvents } from '../utils/dateUtils'
 
 const log = (fn, err) => console.error(`[db.${fn}]`, err?.code, err?.message, err)
 
@@ -24,7 +25,7 @@ const mockRec = (data = {}) => ({
 
 export const testConnection = async () => {
   try {
-    const { error } = await supabase.from('pointages').select('id').limit(1)
+    const { error } = await supabase.from('pointage_events').select('id').limit(1)
     if (error) { log('testConnection', error); return { ok: false, message: `${error.code}: ${error.message}` } }
     return { ok: true }
   } catch (e) {
@@ -33,68 +34,94 @@ export const testConnection = async () => {
   }
 }
 
-// ── POINTAGES ────────────────────────────────────────────────
+// ── POINTAGES — journal d'événements (arrivée / pause_debut / pause_fin / départ) ──
+// Chaque pointage est un événement indépendant : aucune limite sur le nombre de
+// pauses par jour. Les fonctions ci-dessous regroupent ces événements par jour et
+// exposent un résumé (heure_arrivee / heure_depart / duree_minutes / pauses...)
+// compatible avec l'ancien modèle "une ligne = un jour" pour ne pas impacter les
+// écrans de paie (SoldeHeures, MonSolde, MonthlyExport, DashboardRH, Statistiques…).
 
-export const getPointageByUserAndDate = async (userId, date) => {
-  const { data, error } = await supabase
-    .from('pointages').select('*').eq('user_id', userId).eq('date', date).maybeSingle()
-  if (error) { log('getPointageByUserAndDate', error); throw error }
+export const POINTAGE_EVENT_TYPES = ['arrivee', 'pause_debut', 'pause_fin', 'depart']
+
+export const insertPointageEvent = async (userId, date, type) => {
+  const heure = new Date().toISOString()
+  if (isTestMode()) return mockRec({ user_id: userId, date, type, heure })
+  const { data, error } = await supabase.from('pointage_events')
+    .insert({ user_id: userId, date, type, heure })
+    .select().single()
+  if (error) { log('insertPointageEvent', error); throw error }
   return data
 }
 
-export const getPointagesByUserAndMonth = async (userId, from, to) => {
-  const { data, error } = await supabase.from('pointages').select('*')
-    .eq('user_id', userId).gte('date', from).lte('date', to).order('date', { ascending: false })
-  if (error) { log('getPointagesByUserAndMonth', error); throw error }
+export const getPointageEventsByUserAndDate = async (userId, date) => {
+  const { data, error } = await supabase.from('pointage_events').select('*')
+    .eq('user_id', userId).eq('date', date).order('heure', { ascending: true })
+  if (error) { log('getPointageEventsByUserAndDate', error); throw error }
   return data || []
+}
+
+// Regroupe une liste d'événements bruts par (user_id, date)
+const groupEventsByDay = (events) => {
+  const byDay = {}
+  events.forEach(e => {
+    const key = `${e.user_id}_${e.date}`
+    if (!byDay[key]) byDay[key] = { user_id: e.user_id, date: e.date, events: [] }
+    byDay[key].events.push(e)
+  })
+  return byDay
+}
+
+const daySummary = (key, day) => ({
+  id: key, user_id: day.user_id, date: day.date, note: null,
+  ...summarizePointageEvents(day.events),
+})
+
+export const getPointageByUserAndDate = async (userId, date) => {
+  const events = await getPointageEventsByUserAndDate(userId, date)
+  if (events.length === 0) return null
+  return daySummary(`${userId}_${date}`, { user_id: userId, date, events })
+}
+
+export const getPointagesByUserAndMonth = async (userId, from, to) => {
+  const { data, error } = await supabase.from('pointage_events').select('*')
+    .eq('user_id', userId).gte('date', from).lte('date', to).order('heure', { ascending: true })
+  if (error) { log('getPointagesByUserAndMonth', error); throw error }
+  const byDay = groupEventsByDay(data || [])
+  return Object.entries(byDay)
+    .map(([key, day]) => daySummary(key, day))
+    .sort((a, b) => b.date.localeCompare(a.date))
 }
 
 export const getPointagesByDateRange = async (userIds, from, to) => {
-  const { data, error } = await supabase.from('pointages').select('*')
+  const { data, error } = await supabase.from('pointage_events').select('*')
     .in('user_id', userIds).gte('date', from).lte('date', to)
   if (error) { log('getPointagesByDateRange', error); throw error }
-  return data || []
+  const byDay = groupEventsByDay(data || [])
+  return Object.entries(byDay).map(([key, day]) => daySummary(key, day))
 }
 
 export const getAllPointagesFiltered = async ({ userId, date } = {}) => {
-  let q = supabase.from('pointages').select('*').order('date', { ascending: false }).limit(500)
+  let q = supabase.from('pointage_events').select('*').order('heure', { ascending: false }).limit(3000)
   if (userId) q = q.eq('user_id', userId)
   if (date)   q = q.eq('date', date)
   const { data, error } = await q
   if (error) { log('getAllPointagesFiltered', error); throw error }
-  return (data || []).map(p => ({ ...p, users: getUserById(p.user_id) }))
+  const byDay = groupEventsByDay(data || [])
+  return Object.entries(byDay)
+    .map(([key, day]) => ({ ...daySummary(key, day), users: getUserById(day.user_id) }))
+    .sort((a, b) => b.date.localeCompare(a.date))
 }
 
-export const insertPointage = async (data) => {
-  if (isTestMode()) return mockRec({ ...data, duree_minutes: null })
-  const { data: record, error } = await supabase.from('pointages').insert(data).select().single()
-  if (error) { log('insertPointage', error); throw error }
-  return record
-}
-
-export const updatePointage = async (id, data) => {
-  if (isTestMode()) return mockRec({ id, ...data })
-  const { data: record, error } = await supabase.from('pointages').update(data).eq('id', id).select().single()
-  if (error) { log('updatePointage', error); throw error }
-  return record
-}
-
-export const deletePointage = async (id) => {
-  if (isTestMode()) return
-  const { error } = await supabase.from('pointages').delete().eq('id', id)
-  if (error) { log('deletePointage', error); throw error }
+// Supprime tous les événements d'une journée pour un utilisateur (réinitialisation admin)
+export const deletePointageEventsForDay = async (userId, date) => {
+  const { error } = await supabase.from('pointage_events').delete().eq('user_id', userId).eq('date', date)
+  if (error) { log('deletePointageEventsForDay', error); throw error }
 }
 
 // Nettoyage des pointages de test — bypass du guard intentionnel
 export const deleteTestUserPointages = async () => {
-  const { error } = await supabase.from('pointages').delete().eq('user_id', TEST_USER_ID)
+  const { error } = await supabase.from('pointage_events').delete().eq('user_id', TEST_USER_ID)
   if (error) { log('deleteTestUserPointages', error); throw error }
-}
-
-// Réinitialisation d'un pointage (compte test uniquement) — bypass intentionnel
-export const deletePointageReal = async (id) => {
-  const { error } = await supabase.from('pointages').delete().eq('id', id)
-  if (error) { log('deletePointageReal', error); throw error }
 }
 
 // ── USERS / PINS ─────────────────────────────────────────────

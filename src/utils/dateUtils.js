@@ -46,6 +46,47 @@ export const calcDuree = (arrivee, depart) => {
   return differenceInMinutes(d, a)
 }
 
+// Agrège le journal d'événements d'une journée (arrivée / pause_debut / pause_fin / départ,
+// nombre illimité de pauses) en un résumé exploitable par l'UI et les calculs de paie.
+export const summarizePointageEvents = (events) => {
+  const sorted = [...events].sort((a, b) => new Date(a.heure) - new Date(b.heure))
+
+  const heure_arrivee = sorted.find(e => e.type === 'arrivee')?.heure ?? null
+  const departEvents  = sorted.filter(e => e.type === 'depart')
+  const heure_depart  = departEvents.length ? departEvents[departEvents.length - 1].heure : null
+
+  const pauses = []
+  let openPause = null
+  sorted.forEach(e => {
+    if (e.type === 'pause_debut') openPause = e.heure
+    else if (e.type === 'pause_fin' && openPause) {
+      pauses.push({ debut: openPause, fin: e.heure })
+      openPause = null
+    }
+  })
+  const pause_minutes = pauses.reduce((s, p) => s + differenceInMinutes(parseISO(p.fin), parseISO(p.debut)), 0)
+
+  const duree_minutes = (heure_arrivee && heure_depart)
+    ? differenceInMinutes(parseISO(heure_depart), parseISO(heure_arrivee)) - pause_minutes
+    : null
+
+  return {
+    heure_arrivee, heure_depart, duree_minutes,
+    pauses, pause_minutes,
+    en_pause: !!openPause,
+    pause_debut_courante: openPause,
+    events: sorted,
+  }
+}
+
+// Statut courant d'une journée à partir de son résumé — 'absent' | 'present' | 'pause' | 'done'
+export const pointageStatus = (summary) => {
+  if (!summary?.heure_arrivee) return 'absent'
+  if (summary.heure_depart)    return 'done'
+  if (summary.en_pause)        return 'pause'
+  return 'present'
+}
+
 export const currentMonthYear = () => {
   const now = new Date()
   return { year: now.getFullYear(), month: now.getMonth() + 1 }

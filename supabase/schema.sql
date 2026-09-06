@@ -10,31 +10,18 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Table des pointages
-CREATE TABLE IF NOT EXISTS pointages (
+-- Table des pointages — journal d'événements (arrivée / pause_debut / pause_fin / départ).
+-- Chaque pointage est un événement indépendant : pas de limite sur le nombre de
+-- pauses par jour. Les heures/durées travaillées sont agrégées côté application
+-- (voir src/utils/dateUtils.js:summarizePointageEvents et src/lib/db.js).
+CREATE TABLE IF NOT EXISTS pointage_events (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   date DATE NOT NULL,
-  heure_arrivee TIMESTAMPTZ,
-  heure_pause_debut TIMESTAMPTZ,
-  heure_pause_fin TIMESTAMPTZ,
-  heure_depart TIMESTAMPTZ,
-  duree_minutes INTEGER GENERATED ALWAYS AS (
-    CASE
-      WHEN heure_arrivee IS NOT NULL AND heure_depart IS NOT NULL THEN
-        EXTRACT(EPOCH FROM (heure_depart - heure_arrivee))::INTEGER / 60
-        - CASE
-            WHEN heure_pause_debut IS NOT NULL AND heure_pause_fin IS NOT NULL
-            THEN EXTRACT(EPOCH FROM (heure_pause_fin - heure_pause_debut))::INTEGER / 60
-            ELSE 0
-          END
-      ELSE NULL
-    END
-  ) STORED,
+  type TEXT NOT NULL CHECK (type IN ('arrivee', 'pause_debut', 'pause_fin', 'depart')),
+  heure TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   note TEXT,
-  modifie_par UUID REFERENCES users(id),
-  modifie_le TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Table du planning hebdomadaire
@@ -64,27 +51,27 @@ CREATE TABLE IF NOT EXISTS planning_events (
 );
 
 -- Index pour les requêtes fréquentes
-CREATE INDEX IF NOT EXISTS idx_pointages_user_date ON pointages(user_id, date);
-CREATE INDEX IF NOT EXISTS idx_pointages_date ON pointages(date);
+CREATE INDEX IF NOT EXISTS idx_pointage_events_user_date ON pointage_events(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_pointage_events_date ON pointage_events(date);
 CREATE INDEX IF NOT EXISTS idx_planning_user ON planning(user_id);
 CREATE INDEX IF NOT EXISTS idx_planning_events_user_date ON planning_events(user_id, date);
 CREATE INDEX IF NOT EXISTS idx_planning_events_date ON planning_events(date);
 
 -- Désactiver RLS pour usage simple (PIN-based auth sans Supabase Auth)
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE pointages DISABLE ROW LEVEL SECURITY;
+ALTER TABLE pointage_events DISABLE ROW LEVEL SECURITY;
 ALTER TABLE planning DISABLE ROW LEVEL SECURITY;
 ALTER TABLE planning_events DISABLE ROW LEVEL SECURITY;
 
 -- Accorder les droits à la clé anon (obligatoire pour CREATE TABLE via SQL brut)
 GRANT SELECT, UPDATE ON public.users TO anon, authenticated;
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.pointages TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.pointage_events TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.planning TO anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.planning_events TO anon, authenticated;
 
 -- Insertion des utilisateurs avec les mêmes IDs que dans AuthContext.jsx
 -- Si des lignes existent déjà (sans ces IDs), les supprimer d'abord :
--- DELETE FROM planning; DELETE FROM pointages; DELETE FROM users;
+-- DELETE FROM planning; DELETE FROM pointage_events; DELETE FROM users;
 INSERT INTO users (id, name, pin, role) VALUES
   ('00000000-0000-0000-0000-000000000001', 'Imene',        '0503', 'assistant'),
   ('00000000-0000-0000-0000-000000000002', 'Dessa',        '2002', 'assistant'),

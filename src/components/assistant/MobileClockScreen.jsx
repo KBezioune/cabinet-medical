@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { todayISO, formatDateTime, minutesToHHMM, planNetMinutes } from '../../utils/dateUtils'
+import { todayISO, formatDateTime, minutesToHHMM, planNetMinutes, summarizePointageEvents, pointageStatus } from '../../utils/dateUtils'
 import {
-  getPointageByUserAndDate, insertPointage, updatePointage,
+  getPointageEventsByUserAndDate, insertPointageEvent,
   getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser, logAccess,
 } from '../../lib/db'
 import { format, eachDayOfInterval, getDay } from 'date-fns'
@@ -17,6 +17,17 @@ const OPEN_DAYS  = new Set([1, 2, 4, 5])
 const DEFAULT_DAY_MIN = 420
 const VAC_QUOTA = 20
 const THIS_YEAR = new Date().getFullYear()
+
+const CONFIRM_CONFIG = {
+  arrivee:     { emoji: '✅', card: 'mob-card-in',  greeting: 'Bonne journée', text: 'Arrivée enregistrée' },
+  pause_debut: { emoji: '☕', card: 'mob-card-out', greeting: 'Bonne pause',   text: 'Pause enregistrée' },
+  pause_fin:   { emoji: '✅', card: 'mob-card-in',  greeting: 'Bon retour',    text: 'Retour de pause enregistré' },
+  depart:      { emoji: '👋', card: 'mob-card-out', greeting: 'Bonne soirée',  text: 'Départ enregistré' },
+}
+
+const EVENT_LABELS = {
+  arrivee: 'Arrivée', pause_debut: 'Début de pause', pause_fin: 'Fin de pause', depart: 'Départ',
+}
 
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371000; const toRad = d => d * Math.PI / 180
@@ -43,7 +54,7 @@ const countWorkDays = (a, b) => {
 export default function MobileClockScreen() {
   const { user, logout } = useAuth()
   const [now,        setNow]        = useState(new Date())
-  const [pointage,   setPointage]   = useState(null)
+  const [events,     setEvents]     = useState([])
   const [loading,    setLoading]    = useState(true)
   const [actionBusy, setActionBusy] = useState(false)
   const [gpsLoading, setGpsLoading] = useState(false)
@@ -56,6 +67,8 @@ export default function MobileClockScreen() {
   const [vacRestant,   setVacRestant]   = useState(VAC_QUOTA)
 
   const timerRef = useRef(null)
+  const summary  = useMemo(() => summarizePointageEvents(events), [events])
+  const status   = pointageStatus(summary)
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
@@ -72,13 +85,13 @@ export default function MobileClockScreen() {
       const from  = `${year}-${String(month).padStart(2,'0')}-01`
       const to    = `${year}-${String(month).padStart(2,'0')}-${new Date(year, month, 0).getDate()}`
       try {
-        const [pt, pl, pts, cg] = await Promise.all([
-          getPointageByUserAndDate(user.id, today),
+        const [ev, pl, pts, cg] = await Promise.all([
+          getPointageEventsByUserAndDate(user.id, today),
           getPlanningByUser(user.id),
           getPointagesByUserAndMonth(user.id, from, to),
           getCongesByUser(user.id),
         ])
-        setPointage(pt)
+        setEvents(ev)
         const days = eachDayOfInterval({ start: new Date(year, month-1, 1), end: new Date(year, month, 0) })
         const todayStr = todayISO()
         let worked = 0, planned = 0
@@ -105,15 +118,8 @@ export default function MobileClockScreen() {
     load()
   }, [user.id])
 
-  const CONFIRM_CONFIG = {
-    arrivee:     { emoji: '✅', card: 'mob-card-in',  greeting: 'Bonne journée' },
-    pause_debut: { emoji: '☕', card: 'mob-card-out', greeting: 'Bonne pause' },
-    pause_fin:   { emoji: '✅', card: 'mob-card-in',  greeting: 'Bon retour' },
-    depart:      { emoji: '👋', card: 'mob-card-out', greeting: 'Bonne soirée' },
-  }
-
-  const startCountdown = (text, kind) => {
-    setConfirmed({ text, kind }); setCountdown(COUNTDOWN)
+  const startCountdown = (kind) => {
+    setConfirmed({ kind }); setCountdown(COUNTDOWN)
     let rem = COUNTDOWN
     timerRef.current = setInterval(() => {
       rem -= 1; setCountdown(rem)
@@ -135,78 +141,30 @@ export default function MobileClockScreen() {
     finally { setGpsLoading(false) }
   }
 
-  const clockIn = async () => {
+  const punch = async (type) => {
     if (!await checkGPS()) return
     setActionBusy(true); setError(null)
     try {
-      const r = await insertPointage({ user_id: user.id, date: todayISO(), heure_arrivee: new Date().toISOString(), heure_depart: null })
-      setPointage(r)
+      const r = await insertPointageEvent(user.id, todayISO(), type)
+      setEvents(prev => [...prev, r])
       logAccess({
-        userId: user.id, action: 'pointage_arrivee', typeEvenement: 'pointage_arrivee',
-        detail: `Arrivée à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+        userId: user.id, action: `pointage_${type}`, typeEvenement: `pointage_${type}`,
+        detail: `${EVENT_LABELS[type]} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
         userAgent: navigator.userAgent,
       })
-      startCountdown('Arrivée enregistrée', 'arrivee')
+      startCountdown(type)
     } catch (e) { setError(e.message) }
     finally { setActionBusy(false) }
   }
 
-  const pauseStart = async () => {
-    if (!await checkGPS()) return
-    setActionBusy(true); setError(null)
-    try {
-      const r = await updatePointage(pointage.id, { heure_pause_debut: new Date().toISOString() })
-      setPointage(prev => ({ ...prev, ...r }))
-      logAccess({
-        userId: user.id, action: 'pointage_pause_debut', typeEvenement: 'pointage_pause_debut',
-        detail: `Début de pause à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
-        userAgent: navigator.userAgent,
-      })
-      startCountdown('Pause enregistrée', 'pause_debut')
-    } catch (e) { setError(e.message) }
-    finally { setActionBusy(false) }
-  }
-
-  const pauseEnd = async () => {
-    if (!await checkGPS()) return
-    setActionBusy(true); setError(null)
-    try {
-      const r = await updatePointage(pointage.id, { heure_pause_fin: new Date().toISOString() })
-      setPointage(prev => ({ ...prev, ...r }))
-      logAccess({
-        userId: user.id, action: 'pointage_pause_fin', typeEvenement: 'pointage_pause_fin',
-        detail: `Fin de pause à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
-        userAgent: navigator.userAgent,
-      })
-      startCountdown('Retour de pause enregistré', 'pause_fin')
-    } catch (e) { setError(e.message) }
-    finally { setActionBusy(false) }
-  }
-
-  const clockOut = async () => {
-    if (!await checkGPS()) return
-    setActionBusy(true); setError(null)
-    try {
-      const r = await updatePointage(pointage.id, { heure_depart: new Date().toISOString() })
-      setPointage(prev => ({ ...prev, ...r }))
-      logAccess({
-        userId: user.id, action: 'pointage_depart', typeEvenement: 'pointage_depart',
-        detail: `Départ à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
-        userAgent: navigator.userAgent,
-      })
-      startCountdown('Départ enregistré', 'depart')
-    } catch (e) { setError(e.message) }
-    finally { setActionBusy(false) }
-  }
+  const clockIn    = () => punch('arrivee')
+  const pauseStart = () => punch('pause_debut')
+  const pauseEnd   = () => punch('pause_fin')
+  const clockOut   = () => punch('depart')
 
   const timeStr   = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   const secondStr = String(now.getSeconds()).padStart(2, '0')
   const dateStr   = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-  const status    = !pointage?.heure_arrivee ? 'absent'
-    : pointage?.heure_depart ? 'done'
-    : (pointage?.heure_pause_debut && !pointage?.heure_pause_fin) ? 'pause'
-    : 'present'
-  const pauseDeja = !!pointage?.heure_pause_fin
   const busy      = actionBusy || gpsLoading
 
   // ── Écran confirmation ─────────────────────────────────────
@@ -217,7 +175,7 @@ export default function MobileClockScreen() {
       <div className="mob-screen mob-confirm-screen">
         <div className={`mob-confirm-card ${cfg.card}`}>
           <div className="mob-confirm-emoji">{cfg.emoji}</div>
-          <strong className="mob-confirm-title">{confirmed.text} !</strong>
+          <strong className="mob-confirm-title">{cfg.text} !</strong>
           <span className="mob-confirm-sub">{cfg.greeting}, {user.name}</span>
         </div>
         <svg width="78" height="78" viewBox="0 0 72 72">
@@ -250,9 +208,9 @@ export default function MobileClockScreen() {
       {/* ── Statut ────────────────────────────────────────── */}
       <div className={`mob-status mob-status-${status}`}>
         {status === 'absent'  && <><span className="mob-status-dot" />Non pointé aujourd'hui</>}
-        {status === 'present' && <><span className="mob-status-dot mob-dot-green" />En service depuis {formatDateTime(pointage.heure_arrivee)}</>}
-        {status === 'pause'   && <><span className="mob-status-dot mob-dot-blue" />En pause depuis {formatDateTime(pointage.heure_pause_debut)}</>}
-        {status === 'done'    && <><span className="mob-status-dot mob-dot-blue" />Journée terminée · {minutesToHHMM(pointage?.duree_minutes)}</>}
+        {status === 'present' && <><span className="mob-status-dot mob-dot-green" />En service depuis {formatDateTime(summary.heure_arrivee)}{summary.pauses.length > 0 ? ` · ${summary.pauses.length} pause${summary.pauses.length > 1 ? 's' : ''}` : ''}</>}
+        {status === 'pause'   && <><span className="mob-status-dot mob-dot-blue" />En pause depuis {formatDateTime(summary.pause_debut_courante)}</>}
+        {status === 'done'    && <><span className="mob-status-dot mob-dot-blue" />Journée terminée · {minutesToHHMM(summary.duree_minutes)}</>}
       </div>
 
       {/* ── Erreur GPS ────────────────────────────────────── */}
@@ -271,7 +229,7 @@ export default function MobileClockScreen() {
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                 </svg>
-                Pointer mon arrivée
+                Pointer l'arrivée
               </>
             )}
           </button>
@@ -279,17 +237,15 @@ export default function MobileClockScreen() {
 
         {status === 'present' && (
           <>
-            {!pauseDeja && (
-              <button className="mob-action-btn mob-btn-pause" onClick={pauseStart} disabled={busy}>
-                {gpsLoading ? (
-                  <><span className="mob-action-spinner" />Vérification GPS…</>
-                ) : actionBusy ? (
-                  <><span className="mob-action-spinner" />Enregistrement…</>
-                ) : (
-                  <>☕ Débuter ma pause</>
-                )}
-              </button>
-            )}
+            <button className="mob-action-btn mob-btn-pause" onClick={pauseStart} disabled={busy}>
+              {gpsLoading ? (
+                <><span className="mob-action-spinner" />Vérification GPS…</>
+              ) : actionBusy ? (
+                <><span className="mob-action-spinner" />Enregistrement…</>
+              ) : (
+                <>☕ Partir en pause</>
+              )}
+            </button>
             <button className="mob-action-btn mob-btn-depart" onClick={clockOut} disabled={busy}>
               {gpsLoading ? (
                 <><span className="mob-action-spinner" />Vérification GPS…</>
@@ -301,7 +257,7 @@ export default function MobileClockScreen() {
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                     <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
                   </svg>
-                  Pointer mon départ
+                  Terminer la journée
                 </>
               )}
             </button>
@@ -315,7 +271,7 @@ export default function MobileClockScreen() {
             ) : actionBusy ? (
               <><span className="mob-action-spinner" />Enregistrement…</>
             ) : (
-              <>☕ Terminer ma pause</>
+              <>☕ Reprendre le travail</>
             )}
           </button>
         )}
@@ -325,7 +281,7 @@ export default function MobileClockScreen() {
             <span className="mob-done-emoji">🎉</span>
             <div>
               <div className="mob-done-title">Bonne fin de journée !</div>
-              <div className="mob-done-sub">{minutesToHHMM(pointage?.duree_minutes)} travaillées aujourd'hui</div>
+              <div className="mob-done-sub">{minutesToHHMM(summary.duree_minutes)} travaillées aujourd'hui</div>
             </div>
           </div>
         )}
