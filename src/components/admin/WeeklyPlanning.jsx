@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
 import { JOURS, getWeekDays, calcDuree } from '../../utils/dateUtils'
-import { getAssistants } from '../../lib/localData'
+import { getActiveAssistants } from '../../lib/localData'
 import { getPlanningForUsers, getPointagesByDateRange, upsertPlanning } from '../../lib/db'
 import { format, addWeeks, subWeeks } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -36,7 +36,7 @@ export default function WeeklyPlanning() {
   const [msg,         setMsg]         = useState(null)
   const intervalRef = useRef(null)
 
-  const assistants = getAssistants()
+  const assistants = getActiveAssistants()
   const weekDays   = getWeekDays(weekRef)
   const workDays   = weekDays.slice(0, 6) // Lun–Sam
 

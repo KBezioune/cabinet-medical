@@ -52,6 +52,7 @@ const getUserPatches = () => rd('cabinet_user_patches', '{}')
 const getDeletedIds  = () => rd('cabinet_deleted_ids',  '[]')
 const getExtraUsers  = () => rd('cabinet_extra_users',  '[]')
 const getSyncedRoles = () => rd('cabinet_roles',        '{}')
+const getDbUsers     = () => rd('cabinet_db_users',     '{}')
 
 // Le rôle n'est jamais stocké dans un patch local : il vient uniquement de
 // Supabase (via syncUsersFromDb, voir lib/db.js), avec le rôle par défaut
@@ -62,23 +63,53 @@ export const setSyncedRole = (userId, role) => {
   wr('cabinet_roles', roles)
 }
 
+// Métadonnées synchronisées depuis la table Supabase "users" (voir syncUsersFromDb) :
+// statut actif + collaborateurs ajoutés directement dans Supabase.
+export const setSyncedDbUsers = (rows) => {
+  const map = {}
+  rows.forEach(r => {
+    map[r.id] = { id: r.id, name: r.name, pin: r.pin, role: r.role, poste: r.poste ?? null, actif: r.actif !== false }
+  })
+  wr('cabinet_db_users', map)
+}
+
 export const getUsers = () => {
   const pins    = getCustomPins()
   const patches = getUserPatches()
   const deleted = getDeletedIds()
   const extras  = getExtraUsers()
   const roles   = getSyncedRoles()
+  const dbUsers = getDbUsers()
 
   const apply = u => {
     const { role: _ignoredPatchRole, ...patch } = patches[u.id] || {}
-    return { ...u, ...patch, role: roles[u.id] ?? u.role, pin: pins[u.id] ?? u.pin }
+    return {
+      ...u, ...patch,
+      role: roles[u.id] ?? u.role, pin: pins[u.id] ?? u.pin,
+      actif: dbUsers[u.id]?.actif ?? true,
+    }
   }
 
-  return [
-    ...DEFAULT_USERS.filter(u => !deleted.includes(u.id)).map(apply),
-    ...extras.filter(u => !deleted.includes(u.id)).map(apply),
+  const localUsers = [
+    ...DEFAULT_USERS.filter(u => !deleted.includes(u.id)),
+    ...extras.filter(u => !deleted.includes(u.id)),
   ]
+  const knownIds = new Set(localUsers.map(u => u.id))
+
+  // Collaborateurs présents uniquement dans Supabase (ajoutés manuellement)
+  const dbOnly = Object.values(dbUsers)
+    .filter(u => !knownIds.has(u.id) && !deleted.includes(u.id) && u.id !== TEST_USER_ID)
+    .map((u, i) => ({
+      ...u,
+      poste: u.poste || (u.role === 'assistant' ? 'Assistant(e) médical(e)' : null),
+      color: pickColor(localUsers.length + i),
+    }))
+
+  return [...localUsers, ...dbOnly].map(apply)
 }
+
+// Pour l'affichage (planning équipe, annuaire) : masque les comptes désactivés (actif = false)
+export const getActiveUsers = () => getUsers().filter(u => u.actif !== false)
 
 export const updateUserPin = (userId, newPin) => {
   const pins = getCustomPins()
@@ -116,6 +147,7 @@ export const getUsersForAuth = () => {
 }
 
 export const getAssistants = () => getUsers().filter(u => u.role === 'assistant')
+export const getActiveAssistants = () => getActiveUsers().filter(u => u.role === 'assistant')
 export const getManagers   = () => getUsers().filter(u => u.role === 'manager')
 export const getUserById   = (id) => getUsers().find(u => u.id === id)
 

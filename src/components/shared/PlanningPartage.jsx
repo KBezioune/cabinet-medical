@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from 'react'
-import { getUsers } from '../../lib/localData'
+import { getActiveUsers } from '../../lib/localData'
 import { useAuth } from '../../contexts/AuthContext'
 import {
   getPlanningForUsers, getAllConges,
@@ -32,7 +32,7 @@ const fmtDur = (dur, short = false) => {
   return m > 0 ? `${h}h ${m}min` : `${h}h`
 }
 
-const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistante' }
+const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistant(e)' }
 const DEFAULT_DEBUT = '08:30'
 const DEFAULT_FIN   = '17:00'
 const DEFAULT_MATIN = '08:30–12:00'
@@ -89,7 +89,7 @@ export default function PlanningPartage() {
   const [sfSaving, setSfSaving] = useState(false)
   const [sfErr,    setSfErr]    = useState('')
 
-  const users      = getUsers()
+  const users      = getActiveUsers()
   const weekDays   = getWeekDays(weekRef)
   const today      = format(new Date(), 'yyyy-MM-dd')
   const isCurrentWeek = viewMode === 'semaine' && weekDays.some(d => format(d, 'yyyy-MM-dd') === today)

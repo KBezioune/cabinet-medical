@@ -6,7 +6,7 @@ import {
 } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useAuth } from '../../contexts/AuthContext'
-import { getAssistants } from '../../lib/localData'
+import { getActiveAssistants } from '../../lib/localData'
 import { getPlanningEvents, upsertPlanningEvent, deletePlanningEvent, getPlanningForUsers } from '../../lib/db'
 import './PlanningCalendar.css'
 
@@ -20,7 +20,7 @@ const STATUS = {
 
 export default function PlanningCalendar() {
   const { user } = useAuth()
-  const assistants = getAssistants()
+  const assistants = getActiveAssistants()
 
   const [view, setView]           = useState('month')
   const [ref, setRef]             = useState(new Date())

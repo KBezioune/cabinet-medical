@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { getUsers, addLocalUser, patchLocalUser, removeLocalUser, pickColor, setSyncedRole } from '../../lib/localData'
+import { getActiveUsers, addLocalUser, patchLocalUser, removeLocalUser, pickColor, setSyncedRole } from '../../lib/localData'
 import { getPlanningByUser, getCongesByUser, getUserContract, updateUserContract,
          insertUserInDb, updateUserInDb, deleteUserInDb } from '../../lib/db'
 import { format, differenceInYears } from 'date-fns'
@@ -464,7 +464,7 @@ function DeleteConfirm({ target, onConfirm, onClose }) {
 
 export default function Annuaire() {
   const { user }   = useAuth()
-  const [empList,   setEmpList]   = useState(() => getUsers())
+  const [empList,   setEmpList]   = useState(() => getActiveUsers())
   const [selected,  setSelected]  = useState(null)
   const [empModal,  setEmpModal]  = useState(null)   // null | 'add' | user_object (edit)
   const [delTarget, setDelTarget] = useState(null)
@@ -473,7 +473,7 @@ export default function Annuaire() {
   const handleKey = e => { if (e.key === 'Escape') { setSelected(null); setEmpModal(null); setDelTarget(null) } }
 
   const refreshList = () => {
-    const updated = getUsers()
+    const updated = getActiveUsers()
     setEmpList(updated)
     return updated
   }
