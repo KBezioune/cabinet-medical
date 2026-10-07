@@ -7,7 +7,7 @@
 //
 //   Imene (apprentie)       : lundi et mardi uniquement (école le reste)
 //   Dessa, Bledi, Dr Bezioune et tout autre collaborateur : lundi → vendredi
-import { eachDayOfInterval, getDay } from 'date-fns'
+import { eachDayOfInterval, getDay, format } from 'date-fns'
 
 export const MATIN = { debut: '08:30', fin: '12:30' }
 export const APREM = { debut: '13:30', fin: '17:00' }
@@ -42,6 +42,14 @@ export const countWorkDays = (userId, debut, fin) => {
   if (s > e) return 0
   return eachDayOfInterval({ start: s, end: e }).filter(d => worksOn(userId, d)).length
 }
+
+// Heures planifiées du mois complet : tous les jours travaillés du mois
+// (lun→ven, ou lun/mar pour Imene) × 7h30, hors congés approuvés.
+// month = 1…12
+export const monthPlannedMinutes = (userId, year, month, conges = []) =>
+  eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) })
+    .filter(d => !isOnApprovedLeave(userId, format(d, 'yyyy-MM-dd'), conges))
+    .reduce((sum, d) => sum + plannedMinutesFor(userId, d), 0)
 
 // Le jour est-il couvert par un congé approuvé ?
 export const isOnApprovedLeave = (userId, dateStr, conges) =>

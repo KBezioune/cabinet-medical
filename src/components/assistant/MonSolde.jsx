@@ -19,7 +19,6 @@ const formatSolde = (min) => {
   return `${sign}${h}h${String(m).padStart(2, '0')}`
 }
 
-const TODAY       = format(new Date(), 'yyyy-MM-dd')
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
@@ -68,7 +67,7 @@ export default function MonSolde() {
     const dayPlan = isOnApprovedLeave(user.id, dateStr, conges) ? 0 : plannedMinutesFor(user.id, d)
     const dayWork = pt?.duree_minutes || 0
 
-    if (dateStr <= TODAY) totalPlanned += dayPlan
+    totalPlanned += dayPlan // mois complet
     totalWorked  += dayWork
 
     if (dayPlan > 0 || dayWork > 0) {

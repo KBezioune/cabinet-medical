@@ -17,8 +17,6 @@ const formatSolde = (min) => {
   return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
 }
 
-const TODAY = format(new Date(), 'yyyy-MM-dd')
-
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
   label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
@@ -72,7 +70,7 @@ export default function SoldeHeures() {
       const dayPlan    = isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, d)
       const dayWorked  = pt?.duree_minutes || 0
 
-      if (dateStr <= TODAY) plannedMin += dayPlan
+      plannedMin += dayPlan // mois complet
       workedMin  += dayWorked
 
       if (dayPlan > 0 || dayWorked > 0) {

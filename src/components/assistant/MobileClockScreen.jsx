@@ -83,12 +83,11 @@ export default function MobileClockScreen() {
         ])
         setEvents(ev)
         const days = eachDayOfInterval({ start: new Date(year, month-1, 1), end: new Date(year, month, 0) })
-        const todayStr = todayISO()
         let worked = 0, planned = 0
         days.forEach(d => {
           const ds   = format(d, 'yyyy-MM-dd')
           const dayPlan = isOnApprovedLeave(user.id, ds, cg) ? 0 : plannedMinutesFor(user.id, d)
-          if (ds <= todayStr) planned += dayPlan
+          planned += dayPlan // mois complet
           const p = pts.find(x => x.date === ds)
           if (p) worked += p.duree_minutes || 0
         })

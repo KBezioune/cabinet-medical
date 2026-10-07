@@ -7,7 +7,7 @@ import { startOfMonth, endOfMonth, eachDayOfInterval, format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { getUsers } from '../../lib/localData'
 import { getPointagesByDateRange, getAllConges } from '../../lib/db'
-import { plannedMinutesFor, worksOn, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
+import { monthPlannedMinutes, worksOn, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
 import './Statistiques.css'
 
@@ -50,7 +50,7 @@ export default function Statistiques() {
         const perUser = users.map(u => {
           const pts = pointages.filter(p => p.user_id === u.id)
           const dueDays = elapsed.filter(d => worksOn(u.id, d) && !isOnApprovedLeave(u.id, format(d, 'yyyy-MM-dd'), conges))
-          const plannedMin = dueDays.reduce((acc, d) => acc + plannedMinutesFor(u.id, d), 0)
+          const plannedMin = monthPlannedMinutes(u.id, year, month, conges) // mois complet
           const workedMin  = pts.reduce((acc, p) => acc + (p.duree_minutes || 0), 0)
           const presentDays = new Set(pts.filter(p => p.heure_arrivee).map(p => p.date)).size
           return { u, plannedMin, workedMin, presentDays, dueDays: dueDays.length }
@@ -120,7 +120,7 @@ export default function Statistiques() {
         <div className="card stats-kpi">
           <span className="stats-kpi-label">Taux d'activité équipe</span>
           <span className="stats-kpi-value">{globalTaux} %</span>
-          <span className="stats-kpi-sub">heures travaillées / dues · {monthLabel}</span>
+          <span className="stats-kpi-sub">heures travaillées / planifiées · {monthLabel}</span>
         </div>
         <div className="card stats-kpi">
           <span className="stats-kpi-label">Présence moyenne</span>
@@ -161,7 +161,7 @@ export default function Statistiques() {
 
         {/* Heures travaillées vs planifiées */}
         <div className="card stats-chart-card">
-          <h3 className="stats-chart-title">Heures travaillées vs dues — {monthLabel}</h3>
+          <h3 className="stats-chart-title">Heures travaillées vs planifiées — {monthLabel}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={heures} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />

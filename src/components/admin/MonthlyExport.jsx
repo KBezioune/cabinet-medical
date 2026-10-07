@@ -3,7 +3,7 @@ import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear } from '../
 import { getUsers } from '../../lib/localData'
 import { getPointagesByUserAndMonth, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval, parseISO } from 'date-fns'
-import { plannedMinutesFor, isOnApprovedLeave } from '../../utils/horaires'
+import { plannedMinutesFor, isOnApprovedLeave, monthPlannedMinutes } from '../../utils/horaires'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
 import './MonthlyExport.css'
@@ -58,14 +58,8 @@ export default function MonthlyExport() {
   const getDayPlanned = (userId, dateStr) =>
     isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, parseISO(dateStr))
 
-  // Total dû sur le mois jusqu'à aujourd'hui (même règle que Soldes / Dashboard RH)
-  const getMonthPlanned = (userId) => {
-    const today = format(new Date(), 'yyyy-MM-dd')
-    return eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) })
-      .map(d => format(d, 'yyyy-MM-dd'))
-      .filter(ds => ds <= today)
-      .reduce((s, ds) => s + getDayPlanned(userId, ds), 0)
-  }
+  // Total planifié sur le mois complet (même règle que Soldes / Dashboard RH)
+  const getMonthPlanned = (userId) => monthPlannedMinutes(userId, year, month, conges)
 
   // Statut du congé pour un utilisateur à une date
   const getCongeStatus = (userId, dateStr) => {

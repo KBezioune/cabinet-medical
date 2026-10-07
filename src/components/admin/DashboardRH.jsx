@@ -76,7 +76,7 @@ export default function DashboardRH() {
       const dayPlan  = isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, d)
       const dayWork  = pt?.duree_minutes || 0
 
-      if (dateStr <= TODAY) plannedMin += dayPlan
+      plannedMin += dayPlan // mois complet
       workedMin  += dayWork
       if (dayPlan > 0 && dayWork === 0 && dateStr <= TODAY) absences++
     })
