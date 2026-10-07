@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import { todayISO, formatDateTime, minutesToHHMM, planNetMinutes, summarizePointageEvents, pointageStatus } from '../../utils/dateUtils'
+import { todayISO, formatDateTime, minutesToHHMM, summarizePointageEvents, pointageStatus } from '../../utils/dateUtils'
 import {
   getPointageEventsByUserAndDate, insertPointageEvent,
-  getPlanningByUser, getPointagesByUserAndMonth, getCongesByUser, logAccess,
+  getPointagesByUserAndMonth, getCongesByUser, logAccess,
 } from '../../lib/db'
-import { format, eachDayOfInterval, getDay } from 'date-fns'
+import { format, eachDayOfInterval } from 'date-fns'
+import { plannedMinutesFor, isOnApprovedLeave, computeVacances, VAC_QUOTA } from '../../utils/horaires'
 import CircularGauge from '../shared/CircularGauge'
 import '../shared/CircularGauge.css'
 import './MobileClockScreen.css'
@@ -13,10 +14,6 @@ import './MobileClockScreen.css'
 const COUNTDOWN  = 5
 const CABINET    = { lat: 46.52627, lng: 6.58332 }
 const MAX_DIST_M = 500
-const OPEN_DAYS  = new Set([1, 2, 4, 5])
-const DEFAULT_DAY_MIN = 420
-const VAC_QUOTA = 20
-const THIS_YEAR = new Date().getFullYear()
 
 const CONFIRM_CONFIG = {
   arrivee:     { emoji: '✅', card: 'mob-card-in',  greeting: 'Bonne journée', text: 'Arrivée enregistrée' },
@@ -44,12 +41,6 @@ const verifierPosition = () => new Promise((resolve, reject) => {
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   )
 })
-
-const countWorkDays = (a, b) => {
-  const s = new Date(a + 'T12:00:00'); const e = new Date(b + 'T12:00:00')
-  if (s > e) return 0
-  return eachDayOfInterval({ start: s, end: e }).filter(d => getDay(d) >= 1 && getDay(d) <= 5).length
-}
 
 export default function MobileClockScreen() {
   const { user, logout } = useAuth()
@@ -85,9 +76,8 @@ export default function MobileClockScreen() {
       const from  = `${year}-${String(month).padStart(2,'0')}-01`
       const to    = `${year}-${String(month).padStart(2,'0')}-${new Date(year, month, 0).getDate()}`
       try {
-        const [ev, pl, pts, cg] = await Promise.all([
+        const [ev, pts, cg] = await Promise.all([
           getPointageEventsByUserAndDate(user.id, today),
-          getPlanningByUser(user.id),
           getPointagesByUserAndMonth(user.id, from, to),
           getCongesByUser(user.id),
         ])
@@ -97,21 +87,13 @@ export default function MobileClockScreen() {
         let worked = 0, planned = 0
         days.forEach(d => {
           const ds   = format(d, 'yyyy-MM-dd')
-          const js   = getDay(d) === 0 ? 7 : getDay(d)
-          const plan = pl.find(p => p.jour_semaine === js)
-          const dayPlan = plan
-            ? planNetMinutes(plan.heure_debut, plan.heure_fin)
-            : (OPEN_DAYS.has(js) ? DEFAULT_DAY_MIN : 0)
+          const dayPlan = isOnApprovedLeave(user.id, ds, cg) ? 0 : plannedMinutesFor(user.id, d)
           if (ds <= todayStr) planned += dayPlan
           const p = pts.find(x => x.date === ds)
           if (p) worked += p.duree_minutes || 0
         })
         setMonthWorked(worked); setMonthPlanned(planned)
-        const y0 = `${year}-01-01`, y1 = `${year}-12-31`
-        const consomme = cg
-          .filter(c => c.statut === 'approuve' && c.date_debut <= y1 && c.date_fin >= y0)
-          .reduce((s, c) => s + countWorkDays(c.date_debut < y0 ? y0 : c.date_debut, c.date_fin > y1 ? y1 : c.date_fin), 0)
-        setVacRestant(Math.max(0, VAC_QUOTA - consomme))
+        setVacRestant(computeVacances(user.id, cg, year).restant)
       } catch (e) { setError(e.message) }
       finally { setLoading(false) }
     }

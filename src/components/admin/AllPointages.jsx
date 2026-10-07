@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, Fragment } from 'react'
 import { supabase } from '../../lib/supabase'
 import { todayISO, formatDate, formatDateTime, minutesToHHMM } from '../../utils/dateUtils'
-import { getAssistants } from '../../lib/localData'
+import { getUsers } from '../../lib/localData'
 import { getAllPointagesFiltered, deleteTestUserPointages, deletePointageEventsForDay } from '../../lib/db'
 import { useAuth } from '../../contexts/AuthContext'
 import Breadcrumb from '../shared/Breadcrumb'
@@ -20,7 +20,7 @@ export default function AllPointages() {
   const [deleting,     setDeleting]     = useState(false)
   const [resettingId,  setResettingId]  = useState(null)
   const [expanded,     setExpanded]     = useState(null)
-  const assistants = getAssistants()
+  const assistants = getUsers().filter(u => u.role !== 'admin')
 
   const refresh = useCallback(async () => {
     setLoading(true)

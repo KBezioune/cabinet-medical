@@ -2,12 +2,13 @@ import { useState, useEffect, useRef, Fragment } from 'react'
 import { getActiveUsers } from '../../lib/localData'
 import { useAuth } from '../../contexts/AuthContext'
 import {
-  getPlanningForUsers, getAllConges,
+  getAllConges,
   getPlanningShifts, upsertPlanningShift,
   updatePlanningShiftById, deletePlanningShiftById,
   getPointagesByDateRange,
 } from '../../lib/db'
-import { JOURS, getWeekDays, calcDuree } from '../../utils/dateUtils'
+import { JOURS, getWeekDays } from '../../utils/dateUtils'
+import { worksOn, HORAIRE_MATIN, HORAIRE_APREM, MATIN, APREM } from '../../utils/horaires'
 import { format, addWeeks, subWeeks, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from './Breadcrumb'
@@ -15,11 +16,11 @@ import './PlanningPartage.css'
 
 const AUTO_REFRESH_MS = 5 * 60 * 1000
 
+// Durée nette (pauses déduites) — même valeur que Soldes / Dashboard RH
 const calcDuration = (pt) => {
   if (!pt || !pt.heure_arrivee) return null
   if (!pt.heure_depart) return { inProgress: true, minutes: 0 }
-  const min = calcDuree(pt.heure_arrivee, pt.heure_depart)
-  return { inProgress: false, minutes: Math.max(0, min ?? 0) }
+  return { inProgress: false, minutes: Math.max(0, pt.duree_minutes ?? 0) }
 }
 
 const fmtDur = (dur, short = false) => {
@@ -33,11 +34,8 @@ const fmtDur = (dur, short = false) => {
 }
 
 const ROLE_LABEL    = { admin: 'Médecin', manager: 'Manager', assistant: 'Assistant(e)' }
-const DEFAULT_DEBUT = '08:30'
-const DEFAULT_FIN   = '17:00'
-const DEFAULT_MATIN = '08:30–12:00'
-const DEFAULT_APREM = '14:00–17:00'
-const IMENE_ID      = '00000000-0000-0000-0000-000000000001'
+const DEFAULT_DEBUT = MATIN.debut
+const DEFAULT_FIN   = APREM.fin
 
 const SHIFT_PALETTE = [
   { bg: '#F1E9DC', text: '#1e40af', border: '#93c5fd' },
@@ -69,7 +67,6 @@ export default function PlanningPartage() {
   const [weekRef,   setWeekRef]   = useState(new Date())
   const [monthRef,  setMonthRef]  = useState(new Date())
 
-  const [planning,     setPlanning]     = useState([])
   const [conges,       setConges]       = useState([])
   const [shifts,       setShifts]       = useState([])
   const [loading,      setLoading]      = useState(true)
@@ -93,7 +90,7 @@ export default function PlanningPartage() {
   const weekDays   = getWeekDays(weekRef)
   const today      = format(new Date(), 'yyyy-MM-dd')
   const isCurrentWeek = viewMode === 'semaine' && weekDays.some(d => format(d, 'yyyy-MM-dd') === today)
-  const workDays      = weekDays.slice(0, 6)
+  const workDays      = weekDays.slice(0, 5) // lundi → vendredi (week-end fermé)
   const getPointage   = (userId, day) => {
     const dateStr = format(day, 'yyyy-MM-dd')
     return pointages.find(p => p.user_id === userId && p.date === dateStr)
@@ -109,8 +106,7 @@ export default function PlanningPartage() {
       const from = viewMode === 'semaine' ? format(weekDays[0], 'yyyy-MM-dd') : format(monthStart, 'yyyy-MM-dd')
       const to   = viewMode === 'semaine' ? format(weekDays[6], 'yyyy-MM-dd') : format(monthEnd,   'yyyy-MM-dd')
       try {
-        const [pl, cg] = await Promise.all([getPlanningForUsers(ids), getAllConges()])
-        setPlanning(pl); setConges(cg)
+        setConges(await getAllConges())
       } catch (e) { console.error(e) }
       try {
         const sh = await getPlanningShifts(ids, from, to)
@@ -142,21 +138,8 @@ export default function PlanningPartage() {
     shifts.filter(s => s.user_id === userId && s.date === dateStr)
       .sort((a, b) => (a.heure_debut || '').localeCompare(b.heure_debut || ''))
 
-  // Planning par défaut (utilisé quand aucune ligne "planning" explicite n'existe) :
-  // Imene (apprentie) ne travaille que lundi/mardi (absente le reste, école).
-  // Les autres (assistantes médicales + Dr. Bezioune) travaillent lundi, mardi,
-  // jeudi, vendredi journée complète, et mercredi matin seulement.
-  const getDayPlan = (userId, day) => {
-    const jourSem = getDay(day) === 0 ? 7 : getDay(day)
-    const found   = planning.find(p => p.user_id === userId && p.jour_semaine === jourSem && p.actif)
-    if (found) return found
-
-    const isImene = userId === IMENE_ID
-    const matin = isImene ? (jourSem === 1 || jourSem === 2) : (jourSem >= 1 && jourSem <= 5)
-    const aprem = isImene ? (jourSem === 1 || jourSem === 2) : (jourSem >= 1 && jourSem <= 5 && jourSem !== 3)
-    if (!matin && !aprem) return null
-    return { heure_debut: DEFAULT_DEBUT, heure_fin: DEFAULT_FIN, fallback: true, matin, aprem }
-  }
+  // Horaires officiels (utils/horaires.js) : Imene lundi/mardi, les autres lundi → vendredi
+  const getDayPlan = (userId, day) => worksOn(userId, day)
 
   const getDayConge = (userId, dateStr) =>
     conges.find(c =>
@@ -334,9 +317,7 @@ export default function PlanningPartage() {
                           return s.tache ? `${time} ${s.tache}` : time
                         }).join(' / ')
                         content = <span title={title}>🕐</span>
-                      } else if (plan && !plan.fallback) {
-                        cellClass += ' pp-mc-planned'; content = <span className="pp-mc-dot" />
-                      } else if (plan?.fallback) {
+                      } else if (plan) {
                         cellClass += ' pp-mc-fallback'; content = <span className="pp-mc-dot pp-mc-dot-gray" />
                       }
                       return (
@@ -429,19 +410,11 @@ export default function PlanningPartage() {
                                 )
                               })}
 
-                              {/* Fallback horaires hebdo / cabinet */}
+                              {/* Horaires officiels */}
                               {plan && (
-                                <div className={`pp-hours${plan.fallback ? ' pp-hours-fallback' : ''}`}>
-                                  {plan.fallback ? (
-                                    <>
-                                      {plan.matin && <span className="pp-hours-line">{DEFAULT_MATIN}</span>}
-                                      {plan.aprem && <span className="pp-hours-line">{DEFAULT_APREM}</span>}
-                                    </>
-                                  ) : (
-                                    <span className="pp-hours-line">
-                                      {plan.heure_debut?.slice(0,5)}–{plan.heure_fin?.slice(0,5)}
-                                    </span>
-                                  )}
+                                <div className="pp-hours pp-hours-fallback">
+                                  <span className="pp-hours-line">{HORAIRE_MATIN}</span>
+                                  <span className="pp-hours-line">{HORAIRE_APREM}</span>
                                 </div>
                               )}
 

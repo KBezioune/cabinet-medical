@@ -148,58 +148,8 @@ export const updateUserPinInDb = async (userId, newPin) => {
 }
 
 // ── PLANNING ─────────────────────────────────────────────────
-
-export const getPlanningByUser = async (userId) => {
-  const { data, error } = await supabase.from('planning').select('*').eq('user_id', userId).eq('actif', true)
-  if (error) { log('getPlanningByUser', error); throw error }
-  return data || []
-}
-
-export const getPlanningForUsers = async (userIds) => {
-  const { data, error } = await supabase.from('planning').select('*').in('user_id', userIds)
-  if (error) { log('getPlanningForUsers', error); throw error }
-  return data || []
-}
-
-export const upsertPlanning = async (userId, jour_semaine, heure_debut, heure_fin) => {
-  if (isTestMode()) return
-  const { error } = await supabase.from('planning').upsert(
-    { user_id: userId, jour_semaine, heure_debut: heure_debut || null, heure_fin: heure_fin || null, actif: !!(heure_debut && heure_fin) },
-    { onConflict: 'user_id,jour_semaine' }
-  )
-  if (error) { log('upsertPlanning', error); throw error }
-}
-
-// ── PLANNING EVENTS ──────────────────────────────────────────
-
-export const getPlanningEvents = async (userIds, from, to) => {
-  const { data, error } = await supabase.from('planning_events').select('*')
-    .in('user_id', userIds).gte('date', from).lte('date', to)
-  if (error) { log('getPlanningEvents', error); throw error }
-  return data || []
-}
-
-export const getPlanningEventsByUser = async (userId, from, to) => {
-  const { data, error } = await supabase.from('planning_events').select('*')
-    .eq('user_id', userId).gte('date', from).lte('date', to).order('date', { ascending: true })
-  if (error) { log('getPlanningEventsByUser', error); throw error }
-  return data || []
-}
-
-export const upsertPlanningEvent = async (event) => {
-  if (isTestMode()) return mockRec(event)
-  const { data, error } = await supabase.from('planning_events')
-    .upsert(event, { onConflict: 'user_id,date' }).select().single()
-  if (error) { log('upsertPlanningEvent', error); throw error }
-  return data
-}
-
-export const deletePlanningEvent = async (userId, date) => {
-  if (isTestMode()) return
-  const { error } = await supabase.from('planning_events')
-    .delete().eq('user_id', userId).eq('date', date)
-  if (error) { log('deletePlanningEvent', error); throw error }
-}
+// Les horaires récurrents ne sont plus lus en base : ils viennent des
+// horaires officiels du cabinet (src/utils/horaires.js).
 
 // ── CONGÉS ────────────────────────────────────────────────────
 

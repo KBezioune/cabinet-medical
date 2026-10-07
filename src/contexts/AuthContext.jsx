@@ -21,8 +21,12 @@ export function AuthProvider({ children }) {
         const parsed  = JSON.parse(stored)
         const current = getUsersForAuth().find(u => u.id === parsed.id)
         const resolved = current ?? parsed
-        sessionStorage.setItem('cabinet_user', JSON.stringify(resolved))
-        setUser(resolved)
+        if (resolved.actif === false) {
+          sessionStorage.removeItem('cabinet_user')
+        } else {
+          sessionStorage.setItem('cabinet_user', JSON.stringify(resolved))
+          setUser(resolved)
+        }
       } catch {}
     }
     setLoading(false)
@@ -59,6 +63,8 @@ export function AuthProvider({ children }) {
   }, [user])
 
   const login = async (password) => {
+    // Statut "actif" à jour depuis Supabase avant de valider la connexion
+    await syncUsersFromDb().catch(() => {})
     const found = getUsersForAuth().find(u => u.pin === password.trim())
     const ua    = navigator.userAgent
 
@@ -69,6 +75,13 @@ export function AuthProvider({ children }) {
         logAccess({ userId: null, action: 'login_failure', typeEvenement: 'connexion_echec', userAgent: ua }).catch(() => {})
       }
       throw new Error('Mot de passe incorrect')
+    }
+
+    if (found.actif === false) {
+      logAccess({ userId: found.id, action: 'login_disabled', typeEvenement: 'connexion_echec', userAgent: ua }).catch(() => {})
+      const err = new Error('Compte désactivé')
+      err.code = 'ACCOUNT_DISABLED'
+      throw err
     }
 
     const isTestAccount = found._isTestUser

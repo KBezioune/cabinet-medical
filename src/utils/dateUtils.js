@@ -39,13 +39,6 @@ export const getMonthDays = (year, month) => {
   return eachDayOfInterval({ start, end })
 }
 
-export const calcDuree = (arrivee, depart) => {
-  if (!arrivee || !depart) return null
-  const a = typeof arrivee === 'string' ? parseISO(arrivee) : arrivee
-  const d = typeof depart === 'string' ? parseISO(depart) : depart
-  return differenceInMinutes(d, a)
-}
-
 // Agrège le journal d'événements d'une journée (arrivée / pause_debut / pause_fin / départ,
 // nombre illimité de pauses) en un résumé exploitable par l'UI et les calculs de paie.
 export const summarizePointageEvents = (events) => {
@@ -95,26 +88,4 @@ export const currentMonthYear = () => {
 export const isoToLocalTime = (isoString) => {
   if (!isoString) return ''
   return format(parseISO(isoString), 'HH:mm')
-}
-
-export const timeToMin = (t) => {
-  if (!t) return 0
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
-}
-
-// Pause déjeuner cabinet : 12:00 – 14:00 (120 min)
-const LUNCH_START = 12 * 60  // 720
-const LUNCH_END   = 14 * 60  // 840
-
-// Minutes nettes travaillées sur une plage — déduit la pause si la plage la chevauche
-export const planNetMinutes = (heure_debut, heure_fin) => {
-  if (!heure_debut || !heure_fin) return 0
-  const start = timeToMin(heure_debut)
-  const end   = timeToMin(heure_fin)
-  if (end <= start) return 0
-  const gross        = end - start
-  const overlapStart = Math.max(start, LUNCH_START)
-  const overlapEnd   = Math.min(end,   LUNCH_END)
-  return gross - Math.max(0, overlapEnd - overlapStart)
 }

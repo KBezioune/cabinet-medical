@@ -4,7 +4,7 @@ const DEFAULT_USERS = [
     name: 'Imene', pin: '0503', role: 'assistant',
     poste: 'Apprentie', phone: '+41 79 100 00 01',
     email: 'imene@horizons-medical.ch', date_entree: '2021-03-15',
-    taux_activite: 100, heures_hebdo: 24, type_contrat: 'CDI',
+    taux_activite: 100, heures_hebdo: 15, type_contrat: 'CDI',
     color: '#4f8ef7',
   },
   {
@@ -12,7 +12,7 @@ const DEFAULT_USERS = [
     name: 'Dessa', pin: '2002', role: 'assistant',
     poste: 'Assistante médicale', phone: '+41 79 100 00 02',
     email: 'dessa@horizons-medical.ch', date_entree: '2020-09-01',
-    taux_activite: 80, heures_hebdo: 19.2, type_contrat: 'CDI',
+    taux_activite: 100, heures_hebdo: 37.5, type_contrat: 'CDI',
     color: '#8b5cf6',
   },
   {
@@ -22,6 +22,7 @@ const DEFAULT_USERS = [
     email: 'talya@horizons-medical.ch', date_entree: '2023-02-06',
     taux_activite: 60, heures_hebdo: 14.4, type_contrat: 'CDI',
     color: '#0891b2',
+    actif: false, // compte désactivé (aussi en base : users.actif = false)
   },
   {
     id: '00000000-0000-0000-0000-000000000004',
@@ -86,7 +87,7 @@ export const getUsers = () => {
     return {
       ...u, ...patch,
       role: roles[u.id] ?? u.role, pin: pins[u.id] ?? u.pin,
-      actif: dbUsers[u.id]?.actif ?? true,
+      actif: dbUsers[u.id]?.actif ?? u.actif ?? true,
     }
   }
 
@@ -146,7 +147,6 @@ export const getUsersForAuth = () => {
   return [...getUsers(), { ...TEST_USER, pin: pins[TEST_USER_ID] ?? TEST_USER.pin }]
 }
 
-export const getAssistants = () => getUsers().filter(u => u.role === 'assistant')
 export const getActiveAssistants = () => getActiveUsers().filter(u => u.role === 'assistant')
 export const getManagers   = () => getUsers().filter(u => u.role === 'manager')
 export const getUserById   = (id) => getUsers().find(u => u.id === id)

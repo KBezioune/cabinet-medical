@@ -40,7 +40,12 @@ export default function Login() {
     setLoading(true); setError('')
     try {
       await login(password)
-    } catch {
+    } catch (err) {
+      if (err?.code === 'ACCOUNT_DISABLED') {
+        setPassword('')
+        setError('Compte désactivé')
+        return
+      }
       const next = attempts + 1
       setAttempts(next); setPassword('')
       if (next >= MAX_ATTEMPTS) {

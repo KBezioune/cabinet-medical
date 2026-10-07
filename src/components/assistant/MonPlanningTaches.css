@@ -1,6 +1,5 @@
 /* MonPlanningTaches.css
-   Réutilise .schedule-header, .section-title, .week-nav, .week-label,
-   .btn-sm, .day-name, .day-date depuis MySchedule.css */
+   Styles de la vue semaine « Mon Planning » (assistantes) */
 
 /* ── Grille semaine ──────────────────────────────────────── */
 .mpt-grid {

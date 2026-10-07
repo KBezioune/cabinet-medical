@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { getActiveUsers, addLocalUser, patchLocalUser, removeLocalUser, pickColor, setSyncedRole } from '../../lib/localData'
-import { getPlanningByUser, getCongesByUser, getUserContract, updateUserContract,
+import { getCongesByUser, getUserContract, updateUserContract,
          insertUserInDb, updateUserInDb, deleteUserInDb } from '../../lib/db'
 import { format, differenceInYears } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
+import { workDaysFor, weeklyMinutesFor, DAY_MIN, HORAIRE_MATIN, HORAIRE_APREM } from '../../utils/horaires'
 import './Annuaire.css'
 
 const ROLE_LABEL = { admin: 'Admin', manager: 'Manager', assistant: 'Assistante médicale' }
@@ -27,7 +28,6 @@ const CONGE_TYPES = {
 
 const TYPE_CONTRAT_OPTIONS = ['CDI', 'CDD', 'Temps partiel', 'Indépendant', 'Stage']
 
-const timeToMin = t => { if (!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m }
 const minToHHMM = m => { const h = Math.floor(m / 60); return `${h}h${String(m % 60).padStart(2, '0')}` }
 
 function ContratTab({ emp, isAdmin }) {
@@ -172,15 +172,14 @@ function formatFieldValue(key, val, anciennete) {
 
 function PanelContent({ user: emp, canEditContracts, isAdmin, currentUserId, onEdit, onDelete }) {
   const [tab,      setTab]      = useState('info')
-  const [planning, setPlanning] = useState([])
   const [conges,   setConges]   = useState([])
   const [loading,  setLoading]  = useState(false)
 
   useEffect(() => {
-    if (tab !== 'planning' && tab !== 'conges') return
+    if (tab !== 'conges') return
     setLoading(true)
-    Promise.all([getPlanningByUser(emp.id), getCongesByUser(emp.id)])
-      .then(([pl, cg]) => { setPlanning(pl); setConges(cg) })
+    getCongesByUser(emp.id)
+      .then(setConges)
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [tab, emp.id])
@@ -271,31 +270,25 @@ function PanelContent({ user: emp, canEditContracts, isAdmin, currentUserId, onE
         )}
 
         {tab === 'planning' && (
-          loading ? <div className="loading-center"><div className="spinner" /></div> :
-          planning.length === 0
-            ? <p className="ann-empty">Aucun planning configuré.</p>
-            : (
-              <table className="ann-planning-table">
-                <thead>
-                  <tr><th>Jour</th><th>Début</th><th>Fin</th><th>Durée</th></tr>
-                </thead>
-                <tbody>
-                  {JOURS.map((j, i) => {
-                    const row = planning.find(p => p.jour_semaine === i + 1)
-                    if (!row?.actif) return null
-                    const dur = timeToMin(row.heure_fin) - timeToMin(row.heure_debut)
-                    return (
-                      <tr key={i}>
-                        <td className="ann-jour">{j}</td>
-                        <td>{row.heure_debut?.slice(0,5)}</td>
-                        <td>{row.heure_fin?.slice(0,5)}</td>
-                        <td><span className="badge badge-blue">{minToHHMM(dur)}</span></td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )
+          <table className="ann-planning-table">
+            <thead>
+              <tr><th>Jour</th><th>Matin</th><th>Après-midi</th><th>Durée</th></tr>
+            </thead>
+            <tbody>
+              {workDaysFor(emp.id).map(js => (
+                <tr key={js}>
+                  <td className="ann-jour">{JOURS[js - 1]}</td>
+                  <td>{HORAIRE_MATIN}</td>
+                  <td>{HORAIRE_APREM}</td>
+                  <td><span className="badge badge-blue">{minToHHMM(DAY_MIN)}</span></td>
+                </tr>
+              ))}
+              <tr>
+                <td className="ann-jour">Total semaine</td><td /><td />
+                <td><span className="badge badge-blue">{minToHHMM(weeklyMinutesFor(emp.id))}</span></td>
+              </tr>
+            </tbody>
+          </table>
         )}
 
         {tab === 'conges' && (

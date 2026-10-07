@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getUsers } from '../../lib/localData'
-import { getPlanningForUsers, getPointagesByDateRange, getAllConges } from '../../lib/db'
-import { format, eachDayOfInterval, getDay } from 'date-fns'
+import { getPointagesByDateRange, getAllConges } from '../../lib/db'
+import { format, eachDayOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { minutesToHHMM, currentMonthYear, planNetMinutes } from '../../utils/dateUtils'
+import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import { plannedMinutesFor, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
 import './SoldeHeures.css'
-
-const timeToMin = (t) => {
-  if (!t) return 0
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
-}
 
 const formatSolde = (min) => {
   if (min === 0) return '±0'
@@ -22,46 +17,17 @@ const formatSolde = (min) => {
   return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
 }
 
-const TODAY       = format(new Date(), 'yyyy-MM-dd')
-const OPEN_DAYS   = new Set([1, 2, 4, 5]) // Lun Mar Jeu Ven — Mer/Sam/Dim fermés
-const DEFAULT_DAY_MIN = 420               // 7h par jour ouvré
+const TODAY = format(new Date(), 'yyyy-MM-dd')
 
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
   label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
 }))
 
-// ── Solde vacances ────────────────────────────────────────────
-const VAC_QUOTA  = 20
-const THIS_YEAR  = new Date().getFullYear()
-const YEAR_START = `${THIS_YEAR}-01-01`
-const YEAR_END   = `${THIS_YEAR}-12-31`
-
-const countWorkingDays = (debut, fin) => {
-  const s = new Date(debut + 'T12:00:00')
-  const e = new Date(fin   + 'T12:00:00')
-  if (s > e) return 0
-  return eachDayOfInterval({ start: s, end: e })
-    .filter(d => getDay(d) >= 1 && getDay(d) <= 5).length
-}
-
-const computeVacances = (userId, conges) => {
-  const consomme = conges
-    .filter(c => c.user_id === userId && c.statut === 'approuve' &&
-                 c.date_debut <= YEAR_END && c.date_fin >= YEAR_START)
-    .reduce((sum, c) => {
-      const debut = c.date_debut < YEAR_START ? YEAR_START : c.date_debut
-      const fin   = c.date_fin   > YEAR_END   ? YEAR_END   : c.date_fin
-      return sum + countWorkingDays(debut, fin)
-    }, 0)
-  return { quota: VAC_QUOTA, consomme, restant: Math.max(0, VAC_QUOTA - consomme) }
-}
-
 export default function SoldeHeures() {
   const { year: cy, month: cm } = currentMonthYear()
   const [year,  setYear]   = useState(cy)
   const [month, setMonth]  = useState(cm)
-  const [planning,  setPlanning]  = useState([])
   const [pointages, setPointages] = useState([])
   const [conges,    setConges]    = useState([])
   const [loading,   setLoading]   = useState(true)
@@ -76,12 +42,10 @@ export default function SoldeHeures() {
       const to   = `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`
       const ids  = assistants.map(a => a.id)
       try {
-        const [pl, pt, cg] = await Promise.all([
-          getPlanningForUsers(ids),
+        const [pt, cg] = await Promise.all([
           getPointagesByDateRange(ids, from, to),
           getAllConges(),
         ])
-        setPlanning(pl)
         setPointages(pt)
         setConges(cg)
       } catch (e) { console.error(e) }
@@ -91,7 +55,6 @@ export default function SoldeHeures() {
   }, [year, month])
 
   const computeSolde = (userId) => {
-    const userPlan = planning.filter(p => p.user_id === userId && p.actif)
     const userPts  = pointages.filter(p => p.user_id === userId)
 
     const days = eachDayOfInterval({
@@ -105,12 +68,8 @@ export default function SoldeHeures() {
 
     days.forEach(d => {
       const dateStr    = format(d, 'yyyy-MM-dd')
-      const jourSem    = getDay(d) === 0 ? 7 : getDay(d)
-      const plan       = userPlan.find(p => p.jour_semaine === jourSem)
       const pt         = userPts.find(p => p.date === dateStr)
-      const dayPlan    = plan
-        ? planNetMinutes(plan.heure_debut, plan.heure_fin)
-        : (OPEN_DAYS.has(jourSem) ? DEFAULT_DAY_MIN : 0)
+      const dayPlan    = isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, d)
       const dayWorked  = pt?.duree_minutes || 0
 
       if (dateStr <= TODAY) plannedMin += dayPlan
@@ -148,7 +107,7 @@ export default function SoldeHeures() {
         <div className="sh-list">
           {assistants.map(a => {
             const { plannedMin, workedMin, balance, details } = computeSolde(a.id)
-            const vac      = computeVacances(a.id, conges)
+            const vac      = computeVacances(a.id, conges, cy)
             const isOpen   = expanded === a.id
             const soldeClass = balance > 0 ? 'pos' : (balance < 0 && workedMin > 0) ? 'neg' : 'zero'
 

@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react'
-import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear, planNetMinutes } from '../../utils/dateUtils'
+import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
 import { getUsers } from '../../lib/localData'
-import { getPointagesByUserAndMonth, getPlanningForUsers, getAllConges } from '../../lib/db'
-import { format, eachDayOfInterval, getDay, parseISO } from 'date-fns'
+import { getPointagesByUserAndMonth, getAllConges } from '../../lib/db'
+import { format, eachDayOfInterval, parseISO } from 'date-fns'
+import { plannedMinutesFor, isOnApprovedLeave } from '../../utils/horaires'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
 import './MonthlyExport.css'
-
-const timeToMin = (t) => {
-  if (!t) return 0
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
-}
 
 const formatEcart = (min) => {
   if (min === 0) return '±0h'
@@ -33,7 +28,6 @@ export default function MonthlyExport() {
   const [month, setMonth]       = useState(cm)
   const [selectedUser, setSelectedUser] = useState('all')
   const [allRecords,   setAllRecords]   = useState({})
-  const [planning,     setPlanning]     = useState([])
   const [conges,       setConges]       = useState([])
   const [loading,      setLoading]      = useState(true)
 
@@ -45,17 +39,14 @@ export default function MonthlyExport() {
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      const ids = collaborateurs.map(u => u.id)
       try {
-        const [results, pl, cg] = await Promise.all([
+        const [results, cg] = await Promise.all([
           Promise.all(collaborateurs.map(u => getPointagesByUserAndMonth(u.id, from, to))),
-          getPlanningForUsers(ids),
           getAllConges(),
         ])
         const byUser = {}
         collaborateurs.forEach((u, i) => { byUser[u.id] = results[i] })
         setAllRecords(byUser)
-        setPlanning(pl)
         setConges(cg)
       } catch (e) { console.error(e) }
       finally { setLoading(false) }
@@ -63,23 +54,17 @@ export default function MonthlyExport() {
     load()
   }, [year, month])
 
-  // Minutes planifiées pour un utilisateur sur un jour précis
-  const getDayPlanned = (userId, dateStr) => {
-    const date    = parseISO(dateStr)
-    const jourSem = getDay(date) === 0 ? 7 : getDay(date)
-    const plan    = planning.find(p => p.user_id === userId && p.jour_semaine === jourSem && p.actif)
-    return plan ? planNetMinutes(plan.heure_debut, plan.heure_fin) : 0
-  }
+  // Minutes dues pour un utilisateur sur un jour précis (horaires officiels, congé approuvé = 0)
+  const getDayPlanned = (userId, dateStr) =>
+    isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, parseISO(dateStr))
 
-  // Total planifié sur le mois entier pour un utilisateur
+  // Total dû sur le mois jusqu'à aujourd'hui (même règle que Soldes / Dashboard RH)
   const getMonthPlanned = (userId) => {
-    const userPlan = planning.filter(p => p.user_id === userId && p.actif)
-    const days     = eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) })
-    return days.reduce((s, d) => {
-      const jourSem = getDay(d) === 0 ? 7 : getDay(d)
-      const plan    = userPlan.find(p => p.jour_semaine === jourSem)
-      return s + (plan ? planNetMinutes(plan.heure_debut, plan.heure_fin) : 0)
-    }, 0)
+    const today = format(new Date(), 'yyyy-MM-dd')
+    return eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) })
+      .map(d => format(d, 'yyyy-MM-dd'))
+      .filter(ds => ds <= today)
+      .reduce((s, ds) => s + getDayPlanned(userId, ds), 0)
   }
 
   // Statut du congé pour un utilisateur à une date

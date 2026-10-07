@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { getUsers } from '../../lib/localData'
-import { getPlanningForUsers, getPointagesByDateRange, getAllConges } from '../../lib/db'
-import { format, eachDayOfInterval, getDay } from 'date-fns'
+import { getPointagesByDateRange, getAllConges } from '../../lib/db'
+import { format, eachDayOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { minutesToHHMM, currentMonthYear, planNetMinutes } from '../../utils/dateUtils'
+import { minutesToHHMM } from '../../utils/dateUtils'
+import { plannedMinutesFor, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
 import './DashboardRH.css'
 
@@ -11,12 +12,6 @@ const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
   value: i + 1,
   label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
 }))
-
-const timeToMin = (t) => {
-  if (!t) return 0
-  const [h, m] = t.split(':').map(Number)
-  return h * 60 + m
-}
 
 const formatSolde = (min) => {
   if (min === 0) return '±0h'
@@ -27,40 +22,15 @@ const formatSolde = (min) => {
   return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
 }
 
-const TODAY      = format(new Date(), 'yyyy-MM-dd')
-// Jours d'ouverture du cabinet (1=Lun…7=Dim) — Mer/Sam/Dim fermés
-const OPEN_DAYS  = new Set([1, 2, 4, 5])
-const DEFAULT_DAY_MIN = 420 // 7h
-const VAC_QUOTA  = 20
-const THIS_YEAR  = new Date().getFullYear()
-const YEAR_START = `${THIS_YEAR}-01-01`
-const YEAR_END   = `${THIS_YEAR}-12-31`
-
-const countWorkingDays = (debut, fin) => {
-  const s = new Date(debut + 'T12:00:00')
-  const e = new Date(fin   + 'T12:00:00')
-  if (s > e) return 0
-  return eachDayOfInterval({ start: s, end: e })
-    .filter(d => getDay(d) >= 1 && getDay(d) <= 5).length
-}
-
-const computeVacances = (userId, conges) => {
-  const consomme = conges
-    .filter(c => c.user_id === userId && c.statut === 'approuve' &&
-                 c.date_debut <= YEAR_END && c.date_fin >= YEAR_START)
-    .reduce((sum, c) => {
-      const debut = c.date_debut < YEAR_START ? YEAR_START : c.date_debut
-      const fin   = c.date_fin   > YEAR_END   ? YEAR_END   : c.date_fin
-      return sum + countWorkingDays(debut, fin)
-    }, 0)
-  return { quota: VAC_QUOTA, consomme, restant: Math.max(0, VAC_QUOTA - consomme) }
-}
+const TODAY     = format(new Date(), 'yyyy-MM-dd')
+const THIS_YEAR = new Date().getFullYear()
+// Période affichée par défaut à l'ouverture du dashboard
+const DEFAULT_YEAR  = 2026
+const DEFAULT_MONTH = 10
 
 export default function DashboardRH() {
-  const { year: cy, month: cm } = currentMonthYear()
-  const [year,  setYear]    = useState(cy)
-  const [month, setMonth]   = useState(cm)
-  const [planning,  setPlanning]  = useState([])
+  const [year,  setYear]    = useState(DEFAULT_YEAR)
+  const [month, setMonth]   = useState(DEFAULT_MONTH)
   const [pointages, setPointages] = useState([])
   const [conges,    setConges]    = useState([])
   const [loading,   setLoading]   = useState(true)
@@ -75,12 +45,10 @@ export default function DashboardRH() {
       setLoading(true)
       const ids = collaborateurs.map(u => u.id)
       try {
-        const [pl, pt, cg] = await Promise.all([
-          getPlanningForUsers(ids),
+        const [pt, cg] = await Promise.all([
           getPointagesByDateRange(ids, from, to),
           getAllConges(),
         ])
-        setPlanning(pl)
         setPointages(pt)
         setConges(cg)
       } catch (e) { console.error(e) }
@@ -90,7 +58,6 @@ export default function DashboardRH() {
   }, [year, month])
 
   const computeStats = (userId) => {
-    const userPlan = planning.filter(p => p.user_id === userId && p.actif)
     const userPts  = pointages.filter(p => p.user_id === userId)
 
     const days = eachDayOfInterval({
@@ -104,12 +71,9 @@ export default function DashboardRH() {
 
     days.forEach(d => {
       const dateStr  = format(d, 'yyyy-MM-dd')
-      const jourSem  = getDay(d) === 0 ? 7 : getDay(d)
-      const plan     = userPlan.find(p => p.jour_semaine === jourSem)
       const pt       = userPts.find(p => p.date === dateStr)
-      const dayPlan  = plan
-        ? planNetMinutes(plan.heure_debut, plan.heure_fin)
-        : (OPEN_DAYS.has(jourSem) ? DEFAULT_DAY_MIN : 0)
+      // Horaires officiels ; un jour de congé approuvé n'est pas dû
+      const dayPlan  = isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, d)
       const dayWork  = pt?.duree_minutes || 0
 
       if (dateStr <= TODAY) plannedMin += dayPlan
@@ -127,7 +91,7 @@ export default function DashboardRH() {
       c.date_fin >= from
     ).length
 
-    const vac = computeVacances(userId, conges)
+    const vac = computeVacances(userId, conges, THIS_YEAR)
 
     return { plannedMin, workedMin, balance, absences, tauxActivite, congesApprouves, vac }
   }
@@ -189,7 +153,7 @@ export default function DashboardRH() {
               {MONTH_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
             </select>
             <select value={year} onChange={e => setYear(Number(e.target.value))}>
-              {[cy - 1, cy, cy + 1].map(y => <option key={y} value={y}>{y}</option>)}
+              {[THIS_YEAR - 1, THIS_YEAR, THIS_YEAR + 1].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <button className="btn btn-outline drh-export-btn" onClick={exportCSV}>
