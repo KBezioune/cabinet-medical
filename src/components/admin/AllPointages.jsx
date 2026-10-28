@@ -30,11 +30,11 @@ export default function AllPointages() {
           userId: filterUser !== 'all' ? filterUser : undefined,
           date:   filterDate || undefined,
         }),
-        getAllPointagesFiltered({}),
+        // compteur « en service » : seulement les pointages du jour, pas tout l'historique
+        getAllPointagesFiltered({ date: todayISO() }),
       ])
       setRecords(filtered)
-      const t = todayISO()
-      setInService(all.filter(r => r.date === t && r.heure_arrivee && !r.heure_depart).length)
+      setInService(all.filter(r => r.heure_arrivee && !r.heure_depart).length)
     } catch { /* silencieux */ }
     finally { setLoading(false) }
   }, [filterUser, filterDate])
@@ -43,11 +43,14 @@ export default function AllPointages() {
 
   // Temps réel Supabase
   useEffect(() => {
+    let timer
+    // anti-rebond : une rafale de pointages ne déclenche qu'un seul rechargement
+    const debounced = () => { clearTimeout(timer); timer = setTimeout(refresh, 500) }
     const channel = supabase
       .channel('pointage-events-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pointage_events' }, () => refresh())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pointage_events' }, debounced)
       .subscribe()
-    return () => supabase.removeChannel(channel)
+    return () => { clearTimeout(timer); supabase.removeChannel(channel) }
   }, [refresh])
 
   const today = todayISO()

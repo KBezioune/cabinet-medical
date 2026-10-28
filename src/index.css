@@ -45,7 +45,7 @@
   --gray-100: #f1f5f9;
   --gray-200: #e2e8f0;
   --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
+  --gray-400: #6b7a90; /* assombri : contraste AA (4.5:1) sur fond blanc */
   --gray-500: #64748b;
   --gray-600: #475569;
   --gray-700: #334155;
@@ -117,7 +117,7 @@ input  { font-family: inherit; font-size: inherit; }
 }
 
 .btn-success {
-  background: linear-gradient(135deg, var(--green-500), var(--green-600));
+  background: linear-gradient(135deg, var(--green-600), #15803d);
   color: white;
   box-shadow: 0 4px 14px rgb(22 163 74 / 0.35);
 }
@@ -352,4 +352,10 @@ input:focus, textarea:focus, select:focus {
   margin: 0;
   max-width: 28ch;
   line-height: 1.5;
+}
+
+/* Focus clavier visible partout (WCAG 2.4.7) */
+:focus-visible { outline: 3px solid var(--brand-600, #3D5A44); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

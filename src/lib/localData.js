@@ -12,7 +12,7 @@ const DEFAULT_USERS = [
     name: 'Dessa', pin: '2002', role: 'assistant',
     poste: 'Assistante médicale', phone: '+41 79 100 00 02',
     email: 'dessa@horizons-medical.ch', date_entree: '2020-09-01',
-    taux_activite: 100, heures_hebdo: 37.5, type_contrat: 'CDI',
+    taux_activite: 100, heures_hebdo: 42, type_contrat: 'CDI',
     color: '#8b5cf6',
   },
   {

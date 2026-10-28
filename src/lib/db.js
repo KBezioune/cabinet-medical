@@ -92,9 +92,25 @@ export const getPointagesByUserAndMonth = async (userId, from, to) => {
     .sort((a, b) => b.date.localeCompare(a.date))
 }
 
+// PostgREST plafonne à 1000 lignes par requête : on pagine pour ne jamais
+// tronquer silencieusement un mois de pointages (et fausser les heures).
+const PAGE_SIZE = 1000
+const fetchAllPages = async (buildQuery) => {
+  const rows = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1)
+    if (error) return { data: null, error }
+    rows.push(...(data || []))
+    if (!data || data.length < PAGE_SIZE) break
+  }
+  return { data: rows, error: null }
+}
+
 export const getPointagesByDateRange = async (userIds, from, to) => {
-  const { data, error } = await supabase.from('pointage_events').select('*')
-    .in('user_id', userIds).gte('date', from).lte('date', to)
+  const { data, error } = await fetchAllPages(() =>
+    supabase.from('pointage_events').select('id,user_id,date,type,heure')
+      .in('user_id', userIds).gte('date', from).lte('date', to)
+      .order('heure', { ascending: true }).order('id', { ascending: true }))
   if (error) { log('getPointagesByDateRange', error); throw error }
   const byDay = groupEventsByDay(data || [])
   return Object.entries(byDay).map(([key, day]) => daySummary(key, day))

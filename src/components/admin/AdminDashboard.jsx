@@ -1,27 +1,29 @@
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, Suspense, lazy, useState, useEffect } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
-import AllPointages from './AllPointages'
-import MonthlyExport from './MonthlyExport'
-import GestionPins from './GestionPins'
-import JournauxAcces from './JournauxAcces'
-import GestionConges from './GestionConges'
-import SoldeHeures from './SoldeHeures'
-import DashboardRH from './DashboardRH'
-import Annuaire from './Annuaire'
-import DossiersRH from './DossiersRH'
-import Statistiques from './Statistiques'
 import ClockInOut from '../assistant/ClockInOut'
 import MobileClockScreen from '../assistant/MobileClockScreen'
 import MonPlanningTaches from '../assistant/MonPlanningTaches'
 import MyHistory from '../assistant/MyHistory'
 import DemandeConge from '../assistant/DemandeConge'
 import MonSolde from '../assistant/MonSolde'
-import PlanningPartage from '../shared/PlanningPartage'
-import NotesDefrais from '../shared/NotesDefrais'
-import Aide from '../shared/Aide'
-import Messages from '../shared/Messages'
 import { getUnreadMessageCount } from '../../lib/db'
 import './AdminDashboard.css'
+
+// Écrans chargés à la demande : un employé qui pointe ne télécharge plus tout le code admin
+const AllPointages = lazy(() => import('./AllPointages'))
+const MonthlyExport = lazy(() => import('./MonthlyExport'))
+const GestionPins = lazy(() => import('./GestionPins'))
+const JournauxAcces = lazy(() => import('./JournauxAcces'))
+const GestionConges = lazy(() => import('./GestionConges'))
+const SoldeHeures = lazy(() => import('./SoldeHeures'))
+const DashboardRH = lazy(() => import('./DashboardRH'))
+const Annuaire = lazy(() => import('./Annuaire'))
+const DossiersRH = lazy(() => import('./DossiersRH'))
+const Statistiques = lazy(() => import('./Statistiques'))
+const PlanningPartage = lazy(() => import('../shared/PlanningPartage'))
+const NotesDefrais = lazy(() => import('../shared/NotesDefrais'))
+const Aide = lazy(() => import('../shared/Aide'))
+const Messages = lazy(() => import('../shared/Messages'))
 
 // ── Icônes SVG ────────────────────────────────────────────────
 const IC = {
@@ -301,6 +303,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="tab-content">
+          <Suspense fallback={<div className="spinner" role="status" aria-label="Chargement" />}>
           {tab === 'pointage'  && <ClockInOut />}
           {tab === 'clock'     && (isMobile ? <MobileClockScreen /> : <ClockInOut />)}
           {tab === 'monplanning' && <MonPlanningTaches />}
@@ -321,6 +324,7 @@ export default function AdminDashboard() {
           {tab === 'pins'      && <GestionPins />}
           {tab === 'logs'      && <JournauxAcces />}
           {tab === 'aide'      && <Aide />}
+          </Suspense>
         </div>
       </div>
 

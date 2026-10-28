@@ -2,7 +2,9 @@
 // Source unique de vérité pour tous les calculs d'heures (planning, soldes,
 // dashboard RH, export comptabilité, statistiques).
 //
-//   Lundi → Vendredi : 08h30–12h30 + 13h30–17h00  (7h30 nettes / jour)
+//   Lundi → Vendredi : 08h30–12h30 + 13h00–17h24  (8h24 nettes / jour)
+//   Pause de 30 min (12h30–13h00 par défaut) : l'heure réelle de la pause
+//   est libre, seul le total journalier de 8h24 compte.
 //   Samedi, Dimanche : fermé
 //
 //   Imene (apprentie)       : lundi et mardi uniquement (école le reste)
@@ -10,10 +12,10 @@
 import { eachDayOfInterval, getDay, format } from 'date-fns'
 
 export const MATIN = { debut: '08:30', fin: '12:30' }
-export const APREM = { debut: '13:30', fin: '17:00' }
+export const APREM = { debut: '13:00', fin: '17:24' }
 export const HORAIRE_MATIN = `${MATIN.debut}–${MATIN.fin}`
 export const HORAIRE_APREM = `${APREM.debut}–${APREM.fin}`
-export const DAY_MIN = 450 // 7h30
+export const DAY_MIN = 504 // 8h24
 
 export const IMENE_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -44,7 +46,7 @@ export const countWorkDays = (userId, debut, fin) => {
 }
 
 // Heures planifiées du mois complet : tous les jours travaillés du mois
-// (lun→ven, ou lun/mar pour Imene) × 7h30, hors congés approuvés.
+// (lun→ven, ou lun/mar pour Imene) × 8h24, hors congés approuvés.
 // month = 1…12
 export const monthPlannedMinutes = (userId, year, month, conges = []) =>
   eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) })

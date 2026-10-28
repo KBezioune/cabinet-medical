@@ -51,16 +51,24 @@ export const summarizePointageEvents = (events) => {
   const pauses = []
   let openPause = null
   sorted.forEach(e => {
-    if (e.type === 'pause_debut') openPause = e.heure
+    // un 2e pause_debut sans fin ne doit pas écraser la pause déjà ouverte
+    if (e.type === 'pause_debut') openPause = openPause ?? e.heure
     else if (e.type === 'pause_fin' && openPause) {
       pauses.push({ debut: openPause, fin: e.heure })
       openPause = null
     }
   })
-  const pause_minutes = pauses.reduce((s, p) => s + differenceInMinutes(parseISO(p.fin), parseISO(p.debut)), 0)
+  // Pause restée ouverte au départ : on la clôture à l'heure du départ
+  if (openPause && heure_depart && new Date(heure_depart) > new Date(openPause)) {
+    pauses.push({ debut: openPause, fin: heure_depart })
+    openPause = null
+  }
+  // Somme en millisecondes puis arrondi unique (évite de perdre ~1 min par pause)
+  const pauseMs = pauses.reduce((s, p) => s + (parseISO(p.fin) - parseISO(p.debut)), 0)
+  const pause_minutes = Math.round(pauseMs / 60000)
 
   const duree_minutes = (heure_arrivee && heure_depart)
-    ? differenceInMinutes(parseISO(heure_depart), parseISO(heure_arrivee)) - pause_minutes
+    ? Math.round((parseISO(heure_depart) - parseISO(heure_arrivee) - pauseMs) / 60000)
     : null
 
   return {

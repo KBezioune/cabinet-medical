@@ -89,7 +89,7 @@
 .mob-status-absent  { background: #fee2e2; color: #991b1b; }
 .mob-status-present { background: #dcfce7; color: #166534; }
 .mob-status-pause   { background: #fff7ed; color: #c2410c; }
-.mob-status-done    { background: #F1E9DC; color: #1e40af; }
+.mob-status-done    { background: #F1E9DC; color: #3D5A44; }
 
 .mob-status-dot {
   width: 8px; height: 8px;
@@ -98,7 +98,7 @@
   flex-shrink: 0;
 }
 .mob-dot-green { background: #4ade80; animation: pulse-dot 2s ease-in-out infinite; }
-.mob-dot-blue  { background: #60a5fa; }
+.mob-dot-blue  { background: #C4A882; }
 
 @keyframes pulse-dot {
   0%, 100% { transform: scale(1); opacity: 1; }
@@ -156,10 +156,11 @@
 }
 
 .mob-action-btn:active  { transform: scale(0.975); }
+.mob-action-btn:focus-visible { outline: 3px solid #C4A882; outline-offset: 3px; }
 .mob-action-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
 .mob-btn-arrive {
-  background: linear-gradient(135deg, #15803d, #16a34a, #4ade80);
+  background: linear-gradient(135deg, #166534, #15803d);
   color: #fff;
   box-shadow: 0 8px 28px rgba(22,163,74,0.4), 0 2px 8px rgba(22,163,74,0.25);
 }
@@ -169,7 +170,7 @@
 }
 
 .mob-btn-depart {
-  background: linear-gradient(135deg, #b91c1c, #dc2626, #f87171);
+  background: linear-gradient(135deg, #991b1b, #b91c1c);
   color: #fff;
   box-shadow: 0 8px 28px rgba(220,38,38,0.4), 0 2px 8px rgba(220,38,38,0.25);
 }
@@ -179,7 +180,7 @@
 }
 
 .mob-btn-pause {
-  background: linear-gradient(135deg, #c2410c, #ea580c, #fb923c);
+  background: linear-gradient(135deg, #9a3412, #c2410c);
   color: #fff;
   box-shadow: 0 8px 28px rgba(234,88,12,0.4), 0 2px 8px rgba(234,88,12,0.25);
 }

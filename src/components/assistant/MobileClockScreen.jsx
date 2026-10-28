@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, memo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { todayISO, formatDateTime, minutesToHHMM, summarizePointageEvents, pointageStatus } from '../../utils/dateUtils'
 import {
@@ -42,9 +42,30 @@ const verifierPosition = () => new Promise((resolve, reject) => {
   )
 })
 
+// Horloge isolée : seule elle se re-rend chaque seconde, pas tout l'écran de pointage
+const LiveClock = memo(function LiveClock() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <>
+      <div className="mob-date">
+        {now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+      </div>
+      <div className="mob-clock">
+        <span className="mob-clock-hm">
+          {now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+        </span>
+        <span className="mob-clock-sec">{String(now.getSeconds()).padStart(2, '0')}</span>
+      </div>
+    </>
+  )
+})
+
 export default function MobileClockScreen() {
   const { user, logout } = useAuth()
-  const [now,        setNow]        = useState(new Date())
   const [events,     setEvents]     = useState([])
   const [loading,    setLoading]    = useState(true)
   const [actionBusy, setActionBusy] = useState(false)
@@ -60,11 +81,6 @@ export default function MobileClockScreen() {
   const timerRef = useRef(null)
   const summary  = useMemo(() => summarizePointageEvents(events), [events])
   const status   = pointageStatus(summary)
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(id)
-  }, [])
 
   useEffect(() => () => clearInterval(timerRef.current), [])
 
@@ -143,9 +159,6 @@ export default function MobileClockScreen() {
   const pauseEnd   = () => punch('pause_fin')
   const clockOut   = () => punch('depart')
 
-  const timeStr   = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  const secondStr = String(now.getSeconds()).padStart(2, '0')
-  const dateStr   = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
   const busy      = actionBusy || gpsLoading
 
   // ── Écran confirmation ─────────────────────────────────────
@@ -179,11 +192,7 @@ export default function MobileClockScreen() {
       {/* ── Section haut : heure + date ───────────────────── */}
       <div className="mob-header">
         <div className="mob-greeting">Bonjour, <strong>{user.name}</strong></div>
-        <div className="mob-date">{dateStr}</div>
-        <div className="mob-clock">
-          <span className="mob-clock-hm">{timeStr}</span>
-          <span className="mob-clock-sec">{secondStr}</span>
-        </div>
+        <LiveClock />
       </div>
 
       {/* ── Statut ────────────────────────────────────────── */}
