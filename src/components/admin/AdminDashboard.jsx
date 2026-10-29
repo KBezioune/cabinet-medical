@@ -224,9 +224,11 @@ export default function AdminDashboard() {
 
   const isAdmin   = user.role === 'admin'
   const isAssistant = user.role === 'assistant'
-  const pageTitle = isAdmin ? 'Centre Médical Dorigny' : `Bonjour, ${user.name}`
+  // Admin : le titre indique la page courante (le nom du cabinet est déjà dans l'en-tête)
+  const currentLabel = tabs.find(t => t.id === tab)?.label
+  const pageTitle = isAdmin ? (currentLabel || 'Tableau de bord') : `Bonjour, ${user.name}`
   const pageSub   = isAdmin
-    ? `Bienvenue, ${user.name}`
+    ? `Centre Médical Dorigny · ${user.name}`
     : isAssistant ? (user.poste || 'Assistante médicale')
     : 'Responsable médicale'
 

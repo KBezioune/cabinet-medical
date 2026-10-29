@@ -57,7 +57,8 @@ export default function DashboardRH() {
     load()
   }, [year, month])
 
-  const computeStats = (userId) => {
+  const computeStats = (user) => {
+    const userId = user.id
     const userPts  = pointages.filter(p => p.user_id === userId)
 
     const days = eachDayOfInterval({
@@ -65,7 +66,8 @@ export default function DashboardRH() {
       end:   new Date(year, month, 0),
     })
 
-    let plannedMin = 0
+    let plannedMin = 0      // heures dues jusqu'à aujourd'hui (base du solde)
+    let plannedMonthMin = 0 // heures planifiées sur le mois complet
     let workedMin  = 0
     let absences   = 0
 
@@ -76,10 +78,18 @@ export default function DashboardRH() {
       const dayPlan  = isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, d)
       const dayWork  = pt?.duree_minutes || 0
 
-      plannedMin += dayPlan // mois complet
+      plannedMonthMin += dayPlan
+      if (dateStr <= TODAY) plannedMin += dayPlan
       workedMin  += dayWork
       if (dayPlan > 0 && dayWork === 0 && dateStr <= TODAY) absences++
     })
+
+    // Compte désactivé : on garde uniquement l'aperçu des heures effectuées
+    const inactive = user.actif === false
+    if (inactive) {
+      return { inactive, plannedMin: 0, plannedMonthMin: 0, workedMin, balance: 0, absences: 0,
+               tauxActivite: null, congesApprouves: 0, vac: null }
+    }
 
     const balance      = workedMin - plannedMin
     const tauxActivite = plannedMin > 0 ? Math.round((workedMin / plannedMin) * 100) : null
@@ -93,17 +103,20 @@ export default function DashboardRH() {
 
     const vac = computeVacances(userId, conges, THIS_YEAR)
 
-    return { plannedMin, workedMin, balance, absences, tauxActivite, congesApprouves, vac }
+    return { inactive, plannedMin, plannedMonthMin, workedMin, balance, absences, tauxActivite, congesApprouves, vac }
   }
 
-  const allStats = collaborateurs.map(u => ({ user: u, ...computeStats(u.id) }))
+  const allStats = collaborateurs
+    .map(u => ({ user: u, ...computeStats(u) }))
+    .sort((a, b) => Number(a.inactive) - Number(b.inactive)) // comptes désactivés en dernier
+  const activeStats = allStats.filter(r => !r.inactive)
 
   // KPI globaux
-  const totalWorkedMin    = allStats.reduce((s, r) => s + r.workedMin, 0)
-  const totalPlannedMin   = allStats.reduce((s, r) => s + r.plannedMin, 0)
+  const totalWorkedMin    = activeStats.reduce((s, r) => s + r.workedMin, 0)
+  const totalPlannedMin   = activeStats.reduce((s, r) => s + r.plannedMin, 0)
   const totalCongesPending = conges.filter(c => c.statut === 'en_attente').length
-  const totalAbsences     = allStats.reduce((s, r) => s + r.absences, 0)
-  const validTaux         = allStats.filter(r => r.tauxActivite !== null)
+  const totalAbsences     = activeStats.reduce((s, r) => s + r.absences, 0)
+  const validTaux         = activeStats.filter(r => r.tauxActivite !== null)
   const tauxEquipe        = validTaux.length > 0
     ? Math.round(validTaux.reduce((s, r) => s + r.tauxActivite, 0) / validTaux.length)
     : null
@@ -117,7 +130,7 @@ export default function DashboardRH() {
       return [
         r.user.name,
         r.user.role === 'manager' ? 'Manager' : r.user.poste || 'Assistante',
-        minutesToHHMM(r.plannedMin),
+        r.inactive ? 'N/A' : minutesToHHMM(r.plannedMin),
         minutesToHHMM(r.workedMin),
         formatSolde(r.balance),
         r.tauxActivite !== null ? `${r.tauxActivite}%` : 'N/A',
@@ -169,7 +182,7 @@ export default function DashboardRH() {
           <div className="drh-kpi-body">
             <span className="drh-kpi-val">{minutesToHHMM(totalWorkedMin)}</span>
             <span className="drh-kpi-lbl">Heures travaillées</span>
-            <span className="drh-kpi-sub">/ {minutesToHHMM(totalPlannedMin)} planifiées</span>
+            <span className="drh-kpi-sub">/ {minutesToHHMM(totalPlannedMin)} dues à ce jour</span>
           </div>
         </div>
 
@@ -211,7 +224,7 @@ export default function DashboardRH() {
               <thead>
                 <tr>
                   <th>Collaborateur</th>
-                  <th>Heures planifiées</th>
+                  <th>Heures dues à ce jour</th>
                   <th>Heures travaillées</th>
                   <th>Solde</th>
                   <th>Taux activité</th>
@@ -222,6 +235,24 @@ export default function DashboardRH() {
               </thead>
               <tbody>
                 {allStats.map(r => {
+                  if (r.inactive) {
+                    return (
+                      <tr key={r.user.id} className="drh-row-inactive">
+                        <td>
+                          <div className="drh-collab">
+                            <div className="drh-avatar">{r.user.name[0]}</div>
+                            <div>
+                              <div className="drh-collab-name">{r.user.name}</div>
+                              <div className="drh-collab-role">Ancien collaborateur</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td><span className="sh-dash">—</span></td>
+                        <td><span className="badge badge-blue">{minutesToHHMM(r.workedMin)}</span></td>
+                        <td colSpan={5}><span className="drh-no-pointage">Compte désactivé — historique des heures effectuées uniquement</span></td>
+                      </tr>
+                    )
+                  }
                   const noPointage   = r.workedMin === 0
                   const balanceAlert = r.balance < -300 && !noPointage
                   const tauxAlert    = r.tauxActivite !== null && r.tauxActivite < 80 && !noPointage
@@ -242,7 +273,10 @@ export default function DashboardRH() {
                         </div>
                       </td>
 
-                      <td>{minutesToHHMM(r.plannedMin)}</td>
+                      <td>
+                        {minutesToHHMM(r.plannedMin)}
+                        <div className="drh-collab-role">sur {minutesToHHMM(r.plannedMonthMin)} ce mois</div>
+                      </td>
 
                       <td>
                         <span className="badge badge-blue">{minutesToHHMM(r.workedMin)}</span>

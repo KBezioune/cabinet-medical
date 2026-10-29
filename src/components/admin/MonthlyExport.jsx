@@ -202,13 +202,13 @@ export default function MonthlyExport() {
         .subtitle { color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; }
         .user-section { margin-bottom: 2.5rem; break-inside: avoid; }
         .user-header { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem; background: #f8fafc; border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0; flex-wrap: wrap; }
-        .user-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg,#3D5A44,#C4A882); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
+        .user-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg,#0F6A80,#C8A15A); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
         .user-name { font-weight: 700; font-size: 1rem; }
         .user-role { font-size: 0.75rem; color: #94a3b8; }
         .user-totals { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .chip { background: #e2e8f0; color: #475569; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
         .chip-green { background: #dcfce7; color: #16a34a; }
-        .chip-blue  { background: #F1E9DC; color: #2D4433; }
+        .chip-blue  { background: #E6F0F3; color: #0B5468; }
         .chip-red   { background: #fee2e2; color: #dc2626; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { padding: 0.5rem 0.75rem; text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }

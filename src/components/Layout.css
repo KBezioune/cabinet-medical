@@ -28,7 +28,7 @@
 }
 
 .header {
-  background: linear-gradient(135deg, #0C110D 0%, #1B281E 55%, #111812 100%);
+  background: linear-gradient(135deg, #06161D 0%, #0B3A4A 55%, #0A2A36 100%);
   position: sticky;
   top: 0;
   z-index: 30;

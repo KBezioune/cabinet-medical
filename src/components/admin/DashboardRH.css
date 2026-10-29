@@ -42,12 +42,9 @@
 /* ── KPI grid ─────────────────────────────────────────────── */
 .drh-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* s'adapte à la largeur réelle du contenu (sidebar comprise) */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
   gap: 0.75rem;
-}
-
-@media (min-width: 860px) {
-  .drh-kpi-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 .drh-kpi {
@@ -237,3 +234,4 @@ tr.drh-row-alert:hover td { background: #fee2e2 !important; }
   .drh-kpi-sub     { display: none; }
   .drh-taux-bar    { min-width: 2.5rem; }
 }
+tr.drh-row-inactive td { background: var(--gray-50) !important; color: var(--gray-500); }

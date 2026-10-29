@@ -38,7 +38,7 @@ const DEFAULT_DEBUT = MATIN.debut
 const DEFAULT_FIN   = APREM.fin
 
 const SHIFT_PALETTE = [
-  { bg: '#F1E9DC', text: '#1e40af', border: '#93c5fd' },
+  { bg: '#E6F0F3', text: '#1e40af', border: '#93c5fd' },
   { bg: '#dcfce7', text: '#166534', border: '#86efac' },
   { bg: '#ede9fe', text: '#5b21b6', border: '#c4b5fd' },
   { bg: '#fef3c7', text: '#92400e', border: '#fcd34d' },
