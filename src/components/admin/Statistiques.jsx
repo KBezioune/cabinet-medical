@@ -49,8 +49,8 @@ export default function Statistiques() {
 
         const perUser = users.map(u => {
           const pts = pointages.filter(p => p.user_id === u.id)
-          const dueDays = elapsed.filter(d => worksOn(u.id, d) && !isOnApprovedLeave(u.id, format(d, 'yyyy-MM-dd'), conges))
-          const plannedMin = monthPlannedMinutes(u.id, year, month, conges) // mois complet
+          const dueDays = elapsed.filter(d => u.actif !== false && worksOn(u.id, d) && !isOnApprovedLeave(u.id, format(d, 'yyyy-MM-dd'), conges))
+          const plannedMin = u.actif === false ? 0 : monthPlannedMinutes(u.id, year, month, conges) // mois complet, rien pour un compte désactivé
           const workedMin  = pts.reduce((acc, p) => acc + (p.duree_minutes || 0), 0)
           const presentDays = new Set(pts.filter(p => p.heure_arrivee).map(p => p.date)).size
           return { u, plannedMin, workedMin, presentDays, dueDays: dueDays.length }

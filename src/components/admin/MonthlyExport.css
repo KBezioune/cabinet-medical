@@ -72,7 +72,8 @@
 }
 
 @media (min-width: 480px) {
-  .user-summary-stats { grid-template-columns: repeat(5, 1fr); }
+  /* colonnes qui se replient selon la largeur de la carte (évite les valeurs coupées) */
+  .user-summary-stats { grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); }
 }
 
 .summary-stat { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; }

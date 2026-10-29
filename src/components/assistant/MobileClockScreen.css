@@ -12,7 +12,7 @@
 /* ── Section haut : dégradé + heure ─────────────────────── */
 .mob-header {
   width: 100%;
-  background: linear-gradient(160deg, #0f172a 0%, #0B3A4A 55%, #083F4F 100%);
+  background: linear-gradient(160deg, #0f172a 0%, #264F40 55%, #234839 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -89,7 +89,7 @@
 .mob-status-absent  { background: #fee2e2; color: #991b1b; }
 .mob-status-present { background: #dcfce7; color: #166534; }
 .mob-status-pause   { background: #fff7ed; color: #c2410c; }
-.mob-status-done    { background: #E6F0F3; color: #0F6A80; }
+.mob-status-done    { background: #E3F0EA; color: #3A7560; }
 
 .mob-status-dot {
   width: 8px; height: 8px;
@@ -98,7 +98,7 @@
   flex-shrink: 0;
 }
 .mob-dot-green { background: #4ade80; animation: pulse-dot 2s ease-in-out infinite; }
-.mob-dot-blue  { background: #C8A15A; }
+.mob-dot-blue  { background: #7DBB9F; }
 
 @keyframes pulse-dot {
   0%, 100% { transform: scale(1); opacity: 1; }
@@ -156,7 +156,7 @@
 }
 
 .mob-action-btn:active  { transform: scale(0.975); }
-.mob-action-btn:focus-visible { outline: 3px solid #C8A15A; outline-offset: 3px; }
+.mob-action-btn:focus-visible { outline: 3px solid #7DBB9F; outline-offset: 3px; }
 .mob-action-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
 .mob-btn-arrive {
@@ -250,7 +250,7 @@
   max-width: 340px;
 }
 .mob-card-in  { background: #dcfce7; border: 2px solid #86efac; }
-.mob-card-out { background: #E6F0F3; border: 2px solid #93c5fd; }
+.mob-card-out { background: #E3F0EA; border: 2px solid #93c5fd; }
 
 .mob-confirm-emoji  { font-size: 3rem; }
 .mob-confirm-title  { font-size: 1.1875rem; font-weight: 800; color: #1e293b; }

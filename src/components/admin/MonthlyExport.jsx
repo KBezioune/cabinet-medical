@@ -55,11 +55,14 @@ export default function MonthlyExport() {
   }, [year, month])
 
   // Minutes dues pour un utilisateur sur un jour précis (horaires officiels, congé approuvé = 0)
+  // Compte désactivé (ex. Talya) : rien n'est dû, seules les heures effectuées comptent
+  const isInactive = (userId) => collaborateurs.find(u => u.id === userId)?.actif === false
+
   const getDayPlanned = (userId, dateStr) =>
-    isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, parseISO(dateStr))
+    (isInactive(userId) || isOnApprovedLeave(userId, dateStr, conges)) ? 0 : plannedMinutesFor(userId, parseISO(dateStr))
 
   // Total planifié sur le mois complet (même règle que Soldes / Dashboard RH)
-  const getMonthPlanned = (userId) => monthPlannedMinutes(userId, year, month, conges)
+  const getMonthPlanned = (userId) => isInactive(userId) ? 0 : monthPlannedMinutes(userId, year, month, conges)
 
   // Statut du congé pour un utilisateur à une date
   const getCongeStatus = (userId, dateStr) => {
@@ -202,13 +205,13 @@ export default function MonthlyExport() {
         .subtitle { color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; }
         .user-section { margin-bottom: 2.5rem; break-inside: avoid; }
         .user-header { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem; background: #f8fafc; border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0; flex-wrap: wrap; }
-        .user-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg,#0F6A80,#C8A15A); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
+        .user-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg,#3A7560,#7DBB9F); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
         .user-name { font-weight: 700; font-size: 1rem; }
         .user-role { font-size: 0.75rem; color: #94a3b8; }
         .user-totals { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .chip { background: #e2e8f0; color: #475569; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
         .chip-green { background: #dcfce7; color: #16a34a; }
-        .chip-blue  { background: #E6F0F3; color: #0B5468; }
+        .chip-blue  { background: #E3F0EA; color: #2E5E4D; }
         .chip-red   { background: #fee2e2; color: #dc2626; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
         th { padding: 0.5rem 0.75rem; text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }

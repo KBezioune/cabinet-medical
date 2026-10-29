@@ -118,7 +118,7 @@ export default function MonSolde() {
               <CircularGauge
                 value={vacances.restant}
                 max={vacances.quota}
-                color="#C8A15A"
+                color="#7DBB9F"
                 label={`Jours de vacances restants / ${vacances.quota} quota`}
                 unit="j"
                 size={148}

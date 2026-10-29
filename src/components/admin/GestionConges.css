@@ -65,8 +65,8 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.filter-btn:hover  { border-color: #0F6A80; color: #0F6A80; }
-.filter-btn.active { background: #0F6A80; color: #fff; border-color: #0F6A80; }
+.filter-btn:hover  { border-color: #3A7560; color: #3A7560; }
+.filter-btn.active { background: #3A7560; color: #fff; border-color: #3A7560; }
 
 /* Cards */
 .gc-list { display: flex; flex-direction: column; gap: 14px; }
@@ -104,7 +104,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0F6A80, #3E8CA0);
+  background: linear-gradient(135deg, #3A7560, #5FA88C);
   color: #fff;
   font-weight: 800;
   font-size: 1rem;
@@ -152,7 +152,7 @@
   margin-top: 14px;
   width: 100%;
   padding: 10px;
-  background: linear-gradient(135deg, #0B3A4A, #0F6A80);
+  background: linear-gradient(135deg, #264F40, #3A7560);
   color: white;
   border: none;
   border-radius: 10px;
@@ -160,9 +160,9 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 4px 12px rgba(15, 106, 128, 0.28);
+  box-shadow: 0 4px 12px rgba(58, 117, 96, 0.28);
 }
-.btn-traiter:hover { background: linear-gradient(135deg, #0B2A36, #0B5468); box-shadow: 0 6px 18px rgba(15, 106, 128, 0.38); }
+.btn-traiter:hover { background: linear-gradient(135deg, #1E3329, #2E5E4D); box-shadow: 0 6px 18px rgba(58, 117, 96, 0.38); }
 
 /* Empty */
 .empty-state {
@@ -265,7 +265,7 @@
 }
 .form-textarea:focus {
   outline: none;
-  border-color: #0F6A80;
+  border-color: #3A7560;
   background: #fff;
 }
 

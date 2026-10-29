@@ -32,7 +32,7 @@
 .mpt-day.mpt-today {
   border-color: var(--brand-300);
   background: var(--brand-50);
-  box-shadow: 0 0 0 2px rgb(15 106 128 / 0.1);
+  box-shadow: 0 0 0 2px rgb(58 117 96 / 0.1);
 }
 
 .mpt-day.mpt-weekend {

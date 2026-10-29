@@ -120,7 +120,7 @@
 .pp-mc-planned  { background: var(--brand-50); }
 .pp-mc-fallback { background: var(--gray-50); }
 .pp-mc-task     { }
-.pp-mc-task-blue   { background: #E6F0F3; }
+.pp-mc-task-blue   { background: #E3F0EA; }
 .pp-mc-task-teal   { background: #ccfbf1; }
 .pp-mc-task-green  { background: #dcfce7; }
 .pp-mc-task-orange { background: #ffedd5; }
@@ -337,7 +337,7 @@
 
 .pp-row:hover .pp-td { background: var(--gray-50); }
 
-.pp-td-today { background: #F0F7F9 !important; }
+.pp-td-today { background: #EAF4EF !important; }
 .pp-td-today.pp-row:hover .pp-td-today { background: var(--brand-100) !important; }
 
 .pp-td-we { background: var(--gray-50); }
@@ -365,7 +365,7 @@
 
 /* Shift override (planning_shifts) */
 .pp-hours-shift {
-  background: var(--brand-100, #E6F0F3);
+  background: var(--brand-100, #E3F0EA);
   border-left: 2.5px solid var(--brand-500);
 }
 
@@ -493,7 +493,7 @@
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, #0B3A4A 0%, #0B5468 100%);
+  background: linear-gradient(135deg, #264F40 0%, #2E5E4D 100%);
   color: #fff;
   padding: 0.625rem 1rem;
   border-radius: var(--radius);
@@ -583,12 +583,12 @@
   white-space: nowrap;
 }
 .pp-edit-active {
-  background: linear-gradient(135deg, #0B3A4A, #0F6A80);
+  background: linear-gradient(135deg, #264F40, #3A7560);
   color: white;
   border: none;
-  box-shadow: 0 3px 10px rgba(15, 106, 128, 0.3);
+  box-shadow: 0 3px 10px rgba(58, 117, 96, 0.3);
 }
-.pp-edit-active:hover { background: linear-gradient(135deg, #0B2A36, #0B5468); }
+.pp-edit-active:hover { background: linear-gradient(135deg, #1E3329, #2E5E4D); }
 
 /* Cellule éditable */
 .pp-td-editable { cursor: default; }

@@ -52,7 +52,8 @@ export default function SoldeHeures() {
     load()
   }, [year, month])
 
-  const computeSolde = (userId) => {
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
+  const computeSolde = (userId, inactive = false) => {
     const userPts  = pointages.filter(p => p.user_id === userId)
 
     const days = eachDayOfInterval({
@@ -67,10 +68,12 @@ export default function SoldeHeures() {
     days.forEach(d => {
       const dateStr    = format(d, 'yyyy-MM-dd')
       const pt         = userPts.find(p => p.date === dateStr)
-      const dayPlan    = isOnApprovedLeave(userId, dateStr, conges) ? 0 : plannedMinutesFor(userId, d)
+      // Solde = heures dues jusqu'à aujourd'hui ; compte désactivé = rien n'est dû
+      const dayPlan    = (inactive || dateStr > todayStr || isOnApprovedLeave(userId, dateStr, conges))
+        ? 0 : plannedMinutesFor(userId, d)
       const dayWorked  = pt?.duree_minutes || 0
 
-      plannedMin += dayPlan // mois complet
+      plannedMin += dayPlan
       workedMin  += dayWorked
 
       if (dayPlan > 0 || dayWorked > 0) {
@@ -104,7 +107,7 @@ export default function SoldeHeures() {
       ) : (
         <div className="sh-list">
           {assistants.map(a => {
-            const { plannedMin, workedMin, balance, details } = computeSolde(a.id)
+            const { plannedMin, workedMin, balance, details } = computeSolde(a.id, a.actif === false)
             const vac      = computeVacances(a.id, conges, cy)
             const isOpen   = expanded === a.id
             const soldeClass = balance > 0 ? 'pos' : (balance < 0 && workedMin > 0) ? 'neg' : 'zero'
@@ -136,13 +139,13 @@ export default function SoldeHeures() {
                       </div>
                     )}
                     {/* Solde vacances */}
-                    <div className={`sh-vac ${vac.restant <= 3 ? 'sh-vac-low' : ''}`}>
+                    {a.actif !== false && <div className={`sh-vac ${vac.restant <= 3 ? 'sh-vac-low' : ''}`}>
                       <span className="sh-vac-icon">🌴</span>
                       <div className="sh-vac-body">
                         <span className="sh-vac-main">{vac.restant}j restants</span>
                         <span className="sh-vac-sub">{vac.consomme}/{vac.quota}j</span>
                       </div>
-                    </div>
+                    </div>}
                   </div>
                   <button className={`sh-toggle ${isOpen ? 'open' : ''}`} title="Détail">▾</button>
                 </div>
