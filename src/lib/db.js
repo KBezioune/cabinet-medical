@@ -41,8 +41,6 @@ export const testConnection = async () => {
 // compatible avec l'ancien modèle "une ligne = un jour" pour ne pas impacter les
 // écrans de paie (SoldeHeures, MonSolde, MonthlyExport, DashboardRH, Statistiques…).
 
-export const POINTAGE_EVENT_TYPES = ['arrivee', 'pause_debut', 'pause_fin', 'depart']
-
 export const insertPointageEvent = async (userId, date, type) => {
   const heure = new Date().toISOString()
   if (isTestMode()) return mockRec({ user_id: userId, date, type, heure })
@@ -75,12 +73,6 @@ const daySummary = (key, day) => ({
   id: key, user_id: day.user_id, date: day.date, note: null,
   ...summarizePointageEvents(day.events),
 })
-
-export const getPointageByUserAndDate = async (userId, date) => {
-  const events = await getPointageEventsByUserAndDate(userId, date)
-  if (events.length === 0) return null
-  return daySummary(`${userId}_${date}`, { user_id: userId, date, events })
-}
 
 export const getPointagesByUserAndMonth = async (userId, from, to) => {
   const { data, error } = await supabase.from('pointage_events').select('*')

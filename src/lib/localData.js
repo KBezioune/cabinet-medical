@@ -147,10 +147,6 @@ export const getUsersForAuth = () => {
   return [...getUsers(), { ...TEST_USER, pin: pins[TEST_USER_ID] ?? TEST_USER.pin }]
 }
 
-export const getActiveAssistants = () => getActiveUsers().filter(u => u.role === 'assistant')
-export const getManagers   = () => getUsers().filter(u => u.role === 'manager')
 export const getUserById   = (id) => getUsers().find(u => u.id === id)
 
 export const isAdmin   = (user) => user?.role === 'admin'
-export const isManager = (user) => user?.role === 'manager' || user?.role === 'admin'
-export const canManage = (user) => user?.role === 'manager' || user?.role === 'admin'

@@ -3,9 +3,10 @@ import { useAuth } from '../../contexts/AuthContext'
 import { getPointagesByUserAndMonth, getCongesByUser } from '../../lib/db'
 import { format, eachDayOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import { minutesToHHMM, currentMonthYear, MONTH_OPTIONS } from '../../utils/dateUtils'
 import { plannedMinutesFor, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
+import ReglesHeures from '../shared/ReglesHeures'
 import CircularGauge from '../shared/CircularGauge'
 import '../shared/CircularGauge.css'
 import './MonSolde.css'
@@ -19,11 +20,6 @@ const formatSolde = (min) => {
   return `${sign}${h}h${String(m).padStart(2, '0')}`
 }
 
-
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
-  value: i + 1,
-  label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
-}))
 
 export default function MonSolde() {
   const { user } = useAuth()
@@ -57,6 +53,7 @@ export default function MonSolde() {
     end:   new Date(year, month, 0),
   })
 
+  const todayStr = format(new Date(), 'yyyy-MM-dd')
   let totalPlanned = 0
   let totalWorked  = 0
   const details    = []
@@ -64,10 +61,11 @@ export default function MonSolde() {
   days.forEach(d => {
     const dateStr = format(d, 'yyyy-MM-dd')
     const pt      = pointages.find(p => p.date === dateStr)
-    const dayPlan = isOnApprovedLeave(user.id, dateStr, conges) ? 0 : plannedMinutesFor(user.id, d)
+    // Heures dues jusqu'à aujourd'hui seulement : les jours à venir ne comptent pas encore dans le solde
+    const dayPlan = (dateStr > todayStr || isOnApprovedLeave(user.id, dateStr, conges)) ? 0 : plannedMinutesFor(user.id, d)
     const dayWork = pt?.duree_minutes || 0
 
-    totalPlanned += dayPlan // mois complet
+    totalPlanned += dayPlan
     totalWorked  += dayWork
 
     if (dayPlan > 0 || dayWork > 0) {
@@ -84,6 +82,7 @@ export default function MonSolde() {
   return (
     <div className="ms-wrap">
       <Breadcrumb items={['Mon espace', 'Mon Solde']} />
+      <ReglesHeures />
       {/* Sélecteur de période */}
       <div className="card ms-head">
         <div className="ms-period">

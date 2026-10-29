@@ -1,6 +1,11 @@
-import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval,
-  startOfMonth, endOfMonth, differenceInMinutes } from 'date-fns'
+import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
+
+// Liste des 12 mois pour les sélecteurs (Dashboard RH, Soldes, Export, Mon solde)
+export const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
+  value: i + 1,
+  label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
+}))
 
 export const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 
@@ -15,9 +20,6 @@ export const formatDateTime = (date) => {
 export const formatDateLong = (date) =>
   format(typeof date === 'string' ? parseISO(date) : date, 'EEEE dd MMMM yyyy', { locale: fr })
 
-export const formatMonthYear = (date) =>
-  format(typeof date === 'string' ? parseISO(date) : date, 'MMMM yyyy', { locale: fr })
-
 export const todayISO = () => format(new Date(), 'yyyy-MM-dd')
 
 export const minutesToHHMM = (minutes) => {
@@ -30,12 +32,6 @@ export const minutesToHHMM = (minutes) => {
 export const getWeekDays = (date = new Date()) => {
   const start = startOfWeek(date, { weekStartsOn: 1 })
   const end = endOfWeek(date, { weekStartsOn: 1 })
-  return eachDayOfInterval({ start, end })
-}
-
-export const getMonthDays = (year, month) => {
-  const start = startOfMonth(new Date(year, month - 1))
-  const end = endOfMonth(new Date(year, month - 1))
   return eachDayOfInterval({ start, end })
 }
 
@@ -91,9 +87,4 @@ export const pointageStatus = (summary) => {
 export const currentMonthYear = () => {
   const now = new Date()
   return { year: now.getFullYear(), month: now.getMonth() + 1 }
-}
-
-export const isoToLocalTime = (isoString) => {
-  if (!isoString) return ''
-  return format(parseISO(isoString), 'HH:mm')
 }

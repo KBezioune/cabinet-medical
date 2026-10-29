@@ -3,15 +3,11 @@ import { getUsers } from '../../lib/localData'
 import { getPointagesByDateRange, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { minutesToHHMM } from '../../utils/dateUtils'
+import { minutesToHHMM, MONTH_OPTIONS } from '../../utils/dateUtils'
 import { plannedMinutesFor, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
+import ReglesHeures from '../shared/ReglesHeures'
 import './DashboardRH.css'
-
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
-  value: i + 1,
-  label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
-}))
 
 const formatSolde = (min) => {
   if (min === 0) return '±0h'
@@ -174,6 +170,8 @@ export default function DashboardRH() {
           </button>
         </div>
       </div>
+
+      <ReglesHeures />
 
       {/* 4 cartes KPI */}
       <div className="drh-kpi-grid">

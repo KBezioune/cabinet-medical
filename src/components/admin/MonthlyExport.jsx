@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear, MONTH_OPTIONS } from '../../utils/dateUtils'
 import { getUsers } from '../../lib/localData'
 import { getPointagesByUserAndMonth, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval, parseISO } from 'date-fns'
@@ -16,11 +16,6 @@ const formatEcart = (min) => {
   const m    = abs % 60
   return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
 }
-
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
-  value: i + 1,
-  label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
-}))
 
 export default function MonthlyExport() {
   const { year: cy, month: cm } = currentMonthYear()

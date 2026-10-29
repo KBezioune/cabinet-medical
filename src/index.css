@@ -359,3 +359,15 @@ input:focus, textarea:focus, select:focus {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── Encart d'explication des calculs d'heures ── */
+.regles-heures {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+}
+.regles-heures summary { cursor: pointer; font-weight: 600; color: var(--brand-600); }
+.regles-heures ul { margin: 0.625rem 0 0 1.125rem; display: grid; gap: 0.375rem; line-height: 1.45; }

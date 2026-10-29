@@ -3,9 +3,10 @@ import { getUsers } from '../../lib/localData'
 import { getPointagesByDateRange, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { minutesToHHMM, currentMonthYear } from '../../utils/dateUtils'
+import { minutesToHHMM, currentMonthYear, MONTH_OPTIONS } from '../../utils/dateUtils'
 import { plannedMinutesFor, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
+import ReglesHeures from '../shared/ReglesHeures'
 import './SoldeHeures.css'
 
 const formatSolde = (min) => {
@@ -16,11 +17,6 @@ const formatSolde = (min) => {
   const m    = abs % 60
   return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
 }
-
-const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
-  value: i + 1,
-  label: format(new Date(2024, i, 1), 'MMMM', { locale: fr }),
-}))
 
 export default function SoldeHeures() {
   const { year: cy, month: cm } = currentMonthYear()
@@ -101,6 +97,8 @@ export default function SoldeHeures() {
           </select>
         </div>
       </div>
+
+      <ReglesHeures />
 
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
