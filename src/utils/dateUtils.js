@@ -88,3 +88,9 @@ export const currentMonthYear = () => {
   const now = new Date()
   return { year: now.getFullYear(), month: now.getMonth() + 1 }
 }
+
+// Pause minimale prévue par la loi sur le travail (art. 15 LTr) selon la durée de présence :
+// plus de 5h30 → 15 min, plus de 7h → 30 min, plus de 9h → 60 min.
+// Indicatif : à confirmer avec la convention applicable au cabinet.
+export const pauseLegaleMin = (presenceMin) =>
+  presenceMin > 540 ? 60 : presenceMin > 420 ? 30 : presenceMin > 330 ? 15 : 0

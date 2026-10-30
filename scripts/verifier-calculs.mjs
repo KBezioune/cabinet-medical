@@ -1,7 +1,7 @@
 // Vérifie les règles de calcul des heures (planning 8h24, pauses libres, comptes désactivés).
 // Lancer : node scripts/verifier-calculs.mjs
 import { summarizePointageEvents, minutesToHHMM } from '../src/utils/dateUtils.js'
-import { DAY_MIN, plannedMinutesFor, monthPlannedMinutes, IMENE_ID } from '../src/utils/horaires.js'
+import { DAY_MIN, plannedMinutesFor, monthPlannedMinutes, monthDueMinutes, joursFeries, ferieName, IMENE_ID } from '../src/utils/horaires.js'
 
 let ko = 0
 const check = (nom, obtenu, attendu) => {
@@ -34,5 +34,18 @@ check('Octobre 2026 : 22 jours × 8h24 = 184h48', minutesToHHMM(monthPlannedMinu
 check('Octobre 2026 Imene : 8 jours = 67h12', minutesToHHMM(monthPlannedMinutes(IMENE_ID, 2026, 10)), '67h12')
 const conge = [{ user_id: 'x', statut: 'approuve', date_debut: '2026-10-26', date_fin: '2026-10-27' }]
 check('2 jours de congé approuvé retirés du mois', minutesToHHMM(monthPlannedMinutes('x', 2026, 10, conge)), '168h00')
+
+// Jours fériés vaudois 2026 (Pâques = 5 avril 2026)
+const f = joursFeries(2026)
+check('Vendredi Saint 2026 = 3 avril', f['2026-04-03'], 'Vendredi Saint')
+check('Lundi de Pâques 2026 = 6 avril', f['2026-04-06'], 'Lundi de Pâques')
+check('Ascension 2026 = 14 mai', f['2026-05-14'], 'Ascension')
+check('Lundi de Pentecôte 2026 = 25 mai', f['2026-05-25'], 'Lundi de Pentecôte')
+check('Lundi du Jeûne 2026 = 21 septembre', f['2026-09-21'], 'Lundi du Jeûne fédéral')
+check('9 jours fériés par an', Object.keys(f).length, 9)
+check('Jour férié = 0h due (Noël 2026, vendredi)', plannedMinutesFor('x', new Date(2026, 11, 25)), 0)
+check('Décembre 2026 : 23 jours ouvrés − Noël = 22 × 8h24', minutesToHHMM(monthPlannedMinutes('x', 2026, 12)), '184h48')
+check('Octobre jusqu au 9 : 7 jours dus', minutesToHHMM(monthDueMinutes('x', 2026, 10, [], '2026-10-09')), '58h48')
+check('ferieName hors férié', ferieName('2026-10-26'), null)
 console.log(ko ? `\n${ko} échec(s)` : '\nTous les calculs sont corrects.')
 process.exit(ko ? 1 : 0)

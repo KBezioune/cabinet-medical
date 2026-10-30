@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear, MONTH_OPTIONS } from '../../utils/dateUtils'
+import { formatDate, formatDateTime, minutesToHHMM, currentMonthYear, pauseLegaleMin, MONTH_OPTIONS } from '../../utils/dateUtils'
 import { getUsers } from '../../lib/localData'
 import { getPointagesByUserAndMonth, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval, parseISO } from 'date-fns'
-import { plannedMinutesFor, isOnApprovedLeave, monthPlannedMinutes } from '../../utils/horaires'
+import { plannedMinutesFor, isOnApprovedLeave, monthDueMinutes, ferieName, workDaysFor, jourSemaine, DAY_MIN, HORAIRE_MATIN, HORAIRE_APREM } from '../../utils/horaires'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
 import './MonthlyExport.css'
@@ -26,6 +26,8 @@ export default function MonthlyExport() {
   const [conges,       setConges]       = useState([])
   const [loading,      setLoading]      = useState(true)
 
+  const todayStr       = format(new Date(), 'yyyy-MM-dd')
+  const isCurrentMonth = year === cy && month === cm
   const collaborateurs = getUsers().filter(u => u.role !== 'admin')
 
   const from = `${year}-${String(month).padStart(2, '0')}-01`
@@ -57,7 +59,8 @@ export default function MonthlyExport() {
     (isInactive(userId) || isOnApprovedLeave(userId, dateStr, conges)) ? 0 : plannedMinutesFor(userId, parseISO(dateStr))
 
   // Total planifié sur le mois complet (même règle que Soldes / Dashboard RH)
-  const getMonthPlanned = (userId) => isInactive(userId) ? 0 : monthPlannedMinutes(userId, year, month, conges)
+  // Mois en cours : heures dues jusqu'à aujourd'hui ; mois passé : mois complet
+  const getMonthPlanned = (userId) => isInactive(userId) ? 0 : monthDueMinutes(userId, year, month, conges, isCurrentMonth ? todayStr : null)
 
   // Statut du congé pour un utilisateur à une date
   const getCongeStatus = (userId, dateStr) => {
@@ -135,94 +138,148 @@ export default function MonthlyExport() {
   }
 
   // ── Export PDF (impression) ───────────────────────────────────
+  // Document imprimable : synthèse de l'équipe, puis une page par collaborateur avec
+  // le détail de chaque jour (arrivée, pauses, départ, heures dues, remarque) et les signatures.
   const exportPDF = () => {
     const targets    = selectedUser === 'all' ? collaborateurs : collaborateurs.filter(u => u.id === selectedUser)
     const monthLabel = format(new Date(year, month - 1), 'MMMM yyyy', { locale: fr })
+    const esc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    const hhmm = (iso) => iso ? format(new Date(iso), 'HH:mm') : '—'
+    const colorEcart = (e) => e > 0 ? '#15803d' : e < 0 ? '#b91c1c' : '#475569'
+    const days = eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) })
 
-    const userSections = targets.map(u => {
+    const details = targets.map(u => {
       const { records, jours, totalMin, plannedMin } = getSummary(u.id)
-      const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date))
-      const ecartTotal = totalMin - plannedMin
-      const rows = sorted.map(r => {
-        const dayPlan = getDayPlanned(u.id, r.date)
-        const ecart   = (r.duree_minutes || 0) - dayPlan
-        const conge   = getCongeStatus(u.id, r.date)
-        return `<tr>
-          <td>${formatDate(r.date)}</td>
-          <td style="color:#16a34a">${r.heure_arrivee ? format(new Date(r.heure_arrivee), 'HH:mm') : '—'}</td>
-          <td style="color:#dc2626">${r.heure_depart  ? format(new Date(r.heure_depart),  'HH:mm') : '—'}</td>
-          <td><strong>${minutesToHHMM(r.duree_minutes)}</strong></td>
-          <td>${dayPlan > 0 ? minutesToHHMM(dayPlan) : '—'}</td>
-          <td style="color:${ecart >= 0 ? '#16a34a' : '#dc2626'}">${dayPlan > 0 ? formatEcart(ecart) : '—'}</td>
-          <td style="color:#64748b;font-size:11px">${conge || ''}</td>
+      const byDate = {}
+      records.forEach(r => { byDate[r.date] = r })
+      const inactive = isInactive(u.id)
+      let nbAnomalies = 0
+
+      const rows = days.map(d => {
+        const ds = format(d, 'yyyy-MM-dd')
+        if (isCurrentMonth && ds > todayStr) return ''            // jours à venir : pas encore dus
+        const r       = byDate[ds]
+        const ferie   = ferieName(ds)
+        const conge   = getCongeStatus(u.id, ds)
+        const due     = getDayPlanned(u.id, ds)
+        const weekend = !workDaysFor(u.id).includes(jourSemaine(d)) && !ferie
+        if (!r && due === 0 && !ferie && !conge) return ''        // jour non travaillé, rien à signaler
+        if (!r && weekend) return ''
+
+        const notes = []
+        if (ferie)  notes.push(`Férié : ${ferie}`)
+        if (conge)  notes.push(conge)
+        let warn = false
+        if (r?.heure_arrivee && !r.heure_depart && ds < todayStr) { notes.push('Départ non pointé'); warn = true }
+        if (r?.heure_arrivee && r.heure_depart) {
+          const presence = Math.round((new Date(r.heure_depart) - new Date(r.heure_arrivee)) / 60000)
+          const mini = pauseLegaleMin(presence)
+          if ((r.pause_minutes || 0) < mini) { notes.push(`Pause ${r.pause_minutes || 0} min (minimum ${mini} min)`); warn = true }
+        }
+        if (!r && due > 0 && ds < todayStr && !conge) { notes.push('Absent / non pointé'); warn = true }
+        if (warn) nbAnomalies++
+
+        const worked = r?.duree_minutes ?? 0
+        const ecart  = worked - due
+        return `<tr${warn ? ' class="warn"' : ferie || conge ? ' class="off"' : ''}>
+          <td>${format(d, 'EEE dd.MM', { locale: fr })}</td>
+          <td>${hhmm(r?.heure_arrivee)}</td>
+          <td>${r ? (r.pause_minutes ? r.pause_minutes + ' min' : '0') : '—'}</td>
+          <td>${hhmm(r?.heure_depart)}</td>
+          <td><strong>${r?.duree_minutes != null ? minutesToHHMM(worked) : '—'}</strong></td>
+          <td>${due > 0 ? minutesToHHMM(due) : '—'}</td>
+          <td style="color:${colorEcart(ecart)}">${(due > 0 || worked > 0) ? formatEcart(ecart) : '—'}</td>
+          <td class="note">${esc(notes.join(' · '))}</td>
         </tr>`
       }).join('')
 
-      return `<div class="user-section">
-        <div class="user-header">
-          <div class="user-avatar">${u.name[0]}</div>
-          <div>
-            <div class="user-name">${u.name}</div>
-            <div class="user-role">${u.role === 'manager' ? 'Manager' : (u.poste || 'Assistante médicale')}</div>
+      const ecartTotal = totalMin - plannedMin
+      return { u, jours, totalMin, plannedMin, ecartTotal, nbAnomalies, inactive, html: `
+        <section class="page">
+          <div class="who">
+            <div><div class="name">${esc(u.name)}</div>
+              <div class="role">${esc(u.role === 'manager' ? 'Manager' : (u.poste || 'Assistante médicale'))}${inactive ? ' · ancien collaborateur' : ''}</div></div>
+            <div class="period">${monthLabel}</div>
           </div>
-          <div class="user-totals">
-            <span class="chip">${jours} jours</span>
-            <span class="chip chip-blue">${minutesToHHMM(totalMin)} travaillées</span>
-            <span class="chip">${minutesToHHMM(plannedMin)} planifiées</span>
-            <span class="chip ${ecartTotal >= 0 ? 'chip-green' : 'chip-red'}">${formatEcart(ecartTotal)}</span>
+          <table>
+            <thead><tr><th>Jour</th><th>Arrivée</th><th>Pauses</th><th>Départ</th><th>Travaillé</th><th>Dû</th><th>Écart</th><th>Remarque</th></tr></thead>
+            <tbody>${rows}
+              <tr class="total">
+                <td colspan="4">TOTAL — ${jours} jour${jours > 1 ? 's' : ''} pointé${jours > 1 ? 's' : ''}</td>
+                <td>${minutesToHHMM(totalMin)}</td>
+                <td>${inactive ? '—' : minutesToHHMM(plannedMin)}</td>
+                <td style="color:${colorEcart(ecartTotal)}">${inactive ? '—' : formatEcart(ecartTotal)}</td>
+                <td class="note">${nbAnomalies ? nbAnomalies + ' point(s) à vérifier' : ''}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="sign">
+            <div>Employeur (Dr Bezioune)<span></span></div>
+            <div>${esc(u.name)}<span></span></div>
           </div>
-        </div>
-        ${records.length === 0
-          ? '<p style="color:#94a3b8;padding:1rem 0">Aucun pointage ce mois-ci</p>'
-          : `<table>
-              <thead><tr><th>Date</th><th>Arrivée</th><th>Départ</th><th>Durée</th><th>Planifié</th><th>Écart</th><th>Congé</th></tr></thead>
-              <tbody>
-                ${rows}
-                <tr class="total-row">
-                  <td colspan="3"><strong>TOTAL</strong></td>
-                  <td><strong>${minutesToHHMM(totalMin)}</strong></td>
-                  <td>${minutesToHHMM(plannedMin)}</td>
-                  <td style="color:${ecartTotal >= 0 ? '#16a34a' : '#dc2626'}"><strong>${formatEcart(ecartTotal)}</strong></td>
-                  <td>${jours} jour${jours > 1 ? 's' : ''} travaillé${jours > 1 ? 's' : ''}</td>
-                </tr>
-              </tbody>
-            </table>`
-        }
-      </div>`
-    }).join('')
+        </section>` }
+    })
 
+    const synthese = details.map(d => `<tr>
+        <td><strong>${esc(d.u.name)}</strong><div class="role">${esc(d.u.poste || 'Assistante médicale')}${d.inactive ? ' · ancien collaborateur' : ''}</div></td>
+        <td>${d.jours}</td>
+        <td><strong>${minutesToHHMM(d.totalMin)}</strong></td>
+        <td>${d.inactive ? '—' : minutesToHHMM(d.plannedMin)}</td>
+        <td style="color:${colorEcart(d.ecartTotal)}"><strong>${d.inactive ? '—' : formatEcart(d.ecartTotal)}</strong></td>
+        <td class="note">${d.nbAnomalies ? d.nbAnomalies + ' à vérifier' : 'OK'}</td></tr>`).join('')
+
+    const dueLabel = isCurrentMonth ? `Heures dues au ${format(new Date(), 'dd.MM.yyyy')}` : 'Heures dues (mois complet)'
     const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-      <title>Export comptabilité ${monthLabel}</title>
+      <title>Heures de travail — ${monthLabel}</title>
       <style>
+        @page { size: A4; margin: 14mm; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1e293b; padding: 2rem; font-size: 13px; }
-        h1 { font-size: 1.375rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem; }
-        .subtitle { color: #64748b; font-size: 0.875rem; margin-bottom: 2rem; }
-        .user-section { margin-bottom: 2.5rem; break-inside: avoid; }
-        .user-header { display: flex; align-items: center; gap: 0.875rem; padding: 0.875rem 1rem; background: #f8fafc; border-radius: 0.5rem; margin-bottom: 0.75rem; border: 1px solid #e2e8f0; flex-wrap: wrap; }
-        .user-avatar { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: linear-gradient(135deg,#3A7560,#7DBB9F); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; flex-shrink: 0; }
-        .user-name { font-weight: 700; font-size: 1rem; }
-        .user-role { font-size: 0.75rem; color: #94a3b8; }
-        .user-totals { margin-left: auto; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .chip { background: #e2e8f0; color: #475569; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        .chip-green { background: #dcfce7; color: #16a34a; }
-        .chip-blue  { background: #E3F0EA; color: #2E5E4D; }
-        .chip-red   { background: #fee2e2; color: #dc2626; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { padding: 0.5rem 0.75rem; text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f1f5f9; }
-        .total-row td { background: #f8fafc; border-top: 2px solid #e2e8f0; }
-        .footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 0.75rem; }
-        @media print { body { padding: 1rem; } }
+        body { font-family: Inter, 'Segoe UI', Arial, sans-serif; color: #1E3329; font-size: 12px; line-height: 1.4; }
+        .cover { padding-bottom: 14px; border-bottom: 3px solid #3A7560; margin-bottom: 16px; }
+        .brand { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #3A7560; font-weight: 700; }
+        h1 { font-size: 22px; margin-top: 2px; } .cap { text-transform: capitalize; }
+        .meta { color: #5b6b63; font-size: 11px; margin-top: 4px; }
+        h2 { font-size: 13px; margin: 14px 0 6px; color: #2E5E4D; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; color: #fff; background: #3A7560; padding: 6px 8px; }
+        td { padding: 5px 8px; border-bottom: 1px solid #dfe8e3; vertical-align: top; }
+        tr.off td { background: #f2f8f5; color: #5b6b63; }
+        tr.warn td { background: #fff4e5; }
+        tr.total td { font-weight: 700; background: #E3F0EA; border-top: 2px solid #3A7560; }
+        .note { font-size: 10.5px; color: #5b6b63; }
+        .role { font-size: 10.5px; color: #5b6b63; font-weight: 400; }
+        .legend { margin-top: 12px; padding: 8px 10px; background: #f2f8f5; border-radius: 6px; font-size: 10.5px; color: #40594D; }
+        .page { break-before: page; }
+        .who { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #3A7560; padding-bottom: 8px; margin-bottom: 10px; }
+        .who .name { font-size: 18px; font-weight: 800; }
+        .who .period { font-size: 14px; font-weight: 700; color: #3A7560; text-transform: capitalize; }
+        .sign { display: flex; gap: 24px; margin-top: 36px; font-size: 11px; color: #40594D; }
+        .sign div { flex: 1; } .sign span { display: block; border-bottom: 1px solid #1E3329; height: 34px; }
+        tr { break-inside: avoid; }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       </style></head><body>
-      <h1>Export comptabilité — ${monthLabel}</h1>
-      <p class="subtitle">Centre Médical Dorigny · Généré le ${format(new Date(), 'dd/MM/yyyy à HH:mm')}</p>
-      ${userSections}
-      <div class="footer">Document généré automatiquement par le système de pointage du Centre Médical Dorigny</div>
+      <div class="cover">
+        <div class="brand">Centre Médical Dorigny</div>
+        <h1>Heures de travail — <span class="cap">${monthLabel}</span></h1>
+        <div class="meta">Établi le ${format(new Date(), 'dd.MM.yyyy à HH:mm')} · Journée type ${minutesToHHMM(DAY_MIN)} (${HORAIRE_MATIN}, pause 30 min, ${HORAIRE_APREM})</div>
+      </div>
+      <h2>Synthèse de l'équipe</h2>
+      <table>
+        <thead><tr><th>Collaborateur</th><th>Jours</th><th>Heures travaillées</th><th>${dueLabel}</th><th>Écart</th><th>Contrôle</th></tr></thead>
+        <tbody>${synthese}</tbody>
+      </table>
+      <div class="legend">
+        <strong>Comment lire ce document :</strong> heures travaillées = de l'arrivée au départ moins les pauses pointées ·
+        heures dues = jours ouvrés × ${minutesToHHMM(DAY_MIN)}, jours fériés vaudois et congés approuvés déduits ·
+        écart = travaillé − dû (positif = en avance, négatif = en retard).
+        Les lignes orange sont à vérifier : départ non pointé, jour sans pointage ou pause inférieure au minimum légal indicatif.
+      </div>
+      ${details.map(d => d.html).join('')}
       <script>window.onload = () => { window.print() }<\/script>
     </body></html>`
 
     const w = window.open('', '_blank', 'width=960,height=720')
+    if (!w) { alert("Le navigateur a bloqué la fenêtre d'impression. Autorisez les fenêtres pop-up pour ce site, puis réessayez."); return }
     w.document.write(html)
     w.document.close()
   }
