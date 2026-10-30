@@ -6,6 +6,7 @@ import { format, eachDayOfInterval, parseISO } from 'date-fns'
 import { plannedMinutesFor, isOnApprovedLeave, monthDueMinutes, ferieName, workDaysFor, jourSemaine, DAY_MIN, HORAIRE_MATIN, HORAIRE_APREM } from '../../utils/horaires'
 import { fr } from 'date-fns/locale'
 import Breadcrumb from '../shared/Breadcrumb'
+import { Progression, Situation } from '../shared/SituationHeures'
 import './MonthlyExport.css'
 
 const formatEcart = (min) => {
@@ -79,7 +80,9 @@ export default function MonthlyExport() {
     const jours      = records.filter(r => r.heure_arrivee).length
     const totalMin   = records.reduce((s, r) => s + (r.duree_minutes || 0), 0)
     const plannedMin = getMonthPlanned(userId)
-    return { jours, totalMin, plannedMin, records }
+    const joursAttendus = eachDayOfInterval({ start: new Date(year, month - 1, 1), end: new Date(year, month, 0) })
+      .filter(d => { const ds = format(d, 'yyyy-MM-dd'); return (!isCurrentMonth || ds <= todayStr) && getDayPlanned(userId, ds) > 0 }).length
+    return { jours, totalMin, plannedMin, records, joursAttendus }
   }
 
   // ── Export CSV comptabilité ───────────────────────────────────
@@ -314,7 +317,7 @@ export default function MonthlyExport() {
               </svg>
               CSV Comptabilité
             </button>
-            <button className="btn btn-primary" onClick={exportPDF}>
+            <button className="btn btn-primary" onClick={exportPDF} title="Document à imprimer ou à enregistrer en PDF pour la comptabilité">
               <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
@@ -327,45 +330,30 @@ export default function MonthlyExport() {
 
       {loading ? <div className="loading-center"><div className="spinner"/></div> : (
         <>
-          {/* Cartes résumé par collaborateur */}
+          {/* Une carte par personne : heures faites / attendues + situation */}
           <div className="summary-cards">
             {displayedUsers.map(u => {
-              const { jours, totalMin, plannedMin } = getSummary(u.id)
-              const ecart = totalMin - plannedMin
-              const taux  = plannedMin > 0 ? Math.round((totalMin / plannedMin) * 100) : null
+              const { jours, totalMin, plannedMin, joursAttendus } = getSummary(u.id)
+              const inactive = isInactive(u.id)
               return (
                 <div key={u.id} className="card user-summary-card">
                   <div className="user-summary-header">
                     <div className="user-avatar">{u.name[0]}</div>
                     <div>
                       <div className="user-summary-name">{u.name}</div>
-                      <div className="user-summary-role">{u.role === 'manager' ? 'Manager' : u.poste || 'Assistante médicale'}</div>
+                      <div className="user-summary-role">
+                        {inactive ? 'Ancien collaborateur' : u.role === 'manager' ? 'Manager' : u.poste || 'Assistante médicale'}
+                      </div>
                     </div>
                   </div>
-                  <div className="user-summary-stats">
-                    <div className="summary-stat">
-                      <span className="summary-stat-value">{jours}</span>
-                      <span className="summary-stat-label">Jours travaillés</span>
-                    </div>
-                    <div className="summary-stat">
-                      <span className="summary-stat-value blue">{minutesToHHMM(totalMin)}</span>
-                      <span className="summary-stat-label">Heures travaillées</span>
-                    </div>
-                    <div className="summary-stat">
-                      <span className="summary-stat-value">{minutesToHHMM(plannedMin)}</span>
-                      <span className="summary-stat-label">Heures planifiées</span>
-                    </div>
-                    <div className="summary-stat">
-                      <span className={`summary-stat-value ${ecart >= 0 ? 'green' : 'red'}`}>{formatEcart(ecart)}</span>
-                      <span className="summary-stat-label">Écart</span>
-                    </div>
-                    <div className="summary-stat">
-                      <span className={`summary-stat-value ${taux !== null && taux < 80 ? 'red' : ''}`}>
-                        {taux !== null ? `${taux}%` : '—'}
-                      </span>
-                      <span className="summary-stat-label">Taux activité</span>
-                    </div>
-                  </div>
+                  {inactive ? (
+                    <div className="sit-figures"><span><strong>{minutesToHHMM(totalMin)}</strong> faites ce mois-ci</span></div>
+                  ) : (
+                    <>
+                      <Progression workedMin={totalMin} plannedMin={plannedMin} joursPointes={jours} joursAttendus={joursAttendus} />
+                      <Situation workedMin={totalMin} plannedMin={plannedMin} />
+                    </>
+                  )}
                 </div>
               )
             })}
@@ -400,8 +388,8 @@ export default function MonthlyExport() {
                           <th>Date</th>
                           <th>Arrivée</th>
                           <th>Départ</th>
-                          <th>Durée</th>
-                          <th>Planifié</th>
+                          <th>Heures faites</th>
+                          <th>Attendu</th>
                           <th>Écart</th>
                           <th>Congé</th>
                         </tr>
@@ -457,67 +445,6 @@ export default function MonthlyExport() {
             )
           })}
 
-          {/* Résumé mensuel global — visible uniquement en mode "tous" */}
-          {selectedUser === 'all' && (
-            <div className="card me-recap">
-              <h3 className="me-recap-title">Résumé mensuel — {monthLabel}</h3>
-              <div className="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Collaborateur</th>
-                      <th>Rôle</th>
-                      <th>Jours travaillés</th>
-                      <th>Heures planifiées</th>
-                      <th>Heures travaillées</th>
-                      <th>Écart</th>
-                      <th>Taux activité</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {collaborateurs.map(u => {
-                      const { jours, totalMin, plannedMin } = getSummary(u.id)
-                      const ecart     = totalMin - plannedMin
-                      const taux      = plannedMin > 0 ? Math.round((totalMin / plannedMin) * 100) : null
-                      const tauxAlert = taux !== null && taux < 80
-                      const soldeCrit = ecart < -300
-                      return (
-                        <tr key={u.id}>
-                          <td>
-                            <div className="me-collab">
-                              <div className="me-avatar">{u.name[0]}</div>
-                              <span className="me-collab-name">{u.name}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="badge badge-gray">
-                              {u.role === 'manager' ? 'Manager' : u.poste || 'Assistante'}
-                            </span>
-                          </td>
-                          <td>{jours}</td>
-                          <td>{minutesToHHMM(plannedMin)}</td>
-                          <td><span className="badge badge-blue">{minutesToHHMM(totalMin)}</span></td>
-                          <td>
-                            <span className={`me-ecart-cell ${ecart >= 0 ? 'ecart-pos' : 'ecart-neg'}${soldeCrit ? ' me-ecart-crit' : ''}`}>
-                              {formatEcart(ecart)}
-                            </span>
-                          </td>
-                          <td>
-                            <span className={tauxAlert ? 'me-taux-alert' : 'me-taux-ok'}>
-                              {taux !== null ? `${taux}%` : '—'}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <p className="me-recap-note">
-                Généré le {format(new Date(), 'dd/MM/yyyy à HH:mm')} · Centre Médical Dorigny
-              </p>
-            </div>
-          )}
         </>
       )}
     </div>

@@ -371,3 +371,20 @@ input:focus, textarea:focus, select:focus {
 }
 .regles-heures summary { cursor: pointer; font-weight: 600; color: var(--brand-600); }
 .regles-heures ul { margin: 0.625rem 0 0 1.125rem; display: grid; gap: 0.375rem; line-height: 1.45; }
+
+/* ── Situation des heures (Soldes, Dashboard RH, Export) : « faites sur attendues » ── */
+.sit-figures { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; font-size: 0.9375rem; color: var(--gray-800); }
+.sit-figures strong { font-size: 1.25rem; }
+.sit-sur { font-size: 0.8125rem; color: var(--gray-500); }
+.sit-bar { height: 0.625rem; background: var(--gray-100); border-radius: 999px; overflow: hidden; margin: 0.5rem 0 0.375rem; }
+.sit-bar-fill { height: 100%; border-radius: 999px; min-width: 2px; }
+.sit-bar-fill.sit-ok   { background: var(--green-600); }
+.sit-bar-fill.sit-late { background: var(--orange-500); }
+.sit-bar-fill.sit-none { background: var(--gray-300); }
+.sit-days { font-size: 0.75rem; color: var(--gray-500); }
+.sit-status { border-radius: var(--radius); padding: 0.625rem 0.875rem; }
+.sit-status-title { font-weight: 800; font-size: 1rem; }
+.sit-status-detail { font-size: 0.75rem; opacity: 0.85; margin-top: 0.125rem; }
+.sit-status.sit-ok   { background: var(--green-50);  color: var(--green-700); }
+.sit-status.sit-late { background: var(--orange-50); color: #9a3412; }
+.sit-status.sit-none { background: var(--gray-100);  color: var(--gray-600); }

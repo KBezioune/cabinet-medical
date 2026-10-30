@@ -7,6 +7,7 @@ import { minutesToHHMM, MONTH_OPTIONS } from '../../utils/dateUtils'
 import { plannedMinutesFor, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
 import ReglesHeures from '../shared/ReglesHeures'
+import { Progression, Situation } from '../shared/SituationHeures'
 import './DashboardRH.css'
 
 const formatSolde = (min) => {
@@ -66,6 +67,8 @@ export default function DashboardRH() {
     let plannedMonthMin = 0 // heures planifiées sur le mois complet
     let workedMin  = 0
     let absences   = 0
+    let joursAttendus = 0
+    let joursPointes  = 0
 
     days.forEach(d => {
       const dateStr  = format(d, 'yyyy-MM-dd')
@@ -77,6 +80,8 @@ export default function DashboardRH() {
       plannedMonthMin += dayPlan
       if (dateStr <= TODAY) plannedMin += dayPlan
       workedMin  += dayWork
+      if (dayPlan > 0 && dateStr <= TODAY) joursAttendus++
+      if (pt?.heure_arrivee) joursPointes++
       if (dayPlan > 0 && dayWork === 0 && dateStr <= TODAY) absences++
     })
 
@@ -84,7 +89,7 @@ export default function DashboardRH() {
     const inactive = user.actif === false
     if (inactive) {
       return { inactive, plannedMin: 0, plannedMonthMin: 0, workedMin, balance: 0, absences: 0,
-               tauxActivite: null, congesApprouves: 0, vac: null }
+               tauxActivite: null, congesApprouves: 0, vac: null, joursAttendus: 0, joursPointes }
     }
 
     const balance      = workedMin - plannedMin
@@ -99,7 +104,7 @@ export default function DashboardRH() {
 
     const vac = computeVacances(userId, conges, THIS_YEAR)
 
-    return { inactive, plannedMin, plannedMonthMin, workedMin, balance, absences, tauxActivite, congesApprouves, vac }
+    return { inactive, plannedMin, plannedMonthMin, workedMin, balance, absences, tauxActivite, congesApprouves, vac, joursAttendus, joursPointes }
   }
 
   const allStats = collaborateurs
@@ -118,7 +123,7 @@ export default function DashboardRH() {
     : null
 
   const exportCSV = () => {
-    const headers = ['Nom', 'Rôle', 'Heures planifiées', 'Heures travaillées', 'Solde', 'Taux activité', 'Congés approuvés', 'Absences', 'Statut']
+    const headers = ['Nom', 'Rôle', 'Heures attendues', 'Heures faites', 'Écart', 'Taux activité', 'Congés approuvés', 'Jours sans pointage', 'Statut']
     const rows = allStats.map(r => {
       const alerts = []
       if (r.balance < -300) alerts.push('Solde critique')
@@ -173,46 +178,34 @@ export default function DashboardRH() {
 
       <ReglesHeures />
 
-      {/* 4 cartes KPI */}
+      {/* 3 chiffres clés, en mots simples */}
       <div className="drh-kpi-grid">
         <div className="card drh-kpi">
-          <div className="drh-kpi-icon drh-icon-blue">⏰</div>
           <div className="drh-kpi-body">
+            <span className="drh-kpi-lbl">Heures faites par l'équipe</span>
             <span className="drh-kpi-val">{minutesToHHMM(totalWorkedMin)}</span>
-            <span className="drh-kpi-lbl">Heures travaillées</span>
-            <span className="drh-kpi-sub">/ {minutesToHHMM(totalPlannedMin)} dues à ce jour</span>
+            <span className="drh-kpi-sub">sur {minutesToHHMM(totalPlannedMin)} attendues jusqu'à aujourd'hui</span>
           </div>
         </div>
 
         <div className={`card drh-kpi ${totalCongesPending > 0 ? 'drh-kpi-warn' : ''}`}>
-          <div className="drh-kpi-icon drh-icon-orange">🌴</div>
           <div className="drh-kpi-body">
+            <span className="drh-kpi-lbl">Congés à valider</span>
             <span className="drh-kpi-val">{totalCongesPending}</span>
-            <span className="drh-kpi-lbl">Congés en attente</span>
-            <span className="drh-kpi-sub">demandes à valider</span>
+            <span className="drh-kpi-sub">{totalCongesPending > 0 ? 'demandes en attente de ta réponse' : 'aucune demande en attente'}</span>
           </div>
         </div>
 
         <div className={`card drh-kpi ${totalAbsences > 5 && totalWorkedMin > 0 ? 'drh-kpi-danger' : ''}`}>
-          <div className="drh-kpi-icon drh-icon-red">⚠️</div>
           <div className="drh-kpi-body">
+            <span className="drh-kpi-lbl">Jours sans pointage</span>
             <span className="drh-kpi-val">{totalAbsences}</span>
-            <span className="drh-kpi-lbl">Jours d'absence</span>
-            <span className="drh-kpi-sub">sur la période</span>
-          </div>
-        </div>
-
-        <div className={`card drh-kpi ${tauxEquipe !== null && tauxEquipe < 80 && totalWorkedMin > 0 ? 'drh-kpi-danger' : ''}`}>
-          <div className="drh-kpi-icon drh-icon-green">📈</div>
-          <div className="drh-kpi-body">
-            <span className="drh-kpi-val">{tauxEquipe !== null ? `${tauxEquipe}%` : '—'}</span>
-            <span className="drh-kpi-lbl">Taux moyen équipe</span>
-            <span className="drh-kpi-sub">taux d'activité</span>
+            <span className="drh-kpi-sub">jours de travail où personne n'a pointé (absence ou oubli)</span>
           </div>
         </div>
       </div>
 
-      {/* Tableau par collaborateur */}
+      {/* Une ligne par personne : faites / attendues + situation */}
       {loading ? (
         <div className="loading-center"><div className="spinner" /></div>
       ) : (
@@ -221,121 +214,48 @@ export default function DashboardRH() {
             <table>
               <thead>
                 <tr>
-                  <th>Collaborateur</th>
-                  <th>Heures dues à ce jour</th>
-                  <th>Heures travaillées</th>
-                  <th>Solde</th>
-                  <th>Taux activité</th>
-                  <th>Vacances {THIS_YEAR}</th>
-                  <th>Absences</th>
-                  <th>Statut</th>
+                  <th scope="col">Collaborateur</th>
+                  <th scope="col">Heures faites / attendues — {monthLabel}</th>
+                  <th scope="col">Situation</th>
+                  <th scope="col">Vacances {THIS_YEAR}</th>
                 </tr>
               </thead>
               <tbody>
-                {allStats.map(r => {
-                  if (r.inactive) {
-                    return (
-                      <tr key={r.user.id} className="drh-row-inactive">
+                {allStats.map(r => (
+                  <tr key={r.user.id} className={r.inactive ? 'drh-row-inactive' : ''}>
+                    <td>
+                      <div className="drh-collab">
+                        <div className="drh-avatar">{r.user.name[0]}</div>
+                        <div>
+                          <div className="drh-collab-name">{r.user.name}</div>
+                          <div className="drh-collab-role">
+                            {r.inactive ? 'Ancien collaborateur' : r.user.role === 'manager' ? 'Manager' : r.user.poste || 'Assistante médicale'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    {r.inactive ? (
+                      <>
+                        <td><div className="sit-figures"><span><strong>{minutesToHHMM(r.workedMin)}</strong> faites</span></div></td>
+                        <td><span className="drh-no-pointage">Ne travaille plus au cabinet</span></td>
+                        <td><span className="sh-dash">—</span></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="drh-col-progress">
+                          <Progression workedMin={r.workedMin} plannedMin={r.plannedMin} joursPointes={r.joursPointes} joursAttendus={r.joursAttendus} />
+                        </td>
+                        <td><Situation workedMin={r.workedMin} plannedMin={r.plannedMin} /></td>
                         <td>
-                          <div className="drh-collab">
-                            <div className="drh-avatar">{r.user.name[0]}</div>
-                            <div>
-                              <div className="drh-collab-name">{r.user.name}</div>
-                              <div className="drh-collab-role">Ancien collaborateur</div>
-                            </div>
+                          <div className="drh-vac">
+                            <span className="drh-vac-restant">{r.vac.restant} jour{r.vac.restant > 1 ? 's' : ''} restant{r.vac.restant > 1 ? 's' : ''}</span>
+                            <span className="drh-vac-detail">{r.vac.consomme} pris sur {r.vac.quota}</span>
                           </div>
                         </td>
-                        <td><span className="sh-dash">—</span></td>
-                        <td><span className="badge badge-blue">{minutesToHHMM(r.workedMin)}</span></td>
-                        <td colSpan={5}><span className="drh-no-pointage">Compte désactivé — historique des heures effectuées uniquement</span></td>
-                      </tr>
-                    )
-                  }
-                  const noPointage   = r.workedMin === 0
-                  const balanceAlert = r.balance < -300 && !noPointage
-                  const tauxAlert    = r.tauxActivite !== null && r.tauxActivite < 80 && !noPointage
-                  const hasAlert     = balanceAlert || tauxAlert
-                  const soldeClass   = r.balance > 0 ? 'pos' : (r.balance < 0 && !noPointage) ? 'neg' : 'zero'
-
-                  return (
-                    <tr key={r.user.id} className={hasAlert ? 'drh-row-alert' : ''}>
-                      <td>
-                        <div className="drh-collab">
-                          <div className="drh-avatar">{r.user.name[0]}</div>
-                          <div>
-                            <div className="drh-collab-name">{r.user.name}</div>
-                            <div className="drh-collab-role">
-                              {r.user.role === 'manager' ? 'Manager' : r.user.poste || 'Assistante'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        {minutesToHHMM(r.plannedMin)}
-                        <div className="drh-collab-role">sur {minutesToHHMM(r.plannedMonthMin)} ce mois</div>
-                      </td>
-
-                      <td>
-                        <span className="badge badge-blue">{minutesToHHMM(r.workedMin)}</span>
-                      </td>
-
-                      <td>
-                        {noPointage ? (
-                          <span className="drh-no-pointage">Aucun pointage</span>
-                        ) : (
-                          <span className={`sh-badge-solde sh-badge-${soldeClass}${balanceAlert ? ' drh-badge-crit' : ''}`}>
-                            {formatSolde(r.balance)}
-                          </span>
-                        )}
-                      </td>
-
-                      <td>
-                        {noPointage ? (
-                          <span className="sh-dash">—</span>
-                        ) : r.tauxActivite !== null ? (
-                          <div className="drh-taux-wrap">
-                            <div className="drh-taux-bar">
-                              <div
-                                className={`drh-taux-fill${tauxAlert ? ' drh-taux-alert' : r.tauxActivite >= 100 ? ' drh-taux-over' : ''}`}
-                                style={{ width: `${Math.min(r.tauxActivite, 100)}%` }}
-                              />
-                            </div>
-                            <span className={`drh-taux-pct${tauxAlert ? ' drh-taux-pct-alert' : ''}`}>
-                              {r.tauxActivite}%
-                            </span>
-                          </div>
-                        ) : <span className="sh-dash">—</span>}
-                      </td>
-
-                      <td>
-                        <div className={`drh-vac ${r.vac.restant <= 3 ? 'drh-vac-low' : ''}`}>
-                          <span className="drh-vac-restant">🌴 {r.vac.restant}j restants</span>
-                          <span className="drh-vac-detail">{r.vac.consomme} / {r.vac.quota}j consommés</span>
-                        </div>
-                      </td>
-
-                      <td>
-                        {r.absences > 0
-                          ? <span className="badge badge-orange">{r.absences}j</span>
-                          : <span className="badge badge-green">0</span>}
-                      </td>
-
-                      <td>
-                        {noPointage ? (
-                          <span className="drh-no-pointage">Aucun pointage</span>
-                        ) : hasAlert ? (
-                          <div className="drh-chips">
-                            {balanceAlert && <span className="drh-chip-alert">Solde critique</span>}
-                            {tauxAlert    && <span className="drh-chip-alert">Taux faible</span>}
-                          </div>
-                        ) : (
-                          <span className="badge badge-green">✓ OK</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
+                      </>
+                    )}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

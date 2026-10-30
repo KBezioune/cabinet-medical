@@ -4,18 +4,18 @@ import { getPointagesByDateRange, getAllConges } from '../../lib/db'
 import { format, eachDayOfInterval } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { minutesToHHMM, currentMonthYear, MONTH_OPTIONS } from '../../utils/dateUtils'
-import { plannedMinutesFor, isOnApprovedLeave, computeVacances } from '../../utils/horaires'
+import { plannedMinutesFor, isOnApprovedLeave, computeVacances, ferieName } from '../../utils/horaires'
 import Breadcrumb from '../shared/Breadcrumb'
 import ReglesHeures from '../shared/ReglesHeures'
+import { Progression, Situation } from '../shared/SituationHeures'
 import './SoldeHeures.css'
 
-const formatSolde = (min) => {
+// Écart d'un jour dans le détail : « −8h24 », « +15 min », « ± 0 »
+const formatEcart = (min) => {
   if (min === 0) return '±0'
   const sign = min > 0 ? '+' : '−'
   const abs  = Math.abs(min)
-  const h    = Math.floor(abs / 60)
-  const m    = abs % 60
-  return `${sign}${h}h${m > 0 ? String(m).padStart(2, '0') : ''}`
+  return abs < 60 ? `${sign}${abs} min` : `${sign}${minutesToHHMM(abs)}`
 }
 
 export default function SoldeHeures() {
@@ -49,45 +49,64 @@ export default function SoldeHeures() {
   }, [year, month])
 
   const todayStr = format(new Date(), 'yyyy-MM-dd')
-  const computeSolde = (userId, inactive = false) => {
-    const userPts  = pointages.filter(p => p.user_id === userId)
 
+  const computeSolde = (userId, inactive = false) => {
+    const userPts = pointages.filter(p => p.user_id === userId)
     const days = eachDayOfInterval({
       start: new Date(year, month - 1, 1),
       end:   new Date(year, month, 0),
     })
 
-    let plannedMin = 0
-    let workedMin  = 0
-    const details  = []
+    let plannedMin = 0, workedMin = 0, joursAttendus = 0, joursPointes = 0
+    const details = []
 
     days.forEach(d => {
-      const dateStr    = format(d, 'yyyy-MM-dd')
-      const pt         = userPts.find(p => p.date === dateStr)
-      // Solde = heures dues jusqu'à aujourd'hui ; compte désactivé = rien n'est dû
-      const dayPlan    = (inactive || dateStr > todayStr || isOnApprovedLeave(userId, dateStr, conges))
-        ? 0 : plannedMinutesFor(userId, d)
-      const dayWorked  = pt?.duree_minutes || 0
+      const dateStr   = format(d, 'yyyy-MM-dd')
+      const pt        = userPts.find(p => p.date === dateStr)
+      const ferie     = ferieName(dateStr)
+      const enConge   = isOnApprovedLeave(userId, dateStr, conges)
+      // Heures attendues jusqu'à aujourd'hui ; compte désactivé = rien n'est attendu
+      const dayPlan   = (inactive || dateStr > todayStr || enConge) ? 0 : plannedMinutesFor(userId, d)
+      const dayWorked = pt?.duree_minutes || 0
 
       plannedMin += dayPlan
       workedMin  += dayWorked
+      if (dayPlan > 0) joursAttendus++
+      if (pt?.heure_arrivee) joursPointes++
 
-      if (dayPlan > 0 || dayWorked > 0) {
-        details.push({ date: d, dateStr, planned: dayPlan, worked: dayWorked, balance: dayWorked - dayPlan, pt })
+      let note = ''
+      if (ferie)               note = `Férié : ${ferie}`
+      else if (enConge)        note = 'Congé approuvé'
+      else if (dayPlan > 0 && !pt?.heure_arrivee && dateStr < todayStr) note = 'Pas de pointage'
+      else if (pt?.heure_arrivee && !pt.heure_depart && dateStr < todayStr) note = 'Départ non pointé'
+
+      if (dayPlan > 0 || dayWorked > 0 || (note && dateStr <= todayStr)) {
+        details.push({ date: d, dateStr, planned: dayPlan, worked: dayWorked, ecart: dayWorked - dayPlan, pt, note })
       }
     })
 
-    return { plannedMin, workedMin, balance: workedMin - plannedMin, details }
+    return { plannedMin, workedMin, balance: workedMin - plannedMin, joursAttendus, joursPointes, details }
   }
 
   const monthLabel = format(new Date(year, month - 1), 'MMMM yyyy', { locale: fr })
+  const isCurrent  = year === cy && month === cm
+
+  const rows = assistants.map(a => ({ a, ...computeSolde(a.id, a.actif === false) }))
+  const actifs = rows.filter(r => r.a.actif !== false)
+  const anciens = rows.filter(r => r.a.actif === false)
 
   return (
     <div className="sh-wrap">
-      <Breadcrumb items={['Centre Médical Dorigny', 'RH', 'Soldes des heures']} />
-      {/* Sélecteurs */}
+      <Breadcrumb items={['Centre Médical Dorigny', 'RH', 'Heures de l\'équipe']} />
+
       <div className="card sh-controls">
-        <h2 className="section-title">Soldes des heures</h2>
+        <div>
+          <h2 className="section-title">Heures de l'équipe</h2>
+          <p className="sh2-intro">
+            Pour chaque personne : les heures faites <strong>comparées aux heures attendues</strong>
+            {isCurrent ? ` jusqu'à aujourd'hui (${format(new Date(), 'd MMMM', { locale: fr })})` : ` sur tout le mois de ${monthLabel}`}.
+          </p>
+        </div>
         <div className="sh-selects">
           <select value={month} onChange={e => setMonth(Number(e.target.value))}>
             {MONTH_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -104,102 +123,70 @@ export default function SoldeHeures() {
         <div className="loading-center"><div className="spinner" /></div>
       ) : (
         <div className="sh-list">
-          {assistants.map(a => {
-            const { plannedMin, workedMin, balance, details } = computeSolde(a.id, a.actif === false)
-            const vac      = computeVacances(a.id, conges, cy)
-            const isOpen   = expanded === a.id
-            const soldeClass = balance > 0 ? 'pos' : (balance < 0 && workedMin > 0) ? 'neg' : 'zero'
+          {actifs.map(({ a, plannedMin, workedMin, balance, joursAttendus, joursPointes, details }) => {
+            const vac    = computeVacances(a.id, conges, cy)
+            const isOpen = expanded === a.id
 
             return (
               <div key={a.id} className="card sh-card">
-                {/* Résumé */}
-                <div className="sh-summary" onClick={() => setExpanded(isOpen ? null : a.id)}>
-                  <div className="sh-avatar">{a.name[0]}</div>
-                  <div className="sh-info">
-                    <span className="sh-name">{a.name}</span>
-                    <span className="sh-sub">{monthLabel}</span>
-                  </div>
-                  <div className="sh-stats">
-                    <div className="sh-stat">
-                      <span className="sh-stat-val">{minutesToHHMM(plannedMin)}</span>
-                      <span className="sh-stat-lbl">Planifiées</span>
+                <div className="sh2-row">
+                  <div className="sh2-who">
+                    <div className="sh-avatar">{a.name[0]}</div>
+                    <div>
+                      <div className="sh-name">{a.name}</div>
+                      <div className="sh-sub">{a.poste || 'Assistante médicale'}</div>
                     </div>
-                    <div className="sh-stat">
-                      <span className="sh-stat-val blue">{minutesToHHMM(workedMin)}</span>
-                      <span className="sh-stat-lbl">Travaillées</span>
-                    </div>
-                    {workedMin === 0 ? (
-                      <span className="sh-no-pointage">Aucun pointage</span>
-                    ) : (
-                      <div className={`sh-solde sh-solde-${soldeClass}`}>
-                        <span className="sh-solde-val">{formatSolde(balance)}</span>
-                        <span className="sh-solde-lbl">Solde</span>
-                      </div>
-                    )}
-                    {/* Solde vacances */}
-                    {a.actif !== false && <div className={`sh-vac ${vac.restant <= 3 ? 'sh-vac-low' : ''}`}>
-                      <span className="sh-vac-icon">🌴</span>
-                      <div className="sh-vac-body">
-                        <span className="sh-vac-main">{vac.restant}j restants</span>
-                        <span className="sh-vac-sub">{vac.consomme}/{vac.quota}j</span>
-                      </div>
-                    </div>}
                   </div>
-                  <button className={`sh-toggle ${isOpen ? 'open' : ''}`} title="Détail">▾</button>
+
+                  <Progression workedMin={workedMin} plannedMin={plannedMin} joursPointes={joursPointes} joursAttendus={joursAttendus} />
+                  <Situation workedMin={workedMin} plannedMin={plannedMin} />
                 </div>
 
-                {/* Détail jour par jour */}
+                <div className="sh2-foot">
+                  <span className="sh2-vac">🌴 {vac.restant} jour{vac.restant > 1 ? 's' : ''} de vacances restant{vac.restant > 1 ? 's' : ''} sur {vac.quota}</span>
+                  <button className="sh2-more" onClick={() => setExpanded(isOpen ? null : a.id)} aria-expanded={isOpen}>
+                    {isOpen ? 'Masquer le détail' : 'Voir le détail jour par jour'}
+                  </button>
+                </div>
+
                 {isOpen && (
                   <div className="sh-detail">
-                    <div className="table-wrapper">
+                    <div className="table-wrapper" tabIndex={0} role="region" aria-label={`Détail des jours de ${a.name}`}>
                       <table>
                         <thead>
                           <tr>
-                            <th>Date</th>
-                            <th>Planifié</th>
-                            <th>Travaillé</th>
-                            <th>Solde du jour</th>
-                            <th>Pointage</th>
+                            <th scope="col">Jour</th>
+                            <th scope="col">Arrivée → départ</th>
+                            <th scope="col">Heures faites</th>
+                            <th scope="col">Heures attendues</th>
+                            <th scope="col">Écart</th>
+                            <th scope="col">Remarque</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {details.map(d => {
-                            const dc = d.balance > 0 ? 'pos' : (d.balance < 0 && d.worked > 0) ? 'neg' : 'zero'
-                            return (
-                              <tr key={d.dateStr}>
-                                <td className="sh-date-cell">
-                                  {format(d.date, 'EEE d MMM', { locale: fr })}
-                                </td>
-                                <td>{d.planned > 0 ? minutesToHHMM(d.planned) : <span className="sh-dash">—</span>}</td>
-                                <td>
-                                  {d.worked > 0
-                                    ? <span className="badge badge-blue">{minutesToHHMM(d.worked)}</span>
-                                    : <span className="sh-dash">—</span>
-                                  }
-                                </td>
-                                <td>
-                                  <span className={`sh-badge-solde sh-badge-${dc}`}>
-                                    {formatSolde(d.balance)}
-                                  </span>
-                                </td>
-                                <td className="sh-pt-cell">
-                                  {d.pt?.heure_arrivee
-                                    ? `${format(new Date(d.pt.heure_arrivee), 'HH:mm')} → ${d.pt.heure_depart ? format(new Date(d.pt.heure_depart), 'HH:mm') : '...'}`
-                                    : <span className="sh-dash">—</span>
-                                  }
-                                </td>
-                              </tr>
-                            )
-                          })}
+                          {details.map(d => (
+                            <tr key={d.dateStr} className={d.note ? 'sh2-tr-note' : ''}>
+                              <td className="sh-date-cell">{format(d.date, 'EEE d MMM', { locale: fr })}</td>
+                              <td className="sh-pt-cell">
+                                {d.pt?.heure_arrivee
+                                  ? `${format(new Date(d.pt.heure_arrivee), 'HH:mm')} → ${d.pt.heure_depart ? format(new Date(d.pt.heure_depart), 'HH:mm') : '…'}`
+                                  : <span className="sh-dash">—</span>}
+                              </td>
+                              <td>{d.worked > 0 ? <strong>{minutesToHHMM(d.worked)}</strong> : <span className="sh-dash">—</span>}</td>
+                              <td>{d.planned > 0 ? minutesToHHMM(d.planned) : <span className="sh-dash">—</span>}</td>
+                              <td>
+                                {(d.planned > 0 || d.worked > 0)
+                                  ? <span className={d.ecart < 0 ? 'sh2-neg' : d.ecart > 0 ? 'sh2-pos' : ''}>{formatEcart(d.ecart)}</span>
+                                  : <span className="sh-dash">—</span>}
+                              </td>
+                              <td className="sh2-note">{d.note}</td>
+                            </tr>
+                          ))}
                           <tr className="total-row">
-                            <td><strong>TOTAL</strong></td>
-                            <td><strong>{minutesToHHMM(plannedMin)}</strong></td>
+                            <td colSpan={2}><strong>TOTAL</strong></td>
                             <td><strong>{minutesToHHMM(workedMin)}</strong></td>
-                            <td>
-                              <span className={`sh-badge-solde sh-badge-${soldeClass} sh-badge-lg`}>
-                                {formatSolde(balance)}
-                              </span>
-                            </td>
+                            <td><strong>{minutesToHHMM(plannedMin)}</strong></td>
+                            <td><strong>{formatEcart(balance)}</strong></td>
                             <td />
                           </tr>
                         </tbody>
@@ -210,6 +197,24 @@ export default function SoldeHeures() {
               </div>
             )
           })}
+
+          {anciens.length > 0 && (
+            <>
+              <h3 className="sh2-section">Anciens collaborateurs <span>(heures effectuées uniquement)</span></h3>
+              {anciens.map(({ a, workedMin }) => (
+                <div key={a.id} className="card sh-card sh2-ancien">
+                  <div className="sh2-who">
+                    <div className="sh-avatar">{a.name[0]}</div>
+                    <div>
+                      <div className="sh-name">{a.name}</div>
+                      <div className="sh-sub">Ne travaille plus au cabinet</div>
+                    </div>
+                  </div>
+                  <div className="sit-figures"><span><strong>{minutesToHHMM(workedMin)}</strong> faites en {monthLabel}</span></div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>
